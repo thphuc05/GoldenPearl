@@ -1,91 +1,39 @@
-package src.entity;
-
-import java.util.Objects;
+package entity;
 
 public class KhachHang {
-	private String maKhachHang;
-	private String tenKhachHang;
-	private String sDT;
-	private int diemTichLuy;
-	private boolean KHDK;
-	public KhachHang(String maKhachHang, String tenKhachHang, String sDT, int diemTichLuy, boolean laKHDK) {
-		super();
-		this.maKhachHang = maKhachHang;
-		this.tenKhachHang = tenKhachHang;
-		this.sDT = sDT;
-		this.diemTichLuy = diemTichLuy;
-		this.KHDK = laKHDK;
-	}
-	public KhachHang(String ma) {
-		this.maKhachHang=ma;
-		this.tenKhachHang = "";
-		this.sDT = "";
-		this.diemTichLuy = 0;
-		this.KHDK = false;
-	}
-	public KhachHang(String ma,String tenKH, String sdtKH) {
-		this.maKhachHang=ma;
-		this.tenKhachHang = tenKH;
-		this.sDT = sdtKH;
-		this.diemTichLuy = 0;
-		this.KHDK = false;
-	}
-	public KhachHang(String maKhachHang, String tenKhachHang, String sDT, boolean b) {
-		this.maKhachHang = maKhachHang;
-		this.tenKhachHang = tenKhachHang;
-		this.sDT = sDT;
-		this.diemTichLuy = 0;
-		this.KHDK = b;
-	}
-	public void congDiemTichLuy(int diemTichLuy) {
-		this.diemTichLuy+=diemTichLuy;
-	}
-	public String getTenKhachHang() {
-		return tenKhachHang;
-	}
-	public void setTenKhachHang(String tenKhachHang) {
-		this.tenKhachHang = tenKhachHang;
-	}
-	public String getsDT() {
-		return sDT;
-	}
-	public void setsDT(String sDT) {
-		this.sDT = sDT;
-	}
-	public int getDiemTichLuy() {
-		return diemTichLuy;
-	}
-	public void setDiemTichLuy(int diemTichLuy) {
-		this.diemTichLuy = diemTichLuy;
-	}
-	public boolean isLaKHDK() {
-		return KHDK;
-	}
-	public void setKHDK(boolean laKHDK) {
-		this.KHDK = laKHDK;
-	}
-	public String getMaKhachHang() {
-		return maKhachHang;
-	}
-	@Override
-	public int hashCode() {
-		return Objects.hash(maKhachHang);
-	}
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		KhachHang other = (KhachHang) obj;
-		return Objects.equals(maKhachHang, other.maKhachHang);
-	}
-	@Override
-	public String toString() {
-		return "KhachHang [maKhachHang=" + maKhachHang + ", tenKhachHang=" + tenKhachHang + ", sDT=" + sDT
-				+ ", diemTichLuy=" + diemTichLuy + ", laKHDK=" + KHDK + "]";
-	}
-	
+    private String maKH;
+    private String tenKH;
+    private String soDT;
+    private String email;
+
+    public KhachHang() {}
+
+    public KhachHang(String maKH, String tenKH, String soDT, String email) {
+        this.maKH = maKH;
+        this.tenKH = tenKH;
+        this.soDT = soDT;
+        this.email = email;
+    }
+
+    public String getMaKH() { return maKH; }
+    public void setMaKH(String maKH) { this.maKH = maKH; }
+
+    public String getTenKH() { return tenKH; }
+    public void setTenKH(String tenKH) { this.tenKH = tenKH; }
+
+    public String getSoDT() { return soDT; }
+    public void setSoDT(String soDT) { this.soDT = soDT; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    // Các phương thức nghiệp vụ từ diagram
+    public double tinhTongChi() { return 0; }
+    public int tichDiem() { return 0; }
+    public int tinhDiemTichLuy() { return 0; }
+
+    @Override
+    public String toString() {
+        return "KhachHang [maKH=" + maKH + ", tenKH=" + tenKH + ", soDT=" + soDT + "]";
+    }
 }

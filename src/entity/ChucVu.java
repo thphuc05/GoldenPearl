@@ -1,4 +1,4 @@
-package src.entity;
+package entity;
 
 public enum ChucVu {
     NHAN_VIEN("Nhân Viên", "NV"),
