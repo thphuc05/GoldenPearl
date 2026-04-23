@@ -1,92 +1,61 @@
-package src.entity;
+package entity;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
+import java.util.Date;
 
 public class HoaDon {
-	private String maHoaDon;
-	private Ban ban;
-	private NhanVien nhanVienBan;
-	private boolean trangThaiThanhToan;
-	private KhachHang khachHang;
-	private LocalDateTime thoiGianVao;
-	private LocalDateTime thoiGianRa;
+    private String maHD;
+    private Date ngayLap;
+    private double tongTien;
+    private boolean trangThai;
+    private DonDatBan donDatBan;
+    private NhanVien nhanVien;
+    private KhuyenMai khuyenMai;
+    private KhachHang khachHang;
 
+    public HoaDon() {}
 
-	public HoaDon(String maHoaDon, Ban ban, NhanVien nhanVienBan, boolean trangThaiThanhToan, KhachHang khachHang,
-			LocalDateTime thoiGianVao, LocalDateTime thoiGianRa) {
-		super();
-		this.maHoaDon = maHoaDon;
-		this.ban = ban;
-		this.nhanVienBan = nhanVienBan;
-		this.trangThaiThanhToan = trangThaiThanhToan;
-		this.khachHang = khachHang;
-		this.thoiGianVao = thoiGianVao;
-		this.thoiGianRa = thoiGianRa;
-		
-	}
-	public HoaDon(String string) {
-		this.maHoaDon = string;
-	}
-	public Ban getBan() {
-		return ban;
-	}
-	public void setBan(Ban ban) {
-		this.ban = ban;
-	}
-	public NhanVien getNhanVienBan() {
-		return nhanVienBan;
-	}
-	public void setNhanVienBan(NhanVien nhanVienBan) {
-		this.nhanVienBan = nhanVienBan;
-	}
-	public boolean isTrangThaiThanhToan() {
-		return trangThaiThanhToan;
-	}
-	public void setTrangThaiThanhToan(boolean trangThaiThanhToan) {
-		this.trangThaiThanhToan = trangThaiThanhToan;
-	}
-	public KhachHang getKhachHang() {
-		return khachHang;
-	}
-	public void setKhachHang(KhachHang khachHang) {
-		this.khachHang = khachHang;
-	}
-	public LocalDateTime getThoiGianVao() {
-		return thoiGianVao;
-	}
-	public void setThoiGianVao(LocalDateTime thoiGianVao) {
-		this.thoiGianVao = thoiGianVao;
-	}
-	public LocalDateTime getThoiGianRa() {
-		return thoiGianRa;
-	}
-	public void setThoiGianRa(LocalDateTime thoiGianRa) {
-		this.thoiGianRa = thoiGianRa;
-	}
-	public String getMaHoaDon() {
-		return maHoaDon;
-	}
-	@Override
-	public int hashCode() {
-		return Objects.hash(maHoaDon);
-	}
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		HoaDon other = (HoaDon) obj;
-		return Objects.equals(maHoaDon, other.maHoaDon);
-	}
-	@Override
-	public String toString() {
-		return "HoaDon [maHoaDon=" + maHoaDon + ", ban=" + ban + ", nhanVienBan=" + nhanVienBan
-				+ ", trangThaiThanhToan=" + trangThaiThanhToan + ", khachHang=" + khachHang + ", thoiGianVao="
-				+ thoiGianVao + ", thoiGianRa=" + thoiGianRa + "]";
-	}
-	
+    public HoaDon(String maHD, Date ngayLap, double tongTien, boolean trangThai, DonDatBan donDatBan, NhanVien nhanVien, KhuyenMai khuyenMai, KhachHang khachHang) {
+        this.maHD = maHD;
+        this.ngayLap = ngayLap;
+        this.tongTien = tongTien;
+        this.trangThai = trangThai;
+        this.donDatBan = donDatBan;
+        this.nhanVien = nhanVien;
+        this.khuyenMai = khuyenMai;
+        this.khachHang = khachHang;
+    }
+
+    public String getMaHD() { return maHD; }
+    public void setMaHD(String maHD) { this.maHD = maHD; }
+
+    public Date getNgayLap() { return ngayLap; }
+    public void setNgayLap(Date ngayLap) { this.ngayLap = ngayLap; }
+
+    public double getTongTien() { return tongTien; }
+    public void setTongTien(double tongTien) { this.tongTien = tongTien; }
+
+    public boolean isTrangThai() { return trangThai; }
+    public void setTrangThai(boolean trangThai) { this.trangThai = trangThai; }
+
+    public DonDatBan getDonDatBan() { return donDatBan; }
+    public void setDonDatBan(DonDatBan donDatBan) { this.donDatBan = donDatBan; }
+
+    public NhanVien getNhanVien() { return nhanVien; }
+    public void setNhanVien(NhanVien nhanVien) { this.nhanVien = nhanVien; }
+
+    public KhuyenMai getKhuyenMai() { return khuyenMai; }
+    public void setKhuyenMai(KhuyenMai khuyenMai) { this.khuyenMai = khuyenMai; }
+
+    public KhachHang getKhachHang() { return khachHang; }
+    public void setKhachHang(KhachHang khachHang) { this.khachHang = khachHang; }
+
+    public void dongHoaDon() {}
+    public double tinhTienTruocKM() { return 0; }
+    public double tinhVAT() { return 0; }
+    public double tinhTongTien() { return 0; }
+
+    @Override
+    public String toString() {
+        return "HoaDon [maHD=" + maHD + ", ngayLap=" + ngayLap + ", tongTien=" + tongTien + "]";
+    }
 }

@@ -1,68 +1,51 @@
-package src.entity;
-
-import java.util.Objects;
+package entity;
 
 public class SanPham {
-	private String maSanPham;
-	private String tenSanPham;
-	private double gia;
-	private LoaiSanPham loaiSanPham;
-	
-	public SanPham(String maSanPham, String tenSanPham, double gia, LoaiSanPham loaiSanPham) {
-		super();
-		this.maSanPham = maSanPham;
-		this.tenSanPham = tenSanPham;
-		this.gia = gia;
-		this.loaiSanPham = loaiSanPham;
-	}
-	public SanPham(String ma) {
-		this.maSanPham = ma;
-		this.tenSanPham = "";
-		this.gia = 0;
-		this.loaiSanPham = LoaiSanPham.Tra;
-	}
-	public String getTenSanPham() {
-		return tenSanPham;
-	}
-	public void setTenSanPham(String tenSanPham) {
-		this.tenSanPham = tenSanPham;
-	}
-	public double getGia() {
-		return gia;
-	}
-	public void setGia(double gia) {
-		this.gia = gia;
-	}
-	
-	public String getMaSanPham() {
-		return maSanPham;
-	}
-	
-	public LoaiSanPham getLoaiSanPham() {
-		return loaiSanPham;
-	}
-	public void setLoaiSanPham(LoaiSanPham loaiSanPham) {
-		this.loaiSanPham = loaiSanPham;
-	}
-	@Override
-	public int hashCode() {
-		return Objects.hash(maSanPham);
-	}
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		SanPham other = (SanPham) obj;
-		return Objects.equals(maSanPham, other.maSanPham);
-	}
-	@Override
-	public String toString() {
-		return "SanPham [maSanPham=" + maSanPham + ", tenSanPham=" + tenSanPham + ", gia=" + gia + ", loaiSanPham="
-				+ loaiSanPham + "]";
-	}
-	
+    private String maMon;
+    private String tenMon;
+    private double donGia;
+    private String moTa;
+    private boolean trangThai;
+    private LoaiSanPham loaiSanPham;
+    private String hinhAnh;
+
+    public SanPham() {}
+
+    public SanPham(String maMon, String tenMon, double donGia, String moTa, boolean trangThai, LoaiSanPham loaiSanPham, String hinhAnh) {
+        this.maMon = maMon;
+        this.tenMon = tenMon;
+        this.donGia = donGia;
+        this.moTa = moTa;
+        this.trangThai = trangThai;
+        this.loaiSanPham = loaiSanPham;
+        this.hinhAnh = hinhAnh;
+    }
+
+    public String getMaMon() { return maMon; }
+    public void setMaMon(String maMon) { this.maMon = maMon; }
+
+    public String getTenMon() { return tenMon; }
+    public void setTenMon(String tenMon) { this.tenMon = tenMon; }
+
+    public double getDonGia() { return donGia; }
+    public void setDonGia(double donGia) { this.donGia = donGia; }
+
+    public String getMoTa() { return moTa; }
+    public void setMoTa(String moTa) { this.moTa = moTa; }
+
+    public boolean isTrangThai() { return trangThai; }
+    public void setTrangThai(boolean trangThai) { this.trangThai = trangThai; }
+
+    public LoaiSanPham getLoaiSanPham() { return loaiSanPham; }
+    public void setLoaiSanPham(LoaiSanPham loaiSanPham) { this.loaiSanPham = loaiSanPham; }
+
+    public String getHinhAnh() { return hinhAnh; }
+    public void setHinhAnh(String hinhAnh) { this.hinhAnh = hinhAnh; }
+
+    public void capNhatGia(double giaMoi) { this.donGia = giaMoi; }
+
+    @Override
+    public String toString() {
+        return tenMon;
+    }
 }
