@@ -1,79 +1,59 @@
-package src.entity;
+package entity;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
+import java.util.Date;
 
 public class DonDatBan {
-	private String maDonDatBan;
-	private KhachHang khachHang;
-	private Ban ban;
-	private LocalDateTime thoiGian;
-	private boolean daNhan;
-	public DonDatBan(String maDonDatHang, KhachHang khachHang, Ban ban, LocalDateTime thoiGian,boolean daNhan) {
-		super();
-		this.maDonDatBan = maDonDatHang;
-		this.khachHang = khachHang;
-		this.ban = ban;
-		this.thoiGian = thoiGian;
-		this.daNhan=daNhan;
-	}
-	
-	public DonDatBan() {
-		super();
-	}
+    private String maDon;
+    private Date thoiGianDat;
+    private Date thoiGianDen;
+    private int soLuongKhach;
+    private KhachHang khachHang;
+    private boolean trangThai;
+    private NhanVien nhanVien;
+    private Ban ban;
 
-	public boolean isDaNhan() {
-		return daNhan;
-	}
+    public DonDatBan() {}
 
-	public void setDaNhan(boolean daNhan) {
-		this.daNhan = daNhan;
-	}
-	public KhachHang getKhachHang() {
-		return khachHang;
-	}
-	public void setKhachHang(KhachHang khachHang) {
-		this.khachHang = khachHang;
-	}
-	public Ban getBan() {
-		return ban;
-	}
-	public void setBan(Ban ban) {
-		this.ban = ban;
-	}
-	public LocalDateTime getThoiGian() {
-		return thoiGian;
-	}
-	public void setThoiGian(LocalDateTime thoiGian) {
-		this.thoiGian = thoiGian;
-	}
-	public String getMaDonDatBan() {
-		return maDonDatBan;
-	}
-	
-	public void setMaDonDatBan(String maDonDatBan) {
-		this.maDonDatBan = maDonDatBan;
-	}
+    public DonDatBan(String maDon, Date thoiGianDat, Date thoiGianDen, int soLuongKhach, KhachHang khachHang, boolean trangThai, NhanVien nhanVien, Ban ban) {
+        this.maDon = maDon;
+        this.thoiGianDat = thoiGianDat;
+        this.thoiGianDen = thoiGianDen;
+        this.soLuongKhach = soLuongKhach;
+        this.khachHang = khachHang;
+        this.trangThai = trangThai;
+        this.nhanVien = nhanVien;
+        this.ban = ban;
+    }
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(maDonDatBan);
-	}
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		DonDatBan other = (DonDatBan) obj;
-		return Objects.equals(maDonDatBan, other.maDonDatBan);
-	}
-	@Override
-	public String toString() {
-		return "DonDatBan [maDonDatHang=" + maDonDatBan + ", khachHang=" + khachHang + ", ban=" + ban + ", thoiGian="
-				+ thoiGian + "]";
-	}
-	
+    public String getMaDon() { return maDon; }
+    public void setMaDon(String maDon) { this.maDon = maDon; }
+
+    public Date getThoiGianDat() { return thoiGianDat; }
+    public void setThoiGianDat(Date thoiGianDat) { this.thoiGianDat = thoiGianDat; }
+
+    public Date getThoiGianDen() { return thoiGianDen; }
+    public void setThoiGianDen(Date thoiGianDen) { this.thoiGianDen = thoiGianDen; }
+
+    public int getSoLuongKhach() { return soLuongKhach; }
+    public void setSoLuongKhach(int soLuongKhach) { this.soLuongKhach = soLuongKhach; }
+
+    public KhachHang getKhachHang() { return khachHang; }
+    public void setKhachHang(KhachHang khachHang) { this.khachHang = khachHang; }
+
+    public boolean isTrangThai() { return trangThai; }
+    public void setTrangThai(boolean trangThai) { this.trangThai = trangThai; }
+
+    public NhanVien getNhanVien() { return nhanVien; }
+    public void setNhanVien(NhanVien nhanVien) { this.nhanVien = nhanVien; }
+
+    public Ban getBan() { return ban; }
+    public void setBan(Ban ban) { this.ban = ban; }
+
+    public double tinhTienCoc() { return 0; }
+    public boolean kiemTraTinhTrang() { return true; }
+
+    @Override
+    public String toString() {
+        return "DonDatBan [maDon=" + maDon + ", thoiGianDat=" + thoiGianDat + ", khachHang=" + khachHang + "]";
+    }
 }

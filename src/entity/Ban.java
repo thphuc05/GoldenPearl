@@ -1,16 +1,16 @@
-package src.entity;
-
-import java.util.Objects;
+package entity;
 
 public class Ban {
     private String maBan;
     private int soBan;
     private int sucChua;
     private String loaiBan;
-    private KhuVuc khuVuc; 
-    private TinhTrangBan tinhTrangBan; 
+    private KhuVuc khuVuc;
+    private TrangThaiBan tinhTrangBan;
 
-    public Ban(String maBan, int soBan, int sucChua, String loaiBan, KhuVuc khuVuc, TinhTrangBan tinhTrangBan) {
+    public Ban() {}
+
+    public Ban(String maBan, int soBan, int sucChua, String loaiBan, KhuVuc khuVuc, TrangThaiBan tinhTrangBan) {
         this.maBan = maBan;
         this.soBan = soBan;
         this.sucChua = sucChua;
@@ -19,84 +19,26 @@ public class Ban {
         this.tinhTrangBan = tinhTrangBan;
     }
 
-    public Ban() {
-    }
+    public String getMaBan() { return maBan; }
+    public void setMaBan(String maBan) { this.maBan = maBan; }
 
-    public void capNhatTrangThai() {
-    }
+    public int getSoBan() { return soBan; }
+    public void setSoBan(int soBan) { this.soBan = soBan; }
 
-    public void datBan() {
-    }
+    public int getSucChua() { return sucChua; }
+    public void setSucChua(int sucChua) { this.sucChua = sucChua; }
 
-    public void giaiPhongBan() {
-    }
+    public String getLoaiBan() { return loaiBan; }
+    public void setLoaiBan(String loaiBan) { this.loaiBan = loaiBan; }
 
-    public String getMaBan() {
-        return maBan;
-    }
+    public KhuVuc getKhuVuc() { return khuVuc; }
+    public void setKhuVuc(KhuVuc khuVuc) { this.khuVuc = khuVuc; }
 
-    public void setMaBan(String maBan) {
-        this.maBan = maBan;
-    }
-
-    public int getSoBan() {
-        return soBan;
-    }
-
-    public void setSoBan(int soBan) {
-        this.soBan = soBan;
-    }
-
-    public int getSucChua() {
-        return sucChua;
-    }
-
-    public void setSucChua(int sucChua) {
-        this.sucChua = sucChua;
-    }
-
-    public String getLoaiBan() {
-        return loaiBan;
-    }
-
-    public void setLoaiBan(String loaiBan) {
-        this.loaiBan = loaiBan;
-    }
-
-    public KhuVuc getKhuVuc() {
-        return khuVuc;
-    }
-
-    public void setKhuVuc(KhuVuc khuVuc) {
-        this.khuVuc = khuVuc;
-    }
-
-    public TinhTrangBan getTinhTrangBan() {
-        return tinhTrangBan;
-    }
-
-    public void setTinhTrangBan(TinhTrangBan tinhTrangBan) {
-        this.tinhTrangBan = tinhTrangBan;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(maBan);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null || getClass() != obj.getClass())
-            return false;
-        Ban other = (Ban) obj;
-        return Objects.equals(maBan, other.maBan);
-    }
+    public TrangThaiBan getTinhTrangBan() { return tinhTrangBan; }
+    public void setTinhTrangBan(TrangThaiBan tinhTrangBan) { this.tinhTrangBan = tinhTrangBan; }
 
     @Override
     public String toString() {
-        return "Ban [maBan=" + maBan + ", soBan=" + soBan + ", sucChua=" + sucChua + 
-               ", loaiBan=" + loaiBan + ", tinhTrang=" + (tinhTrangBan != null ? tinhTrangBan.getTenTinhTrang() : "N/A") + "]";
+        return "Ban [maBan=" + maBan + ", soBan=" + soBan + ", loaiBan=" + loaiBan + "]";
     }
 }
