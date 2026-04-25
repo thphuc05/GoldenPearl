@@ -74,7 +74,6 @@ public class Login {
                 }
                 FlatLaf.registerCustomDefaultsSource(new File("themes/DefaultTheme.properties"));
                 com.formdev.flatlaf.FlatLaf.setGlobalExtraDefaults((Map) props);
-                System.out.println("✅ Style mặc định đã được áp dụng");
             }
         } catch (Exception e) {
             System.err.println("❌ Thất bại trong việc tải thuộc tính giao diện: " + e.getMessage());
@@ -85,56 +84,58 @@ public class Login {
     }
 
     /**
-     * Thiết lập giao diện (giữ nguyên layout cũ)
+     * Thiết lập giao diện (Tự động tràn màn hình và căn giữa)
      */
     private void initUI() {
-        frame.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH); // Tràn màn hình
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setResizable(false);
-        frame.setLocationRelativeTo(null); // Căn giữa màn hình
-        frame.getContentPane().setLayout(null);
+        frame.setResizable(true);
+        frame.getContentPane().setLayout(new BorderLayout());
 
         // Background
         JPanelWithBackground bg;
         try {
             bg = new JPanelWithBackground("data/image/LoginBG.jpg");
-            bg.setBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-            bg.setLayout(null);
-            frame.getContentPane().add(bg);
         } catch (IOException e) {
             System.err.println("❌ Không tìm thấy ảnh nền: " + e.getMessage());
-            bg = new JPanelWithBackground(); // Panel trống nếu lỗi ảnh
-            bg.setBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-            bg.setLayout(null);
-            frame.getContentPane().add(bg);
+            bg = new JPanelWithBackground();
         }
+        bg.setLayout(new GridBagLayout()); // Sử dụng GridBagLayout để căn giữa nội dung
+        frame.getContentPane().add(bg, BorderLayout.CENTER);
 
-        // Tiêu đề (Phần chữ trên Panel)
-        screenTitle.setBounds((SCREEN_WIDTH - 450) / 2, 100, 450, 45);
+        // Container chính để chứa tất cả thành phần và căn giữa
+        JPanel centerContainer = new JPanel();
+        centerContainer.setOpaque(false);
+        centerContainer.setLayout(new BoxLayout(centerContainer, BoxLayout.Y_AXIS));
+
+        // Tiêu đề
         screenTitle.setFont(new Font("Inter Bold", Font.BOLD, 35));
+        screenTitle.setForeground(Color.BLACK);
+        screenTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         screenTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        bg.add(screenTitle);
 
-        restaurantName.setBounds((SCREEN_WIDTH - 750) / 2, 135, 750, 120);
         restaurantName.setFont(new Font("Instrument Serif Regular", Font.BOLD, 120));
+        restaurantName.setAlignmentX(Component.CENTER_ALIGNMENT);
         restaurantName.setHorizontalAlignment(SwingConstants.CENTER);
-        bg.add(restaurantName);
+        restaurantName.setPreferredSize(new Dimension(800, 130));
+        restaurantName.setMaximumSize(new Dimension(800, 130));
 
         // Panel đăng nhập (Khung mờ)
         int panelWidth = 704;
         int panelHeight = 300;
-        int x = (SCREEN_WIDTH - panelWidth) / 2;
-        int y = (SCREEN_HEIGHT - panelHeight) / 2 + 30;
-        
         panel.setOpaque(false);
         panel.setLayout(null);
-        panel.setBounds(x, y, panelWidth, panelHeight);
+        panel.setPreferredSize(new Dimension(panelWidth, panelHeight));
+        panel.setMaximumSize(new Dimension(panelWidth, panelHeight));
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Labels bên trong panel
         userNameLabel.setBounds(50, 50, 250, 50);
         userNameLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
+        userNameLabel.setForeground(Color.BLACK);
         passwordLabel.setBounds(50, 130, 250, 50);
         passwordLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
+        passwordLabel.setForeground(Color.BLACK);
 
         // Input Fields
         txtUsername.setBounds(300, 50, 350, 50);
@@ -156,7 +157,14 @@ public class Login {
         panel.add(btnForget);
         panel.add(btnLogin);
 
-        bg.add(panel);
+        // Sắp xếp vào container chính
+        centerContainer.add(screenTitle);
+        centerContainer.add(restaurantName);
+        centerContainer.add(Box.createVerticalStrut(20));
+        centerContainer.add(panel);
+
+        // Add container vào background với ràng buộc căn giữa
+        bg.add(centerContainer, new GridBagConstraints());
 
         // Cập nhật UI và hiển thị
         SwingUtilities.updateComponentTreeUI(frame);

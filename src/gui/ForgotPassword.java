@@ -70,55 +70,57 @@ public class ForgotPassword extends JFrame {
     }
 
     private void initUI() {
-        setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+        setExtendedState(JFrame.MAXIMIZED_BOTH); // Phóng to toàn màn hình
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setResizable(false);
-        setLocationRelativeTo(null);
-        getContentPane().setLayout(null);
+        setResizable(true);
+        getContentPane().setLayout(new BorderLayout());
 
         // Background
         JPanelWithBackground bg;
         try {
             bg = new JPanelWithBackground("data/image/LoginBG.jpg");
-            bg.setBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-            bg.setLayout(null);
-            getContentPane().add(bg);
         } catch (IOException e) {
             bg = new JPanelWithBackground();
-            bg.setBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-            bg.setLayout(null);
-            getContentPane().add(bg);
         }
+        bg.setLayout(new GridBagLayout()); // Dùng GridBagLayout để căn giữa
+        getContentPane().add(bg, BorderLayout.CENTER);
+
+        // Container chính
+        JPanel centerContainer = new JPanel();
+        centerContainer.setOpaque(false);
+        centerContainer.setLayout(new BoxLayout(centerContainer, BoxLayout.Y_AXIS));
 
         // Tiêu đề
-        screenTitle.setBounds((SCREEN_WIDTH - 450) / 2, 80, 450, 45);
         screenTitle.setFont(new Font("Inter Bold", Font.BOLD, 35));
+        screenTitle.setForeground(Color.BLACK);
+        screenTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         screenTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        bg.add(screenTitle);
 
-        restaurantName.setBounds((SCREEN_WIDTH - 750) / 2, 115, 750, 120);
         restaurantName.setFont(new Font("Instrument Serif Regular", Font.BOLD, 120));
+        restaurantName.setAlignmentX(Component.CENTER_ALIGNMENT);
         restaurantName.setHorizontalAlignment(SwingConstants.CENTER);
-        bg.add(restaurantName);
+        restaurantName.setPreferredSize(new Dimension(800, 130));
+        restaurantName.setMaximumSize(new Dimension(800, 130));
 
         // Panel chính
         int panelWidth = 704;
         int panelHeight = 350;
-        int x = (SCREEN_WIDTH - panelWidth) / 2;
-        int y = (SCREEN_HEIGHT - panelHeight) / 2 + 50;
-
         panel.setOpaque(false);
         panel.setLayout(null);
-        panel.setBounds(x, y, panelWidth, panelHeight);
+        panel.setPreferredSize(new Dimension(panelWidth, panelHeight));
+        panel.setMaximumSize(new Dimension(panelWidth, panelHeight));
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Nội dung bên trong panel
         phoneLabel.setBounds(50, 50, 250, 50);
         phoneLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
+        phoneLabel.setForeground(Color.BLACK);
         txtPhone.setBounds(300, 50, 350, 50);
         txtPhone.setFont(new Font("Inter Medium", Font.PLAIN, 23));
 
         otpLabel.setBounds(50, 130, 250, 50);
         otpLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
+        otpLabel.setForeground(Color.BLACK);
         txtOTP.setBounds(300, 130, 230, 50);
         txtOTP.setFont(new Font("Inter Medium", Font.PLAIN, 23));
 
@@ -142,7 +144,12 @@ public class ForgotPassword extends JFrame {
         panel.add(btnBack);
         panel.add(btnConfirm);
 
-        bg.add(panel);
+        centerContainer.add(screenTitle);
+        centerContainer.add(restaurantName);
+        centerContainer.add(Box.createVerticalStrut(20));
+        centerContainer.add(panel);
+
+        bg.add(centerContainer, new GridBagConstraints());
 
         SwingUtilities.updateComponentTreeUI(this);
     }

@@ -16,7 +16,7 @@ import java.util.List;
 public class QuanLyNhanVien extends JPanel {
     private JTextField txtMaNV, txtTenNV, txtSoDT, txtSoCCCD, txtSearch;
     private JComboBox<String> cbChucVu, cbTrangThai;
-    private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnSearch;
+    private JButton btnAdd, btnUpdate, btnRemove, btnReset, btnClear, btnSearch;
     private JTable table;
     private DefaultTableModel tableModel;
     private NhanVien_DAO nv_dao;
@@ -32,7 +32,7 @@ public class QuanLyNhanVien extends JPanel {
             e.printStackTrace();
         }
         nv_dao = new NhanVien_DAO();
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout()); // Sử dụng BorderLayout truyền thống
         setBackground(MAIN_BLUE);
 
         // Header
@@ -54,52 +54,94 @@ public class QuanLyNhanVien extends JPanel {
                 BorderFactory.createLineBorder(GOLD_COLOR), "Thông tin chi tiết nhân viên");
         formBorder.setTitleColor(GOLD_COLOR);
         pForm.setBorder(formBorder);
-        
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 20, 10, 20);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.fill = GridBagConstraints.HORIZONTAL; // Ép giãn ngang
+        gbc.anchor = GridBagConstraints.WEST;
 
-        // Row 0
-        gbc.gridx = 0; gbc.gridy = 0;
+// Row 0
+        gbc.gridy = 0;
+
+// Mã NV
+        gbc.gridx = 0; gbc.weightx = 0;
         pForm.add(createLabel("Mã nhân viên:"), gbc);
-        gbc.gridx = 1;
-        txtMaNV = new JTextField(20);
-        txtMaNV.setEditable(false);
+        gbc.gridx = 1; gbc.weightx = 0.5; // Giãn 50% hàng
+        txtMaNV = new JTextField();
+        txtMaNV.setPreferredSize(new Dimension(300, 35));
+        txtMaNV.setEditable(true);
         pForm.add(txtMaNV, gbc);
 
-        gbc.gridx = 2;
+// Tên NV
+        gbc.gridx = 2; gbc.weightx = 0;
         pForm.add(createLabel("Tên nhân viên:"), gbc);
-        gbc.gridx = 3;
-        txtTenNV = new JTextField(20);
+        gbc.gridx = 3; gbc.weightx = 0.5; // Giãn 50% hàng
+        txtTenNV = new JTextField();
+        txtTenNV.setPreferredSize(new Dimension(300, 35));
         pForm.add(txtTenNV, gbc);
 
-        // Row 1
-        gbc.gridx = 0; gbc.gridy = 1;
+// Row 1
+        gbc.gridy = 1;
+
+// Số điện thoại
+        gbc.gridx = 0; gbc.weightx = 0;
         pForm.add(createLabel("Số điện thoại:"), gbc);
-        gbc.gridx = 1;
-        txtSoDT = new JTextField(20);
+        gbc.gridx = 1; gbc.weightx = 0.5;
+        txtSoDT = new JTextField();
+        txtSoDT.setPreferredSize(new Dimension(300, 35));
         pForm.add(txtSoDT, gbc);
 
-        gbc.gridx = 2;
+// Số CCCD
+        gbc.gridx = 2; gbc.weightx = 0;
         pForm.add(createLabel("Số CCCD:"), gbc);
-        gbc.gridx = 3;
-        txtSoCCCD = new JTextField(20);
+        gbc.gridx = 3; gbc.weightx = 0.5;
+        txtSoCCCD = new JTextField();
+        txtSoCCCD.setPreferredSize(new Dimension(300, 35));
         pForm.add(txtSoCCCD, gbc);
 
-        // Row 2
-        gbc.gridx = 0; gbc.gridy = 2;
+// Row 2
+        gbc.gridy = 2;
+
+// Chức vụ
+        gbc.gridx = 0; gbc.weightx = 0;
         pForm.add(createLabel("Chức vụ:"), gbc);
-        gbc.gridx = 1;
+        gbc.gridx = 1; gbc.weightx = 0.5;
         cbChucVu = new JComboBox<>();
         for (ChucVu cv : ChucVu.values()) {
             cbChucVu.addItem(cv.getTenHienThi());
         }
+        cbChucVu.setPreferredSize(new Dimension(300, 35));
+        cbChucVu.setBackground(Color.WHITE);
+        cbChucVu.setForeground(MAIN_BLUE);
+        // Đảm bảo danh sách xổ xuống có màu hiển thị tốt
+        cbChucVu.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setBackground(isSelected ? GOLD_COLOR : Color.WHITE);
+                setForeground(MAIN_BLUE);
+                return this;
+            }
+        });
         pForm.add(cbChucVu, gbc);
 
-        gbc.gridx = 2;
+        // Trạng thái
+        gbc.gridx = 2; gbc.weightx = 0;
         pForm.add(createLabel("Trạng thái:"), gbc);
-        gbc.gridx = 3;
+        gbc.gridx = 3; gbc.weightx = 0.5;
         cbTrangThai = new JComboBox<>(new String[]{"Đang làm việc", "Nghỉ việc"});
+        cbTrangThai.setPreferredSize(new Dimension(300, 35));
+        cbTrangThai.setBackground(Color.WHITE);
+        cbTrangThai.setForeground(MAIN_BLUE);
+        cbTrangThai.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setBackground(isSelected ? GOLD_COLOR : Color.WHITE);
+                setForeground(MAIN_BLUE);
+                return this;
+            }
+        });
         pForm.add(cbTrangThai, gbc);
 
         pMain.add(pForm, BorderLayout.NORTH);
@@ -119,7 +161,8 @@ public class QuanLyNhanVien extends JPanel {
         table.getTableHeader().setBackground(GOLD_COLOR);
         table.getTableHeader().setForeground(MAIN_BLUE);
         
-        table.setBackground(new Color(255, 255, 255, 240));
+        table.setBackground(Color.decode("#EBF5FB"));
+        table.setForeground(MAIN_BLUE);
         table.setSelectionBackground(GOLD_COLOR);
         table.setSelectionForeground(MAIN_BLUE);
 
@@ -138,22 +181,24 @@ public class QuanLyNhanVien extends JPanel {
         pControl.setBorder(new EmptyBorder(15, 0, 0, 0));
 
         // Buttons
-        JPanel pButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 25, 10));
+        JPanel pButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         pButtons.setOpaque(false);
         btnAdd = createStyledButton("Thêm nhân viên");
         btnUpdate = createStyledButton("Cập nhật");
-        btnDelete = createStyledButton("Xóa");
+        btnRemove = createStyledButton("Xóa nhân viên");
+        btnReset = createStyledButton("Xóa trắng");
         btnClear = createStyledButton("Làm mới");
         pButtons.add(btnAdd);
         pButtons.add(btnUpdate);
-        pButtons.add(btnDelete);
+        pButtons.add(btnRemove);
+        pButtons.add(btnReset);
         pButtons.add(btnClear);
         pControl.add(pButtons, BorderLayout.NORTH);
 
         // Search
         JPanel pSearch = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         pSearch.setOpaque(false);
-        pSearch.add(createLabel("Tìm kiếm (Mã/Tên):"));
+        pSearch.add(createLabel("Tìm kiếm (Mã/SDT):"));
         txtSearch = new JTextField(30);
         btnSearch = createStyledButton("Tìm kiếm");
         btnSearch.setPreferredSize(new Dimension(140, 40));
@@ -162,10 +207,29 @@ public class QuanLyNhanVien extends JPanel {
         pControl.add(pSearch, BorderLayout.SOUTH);
 
         pMain.add(pControl, BorderLayout.SOUTH);
-
         add(pMain, BorderLayout.CENTER);
 
-        // Events
+        // Khởi tạo sự kiện
+        initEvents();
+        
+        // 1. Tự động nạp dữ liệu ngay khi mở giao diện
+        loadDataToTable();
+
+        // 2. Tự động cập nhật lại bảng mỗi 30 giây (Polling)
+        Timer autoRefreshTimer = new Timer(30000, e -> {
+            // Chỉ tự động nạp lại nếu người dùng không đang nhập liệu (các ô đang trống)
+            if (txtTenNV.getText().trim().isEmpty() && txtSearch.getText().trim().isEmpty()) {
+                loadDataToTable();
+            }
+        });
+        autoRefreshTimer.start();
+    }
+
+    public void refreshData() {
+        loadDataToTable();
+    }
+
+    private void initEvents() {
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -183,11 +247,18 @@ public class QuanLyNhanVien extends JPanel {
 
         btnAdd.addActionListener(e -> addNhanVien());
         btnUpdate.addActionListener(e -> updateNhanVien());
-        btnDelete.addActionListener(e -> deleteNhanVien());
-        btnClear.addActionListener(e -> clearFields());
+        btnRemove.addActionListener(e -> deleteNhanVien()); // Xóa khỏi SQL
+        btnReset.addActionListener(e -> clearInputs()); // Chỉ xóa ô nhập
+        btnClear.addActionListener(e -> { // Làm mới: Hiện tất cả
+            txtSearch.setText("");
+            clearInputs();
+            loadDataToTable();
+        });
         btnSearch.addActionListener(e -> searchNhanVien());
 
-        loadDataToTable();
+        // Lọc thời gian thực khi chọn Chức vụ hoặc Trạng thái
+        cbChucVu.addActionListener(e -> filterData());
+        cbTrangThai.addActionListener(e -> filterData());
     }
 
     private JLabel createLabel(String text) {
@@ -217,8 +288,46 @@ public class QuanLyNhanVien extends JPanel {
             return;
         }
 
-        if (!dsNV.isEmpty()) {
-            for (NhanVien nv : dsNV) {
+        for (NhanVien nv : dsNV) {
+            tableModel.addRow(new Object[]{
+                nv.getMaNV(),
+                nv.getTenNV(),
+                nv.getSoDT(),
+                nv.getSoCCCD(),
+                nv.getChucVu().getTenHienThi(),
+                nv.isTrangThai() ? "Đang làm việc" : "Nghỉ việc"
+            });
+        }
+    }
+
+    private String formatName(String name) {
+        if (name == null || name.isEmpty()) return "";
+        String[] words = name.trim().toLowerCase().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String word : words) {
+            if (word.length() > 0) {
+                sb.append(Character.toUpperCase(word.charAt(0)))
+                  .append(word.substring(1)).append(" ");
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    private void filterData() {
+        if (!txtMaNV.getText().isEmpty() || !txtTenNV.getText().isEmpty()) return;
+        
+        String cvFilter = cbChucVu.getSelectedItem().toString();
+        String ttFilter = cbTrangThai.getSelectedItem().toString();
+        
+        tableModel.setRowCount(0);
+        List<NhanVien> dsNV = nv_dao.getAllNhanVien();
+        if (dsNV == null) return;
+        
+        for (NhanVien nv : dsNV) {
+            boolean matchesCV = cvFilter.equals(nv.getChucVu().getTenHienThi());
+            boolean matchesTT = ttFilter.equals(nv.isTrangThai() ? "Đang làm việc" : "Nghỉ việc");
+            
+            if (matchesCV && matchesTT) {
                 tableModel.addRow(new Object[]{
                     nv.getMaNV(),
                     nv.getTenNV(),
@@ -228,15 +337,13 @@ public class QuanLyNhanVien extends JPanel {
                     nv.isTrangThai() ? "Đang làm việc" : "Nghỉ việc"
                 });
             }
-        } else {
-            System.out.println("⚠️ Danh sách nhân viên trống.");
         }
     }
 
     private void addNhanVien() {
-        if (!validateData()) return;
+        if (!validateData(true)) return;
 
-        String ten = txtTenNV.getText().trim();
+        String ten = formatName(txtTenNV.getText().trim());
         String sdt = txtSoDT.getText().trim();
         String cccd = txtSoCCCD.getText().trim();
         String chucVuTen = cbChucVu.getSelectedItem().toString();
@@ -248,22 +355,40 @@ public class QuanLyNhanVien extends JPanel {
         if (nv_dao.addNhanVien(nv)) {
             JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công!");
             loadDataToTable();
-            clearFields();
+            clearInputs();
         } else {
             JOptionPane.showMessageDialog(this, "Thêm nhân viên thất bại!");
         }
     }
 
     private void updateNhanVien() {
-        String ma = txtMaNV.getText();
+        String ma = txtMaNV.getText().trim();
         if (ma.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên cần cập nhật!");
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập Mã nhân viên cần cập nhật!");
+            txtMaNV.requestFocus();
             return;
         }
         
-        if (!validateData()) return;
+        if (!validateData(false)) return;
 
-        String ten = txtTenNV.getText().trim();
+        // Kiểm tra xem mã này có tồn tại trong SQL không
+        List<NhanVien> ds = nv_dao.getAllNhanVien();
+        boolean exists = false;
+        if (ds != null) {
+            for (NhanVien nv : ds) {
+                if (nv.getMaNV().equalsIgnoreCase(ma)) {
+                    exists = true;
+                    break;
+                }
+            }
+        }
+
+        if (!exists) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên mã " + ma + " để cập nhật!");
+            return;
+        }
+
+        String ten = formatName(txtTenNV.getText().trim());
         String sdt = txtSoDT.getText().trim();
         String cccd = txtSoCCCD.getText().trim();
         String chucVuTen = cbChucVu.getSelectedItem().toString();
@@ -271,7 +396,7 @@ public class QuanLyNhanVien extends JPanel {
 
         NhanVien nv = new NhanVien(ma, ten, sdt, cccd, ChucVu.fromString(chucVuTen), trangThai, null);
         if (nv_dao.updateNhanVien(nv)) {
-            JOptionPane.showMessageDialog(this, "Cập nhật nhân viên thành công!");
+            JOptionPane.showMessageDialog(this, "Cập nhật dữ liệu vào SQL thành công!");
             loadDataToTable();
         } else {
             JOptionPane.showMessageDialog(this, "Cập nhật thất bại!");
@@ -279,31 +404,35 @@ public class QuanLyNhanVien extends JPanel {
     }
 
     private void deleteNhanVien() {
+        // Giữ lại hàm này phòng hờ nhưng nút Xóa đã chuyển sang clearInputs theo yêu cầu
         int row = table.getSelectedRow();
         if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Chọn nhân viên cần xóa!");
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên dưới bảng để xóa!");
             return;
         }
         String ma = tableModel.getValueAt(row, 0).toString();
-        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa nhân viên này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa nhân viên " + ma + " khỏi hệ thống?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             if (nv_dao.deleteNhanVien(ma)) {
-                JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công!");
+                JOptionPane.showMessageDialog(this, "Đã xóa nhân viên khỏi SQL thành công!");
                 loadDataToTable();
-                clearFields();
+                clearInputs();
             }
         }
     }
 
-    private void clearFields() {
+    private void clearInputs() {
         txtMaNV.setText("");
         txtTenNV.setText("");
         txtSoDT.setText("");
         txtSoCCCD.setText("");
         cbChucVu.setSelectedIndex(0);
         cbTrangThai.setSelectedIndex(0);
-        txtSearch.setText("");
         table.clearSelection();
+    }
+
+    private void clearFields() {
+        clearInputs();
+        txtSearch.setText("");
         loadDataToTable();
     }
 
@@ -313,10 +442,15 @@ public class QuanLyNhanVien extends JPanel {
             loadDataToTable();
             return;
         }
+        
         tableModel.setRowCount(0);
-        List<NhanVien> dsNV = nv_dao.searchNhanVien(s);
-        if (dsNV != null) {
-            for (NhanVien nv : dsNV) {
+        List<NhanVien> dsAll = nv_dao.getAllNhanVien();
+        if (dsAll == null) return;
+        
+        boolean found = false;
+        for (NhanVien nv : dsAll) {
+            // Tìm chính xác theo mã hoặc SĐT
+            if (nv.getMaNV().equalsIgnoreCase(s) || nv.getSoDT().equals(s)) {
                 tableModel.addRow(new Object[]{
                     nv.getMaNV(),
                     nv.getTenNV(),
@@ -325,11 +459,18 @@ public class QuanLyNhanVien extends JPanel {
                     nv.getChucVu().getTenHienThi(),
                     nv.isTrangThai() ? "Đang làm việc" : "Nghỉ việc"
                 });
+                found = true;
             }
+        }
+        
+        if (!found) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên với Mã/SĐT: " + s);
+            loadDataToTable();
         }
     }
 
-    private boolean validateData() {
+    private boolean validateData(boolean isAdd) {
+        String ma = txtMaNV.getText().trim();
         String ten = txtTenNV.getText().trim();
         String sdt = txtSoDT.getText().trim();
         String cccd = txtSoCCCD.getText().trim();
@@ -339,16 +480,44 @@ public class QuanLyNhanVien extends JPanel {
             txtTenNV.requestFocus();
             return false;
         }
+        
         if (!sdt.matches("^0\\d{9}$")) {
-            JOptionPane.showMessageDialog(this, "Số điện thoại phải bắt đầu bằng 0 và có 10 chữ số!");
+            JOptionPane.showMessageDialog(this, "Số điện thoại phải bắt đầu bằng 0 và có đúng 10 chữ số!");
             txtSoDT.requestFocus();
             return false;
         }
+        
         if (!cccd.matches("^\\d{12}$")) {
             JOptionPane.showMessageDialog(this, "Số CCCD phải có đúng 12 chữ số!");
             txtSoCCCD.requestFocus();
             return false;
         }
+
+        // Kiểm tra trùng lặp trong Database
+        List<NhanVien> ds = nv_dao.getAllNhanVien();
+        if (ds != null) {
+            for (NhanVien nv : ds) {
+                // Kiểm tra trùng SĐT
+                if (nv.getSoDT().equals(sdt) && (isAdd || !nv.getMaNV().equalsIgnoreCase(ma))) {
+                    JOptionPane.showMessageDialog(this, "Số điện thoại " + sdt + " đã tồn tại!");
+                    txtSoDT.requestFocus();
+                    return false;
+                }
+                // Kiểm tra trùng CCCD
+                if (nv.getSoCCCD().equals(cccd) && (isAdd || !nv.getMaNV().equalsIgnoreCase(ma))) {
+                    JOptionPane.showMessageDialog(this, "Số CCCD " + cccd + " đã tồn tại!");
+                    txtSoCCCD.requestFocus();
+                    return false;
+                }
+                // Kiểm tra trùng Mã khi thêm mới (nếu người dùng tự nhập mã)
+                if (isAdd && !ma.isEmpty() && nv.getMaNV().equalsIgnoreCase(ma)) {
+                    JOptionPane.showMessageDialog(this, "Mã nhân viên " + ma + " đã tồn tại!");
+                    txtMaNV.requestFocus();
+                    return false;
+                }
+            }
+        }
+        
         return true;
     }
 }
