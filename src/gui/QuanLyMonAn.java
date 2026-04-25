@@ -17,9 +17,9 @@ import java.io.File;
 import java.util.List;
 
 public class QuanLyMonAn extends JPanel {
-    private JTextField txtMaMon, txtTenMon, txtDonGia, txtMoTa, txtSearch;
+    private JTextField txtMaMon, txtTenMon, txtDonGia, txtHinhAnh, txtSearch;
     private JComboBox<String> cbDanhMuc, cbTrangThai;
-    private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnSearch, btnChooseImage;
+    private JButton btnAdd, btnUpdate, btnRemove, btnClearInputs, btnClear, btnSearch, btnChooseImage;
     private JLabel lblImageDisplay;
     private JTable table;
     private DefaultTableModel tableModel;
@@ -27,6 +27,7 @@ public class QuanLyMonAn extends JPanel {
     private LoaiSanPham_DAO lsp_dao;
     private List<LoaiSanPham> dsLoai;
     private String selectedImagePath = "";
+    private boolean isFiltering = false;
 
     // Luxury Theme Colors
     private final Color MAIN_BLUE = Color.decode("#0B3D59");
@@ -40,17 +41,17 @@ public class QuanLyMonAn extends JPanel {
         setLayout(new BorderLayout());
         setBackground(MAIN_BLUE);
 
-        // Header Title
-        JLabel lblTitle = new JLabel("QUẢN LÝ DANH MỤC THỰC ĐƠN", SwingConstants.CENTER);
+        // Header Section
+        JLabel lblTitle = new JLabel("QUẢN LÝ MÓN ĂN", SwingConstants.CENTER);
         lblTitle.setFont(new Font("Inter Bold", Font.BOLD, 32));
         lblTitle.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         lblTitle.setForeground(GOLD_COLOR);
         add(lblTitle, BorderLayout.NORTH);
 
-        // Main content area
-        JPanel pMain = new JPanel(new BorderLayout(0, 20));
+        // Main Container
+        JPanel pMain = new JPanel(new BorderLayout());
         pMain.setOpaque(false);
-        pMain.setBorder(new EmptyBorder(10, 25, 25, 25));
+        pMain.setBorder(new EmptyBorder(10, 20, 20, 20));
 
         // Upper Section: Information & Image
         JPanel pUpper = new JPanel(new BorderLayout(25, 0));
@@ -61,11 +62,12 @@ public class QuanLyMonAn extends JPanel {
         pImageContainer.setOpaque(false);
         pImageContainer.setPreferredSize(new Dimension(280, 280));
         
-        lblImageDisplay = new JLabel("HÌNH ẢNH MÓN ĂN", SwingConstants.CENTER);
+        lblImageDisplay = new JLabel("CLICK ĐỂ TẢI ẢNH", SwingConstants.CENTER);
         lblImageDisplay.setPreferredSize(new Dimension(250, 250));
         lblImageDisplay.setBorder(BorderFactory.createLineBorder(GOLD_COLOR, 3));
         lblImageDisplay.setForeground(GOLD_COLOR);
         lblImageDisplay.setFont(new Font("Inter Medium", Font.BOLD, 14));
+        lblImageDisplay.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         btnChooseImage = createStyledButton("TẢI ẢNH LÊN");
         btnChooseImage.setPreferredSize(new Dimension(250, 45));
@@ -82,59 +84,99 @@ public class QuanLyMonAn extends JPanel {
         formBorder.setTitleColor(GOLD_COLOR);
         formBorder.setTitleFont(new Font("Inter Bold", Font.BOLD, 18));
         pForm.setBorder(formBorder);
-        
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(12, 20, 12, 20);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Row 0
         gbc.gridx = 0; gbc.gridy = 0;
+        gbc.weightx = 0;
         pForm.add(createLabel("Mã món:"), gbc);
         gbc.gridx = 1;
-        txtMaMon = new JTextField(18);
-        txtMaMon.setEditable(false);
+        gbc.weightx = 0.5;
+        txtMaMon = new JTextField(30);
+        txtMaMon.setEditable(true);
         txtMaMon.setFont(new Font("Inter", Font.BOLD, 14));
         pForm.add(txtMaMon, gbc);
 
         gbc.gridx = 2;
+        gbc.weightx = 0;
         pForm.add(createLabel("Tên món:"), gbc);
         gbc.gridx = 3;
-        txtTenMon = new JTextField(18);
+        gbc.weightx = 0.5;
+        txtTenMon = new JTextField(30);
         pForm.add(txtTenMon, gbc);
 
         // Row 1
         gbc.gridx = 0; gbc.gridy = 1;
+        gbc.weightx = 0;
         pForm.add(createLabel("Đơn giá (VNĐ):"), gbc);
         gbc.gridx = 1;
-        txtDonGia = new JTextField(18);
+        gbc.weightx = 0.5;
+        txtDonGia = new JTextField(30);
         pForm.add(txtDonGia, gbc);
 
         gbc.gridx = 2;
+        gbc.weightx = 0;
         pForm.add(createLabel("Danh mục:"), gbc);
         gbc.gridx = 3;
+        gbc.weightx = 0.5;
         cbDanhMuc = new JComboBox<>();
+        cbDanhMuc.setBackground(Color.WHITE);
+        cbDanhMuc.setForeground(MAIN_BLUE);
+        cbDanhMuc.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setBackground(isSelected ? GOLD_COLOR : Color.WHITE);
+                setForeground(MAIN_BLUE);
+                return this;
+            }
+        });
         loadCategories();
         pForm.add(cbDanhMuc, gbc);
 
         // Row 2
         gbc.gridx = 0; gbc.gridy = 2;
+        gbc.weightx = 0;
         pForm.add(createLabel("Trạng thái:"), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 0.5;
         cbTrangThai = new JComboBox<>(new String[]{"Còn món", "Hết món"});
+        cbTrangThai.setBackground(Color.WHITE);
+        cbTrangThai.setForeground(MAIN_BLUE);
+        cbTrangThai.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setBackground(isSelected ? GOLD_COLOR : Color.WHITE);
+                setForeground(MAIN_BLUE);
+                return this;
+            }
+        });
         pForm.add(cbTrangThai, gbc);
 
         gbc.gridx = 2;
-        pForm.add(createLabel("Mô tả:"), gbc);
+        gbc.weightx = 0;
+        pForm.add(createLabel("Đường dẫn ảnh:"), gbc);
         gbc.gridx = 3;
-        txtMoTa = new JTextField(18);
-        pForm.add(txtMoTa, gbc);
+        gbc.weightx = 0.5;
+        txtHinhAnh = new JTextField(30);
+        txtHinhAnh.setEditable(false);
+        pForm.add(txtHinhAnh, gbc);
 
         pUpper.add(pForm, BorderLayout.CENTER);
         pMain.add(pUpper, BorderLayout.NORTH);
 
         // Table Section
         String[] columnNames = {"Mã món", "Tên món", "Danh mục", "Đơn giá", "Trạng thái", "Hình ảnh"};
-        tableModel = new DefaultTableModel(columnNames, 0);
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         table = new JTable(tableModel);
         table.setRowHeight(40);
         table.setFont(new Font("Inter", Font.PLAIN, 15));
@@ -142,7 +184,8 @@ public class QuanLyMonAn extends JPanel {
         table.getTableHeader().setBackground(GOLD_COLOR);
         table.getTableHeader().setForeground(MAIN_BLUE);
         
-        table.setBackground(new Color(255, 255, 255, 245));
+        table.setBackground(Color.decode("#EBF5FB"));
+        table.setForeground(MAIN_BLUE);
         table.setSelectionBackground(GOLD_COLOR);
         table.setSelectionForeground(MAIN_BLUE);
 
@@ -162,15 +205,17 @@ public class QuanLyMonAn extends JPanel {
         pControl.setBorder(new EmptyBorder(15, 0, 0, 0));
 
         // Buttons Panel
-        JPanel pButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 10));
+        JPanel pButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         pButtons.setOpaque(false);
         btnAdd = createStyledButton("THÊM MÓN");
         btnUpdate = createStyledButton("CẬP NHẬT");
-        btnDelete = createStyledButton("XÓA MÓN");
+        btnRemove = createStyledButton("XÓA MÓN");
+        btnClearInputs = createStyledButton("XÓA TRẮNG");
         btnClear = createStyledButton("LÀM MỚI");
         pButtons.add(btnAdd);
         pButtons.add(btnUpdate);
-        pButtons.add(btnDelete);
+        pButtons.add(btnRemove);
+        pButtons.add(btnClearInputs);
         pButtons.add(btnClear);
         pControl.add(pButtons, BorderLayout.NORTH);
 
@@ -190,31 +235,47 @@ public class QuanLyMonAn extends JPanel {
 
         add(pMain, BorderLayout.CENTER);
 
-        // Table Click Event
+        // Events Section
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int row = table.getSelectedRow();
                 if (row != -1) {
-                    txtMaMon.setText(tableModel.getValueAt(row, 0).toString());
-                    txtTenMon.setText(tableModel.getValueAt(row, 1).toString());
-                    cbDanhMuc.setSelectedItem(tableModel.getValueAt(row, 2).toString());
-                    String giaStr = tableModel.getValueAt(row, 3).toString().replace("đ", "").replace(",", "");
+                    String ma = getValueOrEmpty(row, 0);
+                    txtMaMon.setText(ma);
+                    txtTenMon.setText(getValueOrEmpty(row, 1));
+                    
+                    isFiltering = true;
+                    cbDanhMuc.setSelectedItem(getValueOrEmpty(row, 2));
+                    isFiltering = false;
+
+                    String giaStr = getValueOrEmpty(row, 3).replace("đ", "").replace(",", "");
                     txtDonGia.setText(giaStr);
-                    cbTrangThai.setSelectedItem(tableModel.getValueAt(row, 4).toString());
+                    cbTrangThai.setSelectedItem(getValueOrEmpty(row, 4));
                     
-                    selectedImagePath = (tableModel.getValueAt(row, 5) != null) ? tableModel.getValueAt(row, 5).toString() : "";
-                    updateImageDisplay(selectedImagePath);
-                    
-                    // Load description from full data list
+                    // Lấy đường dẫn đầy đủ từ danh sách dữ liệu thực tế
                     List<SanPham> ds = sp_dao.getAllSanPham();
                     for(SanPham sp : ds) {
-                        if(sp.getMaMon().equals(txtMaMon.getText())) {
-                            txtMoTa.setText(sp.getMoTa());
+                        if(sp.getMaMon().equals(ma)) {
+                            selectedImagePath = (sp.getHinhAnh() == null) ? "" : sp.getHinhAnh();
+                            txtHinhAnh.setText(selectedImagePath);
+                            updateImageDisplay(selectedImagePath);
                             break;
                         }
                     }
                 }
+            }
+            
+            private String getValueOrEmpty(int row, int col) {
+                Object val = tableModel.getValueAt(row, col);
+                return (val == null) ? "" : val.toString();
+            }
+        });
+
+        lblImageDisplay.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                chooseImage();
             }
         });
 
@@ -222,12 +283,30 @@ public class QuanLyMonAn extends JPanel {
         btnChooseImage.addActionListener(e -> chooseImage());
         btnAdd.addActionListener(e -> addMonAn());
         btnUpdate.addActionListener(e -> updateMonAn());
-        btnDelete.addActionListener(e -> deleteMonAn());
-        btnClear.addActionListener(e -> clearFields());
+        btnRemove.addActionListener(e -> deleteMonAn());
+        btnClearInputs.addActionListener(e -> clearInputs());
+        btnClear.addActionListener(e -> {
+            isFiltering = true;
+            clearInputs();
+            txtSearch.setText("");
+            cbDanhMuc.setSelectedIndex(-1);
+            isFiltering = false;
+            loadDataToTable();
+        });
         btnSearch.addActionListener(e -> searchMonAn());
+        
+        cbDanhMuc.addActionListener(e -> {
+            if (!isFiltering && cbDanhMuc.getSelectedIndex() != -1 && txtMaMon.getText().isEmpty()) {
+                filterByCategory();
+            }
+        });
 
-        // Initialize table with SQL data
         loadDataToTable();
+    }
+
+    public void refreshData() {
+        loadDataToTable();
+        loadCategories();
     }
 
     private JLabel createLabel(String text) {
@@ -239,11 +318,11 @@ public class QuanLyMonAn extends JPanel {
 
     private JButton createStyledButton(String text) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("Inter Bold", Font.BOLD, 15));
+        btn.setFont(new Font("Inter Bold", Font.BOLD, 14));
         btn.setBackground(GOLD_COLOR);
         btn.setForeground(MAIN_BLUE);
         btn.setFocusPainted(false);
-        btn.setPreferredSize(new Dimension(180, 50));
+        btn.setPreferredSize(new Dimension(170, 45));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         // Hover effect
@@ -256,11 +335,12 @@ public class QuanLyMonAn extends JPanel {
     }
 
     private void chooseImage() {
-        JFileChooser fileChooser = new JFileChooser();
+        JFileChooser fileChooser = new JFileChooser("data/image");
         fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "jpg", "png", "jpeg"));
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             selectedImagePath = selectedFile.getAbsolutePath();
+            txtHinhAnh.setText(selectedImagePath);
             updateImageDisplay(selectedImagePath);
         }
     }
@@ -268,7 +348,7 @@ public class QuanLyMonAn extends JPanel {
     private void updateImageDisplay(String path) {
         if (path == null || path.isEmpty()) {
             lblImageDisplay.setIcon(null);
-            lblImageDisplay.setText("KHÔNG CÓ ẢNH");
+            lblImageDisplay.setText("CLICK ĐỂ TẢI ẢNH");
             return;
         }
         try {
@@ -282,6 +362,7 @@ public class QuanLyMonAn extends JPanel {
     }
 
     private void loadCategories() {
+        isFiltering = true;
         dsLoai = lsp_dao.getAllLoaiSanPham();
         cbDanhMuc.removeAllItems();
         if (dsLoai != null) {
@@ -289,6 +370,13 @@ public class QuanLyMonAn extends JPanel {
                 cbDanhMuc.addItem(lsp.getTenLoai());
             }
         }
+        cbDanhMuc.setSelectedIndex(-1);
+        isFiltering = false;
+    }
+
+    private String getFileName(String path) {
+        if (path == null || path.isEmpty()) return "Không có ảnh";
+        return new File(path).getName();
     }
 
     private void loadDataToTable() {
@@ -302,17 +390,54 @@ public class QuanLyMonAn extends JPanel {
                     sp.getLoaiSanPham().getTenLoai(),
                     String.format("%,.0fđ", sp.getDonGia()),
                     sp.isTrangThai() ? "Còn món" : "Hết món",
-                    sp.getHinhAnh()
+                    getFileName(sp.getHinhAnh())
                 });
+            }
+        }
+    }
+
+    private void filterByCategory() {
+        String cat = cbDanhMuc.getSelectedItem().toString();
+        tableModel.setRowCount(0);
+        List<SanPham> dsSP = sp_dao.getAllSanPham();
+        if (dsSP != null) {
+            for (SanPham sp : dsSP) {
+                if (sp.getLoaiSanPham().getTenLoai().equals(cat)) {
+                    tableModel.addRow(new Object[]{
+                        sp.getMaMon(), sp.getTenMon(), sp.getLoaiSanPham().getTenLoai(),
+                        String.format("%,.0fđ", sp.getDonGia()),
+                        sp.isTrangThai() ? "Còn món" : "Hết món", 
+                        getFileName(sp.getHinhAnh())
+                    });
+                }
             }
         }
     }
 
     private void addMonAn() {
         try {
+            String ma = txtMaMon.getText().trim();
             String ten = txtTenMon.getText().trim();
+            
+            if (ma.isEmpty() || ten.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Mã và Tên món không được để trống!");
+                return;
+            }
+
+            // Duplicate Check
+            List<SanPham> ds = sp_dao.getAllSanPham();
+            for(SanPham item : ds) {
+                if(item.getMaMon().equalsIgnoreCase(ma)) {
+                    JOptionPane.showMessageDialog(this, "Mã món " + ma + " đã tồn tại!");
+                    return;
+                }
+                if(item.getTenMon().equalsIgnoreCase(ten)) {
+                    JOptionPane.showMessageDialog(this, "Tên món '" + ten + "' đã tồn tại!");
+                    return;
+                }
+            }
+
             double gia = Double.parseDouble(txtDonGia.getText().trim().replace(",", ""));
-            String moTa = txtMoTa.getText().trim();
             boolean trangThai = cbTrangThai.getSelectedItem().toString().equals("Còn món");
             
             String tenDanhMuc = cbDanhMuc.getSelectedItem().toString();
@@ -324,16 +449,11 @@ public class QuanLyMonAn extends JPanel {
                 }
             }
 
-            // Auto-generate ID: SPxxx
-            String latest = sp_dao.getLatestMaMon();
-            int num = Integer.parseInt(latest.substring(2)) + 1;
-            String maMoi = "SP" + String.format("%03d", num);
-
-            SanPham sp = new SanPham(maMoi, ten, gia, moTa, trangThai, loaiSelected, selectedImagePath);
+            SanPham sp = new SanPham(ma, ten, gia, "", trangThai, loaiSelected, selectedImagePath);
             if (sp_dao.addSanPham(sp)) {
-                JOptionPane.showMessageDialog(this, "Thêm món ăn mới vào SQL thành công!");
+                JOptionPane.showMessageDialog(this, "Thêm món ăn mới thành công!");
                 loadDataToTable();
-                clearFields();
+                clearInputs();
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Dữ liệu nhập không hợp lệ! Vui lòng kiểm tra lại đơn giá.");
@@ -342,15 +462,14 @@ public class QuanLyMonAn extends JPanel {
 
     private void updateMonAn() {
         try {
-            String ma = txtMaMon.getText();
+            String ma = txtMaMon.getText().trim();
             if (ma.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn món ăn cần cập nhật!");
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập Mã món để cập nhật!");
                 return;
             }
             
             String ten = txtTenMon.getText().trim();
             double gia = Double.parseDouble(txtDonGia.getText().trim().replace(",", ""));
-            String moTa = txtMoTa.getText().trim();
             boolean trangThai = cbTrangThai.getSelectedItem().toString().equals("Còn món");
             
             String tenDanhMuc = cbDanhMuc.getSelectedItem().toString();
@@ -362,7 +481,7 @@ public class QuanLyMonAn extends JPanel {
                 }
             }
 
-            SanPham sp = new SanPham(ma, ten, gia, moTa, trangThai, loaiSelected, selectedImagePath);
+            SanPham sp = new SanPham(ma, ten, gia, "", trangThai, loaiSelected, selectedImagePath);
             if (sp_dao.updateSanPham(sp)) {
                 JOptionPane.showMessageDialog(this, "Cập nhật dữ liệu SQL thành công!");
                 loadDataToTable();
@@ -375,33 +494,36 @@ public class QuanLyMonAn extends JPanel {
     private void deleteMonAn() {
         int row = table.getSelectedRow();
         if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn món ăn cần xóa!");
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn món ăn cần xóa dưới bảng!");
             return;
         }
         
         String ma = tableModel.getValueAt(row, 0).toString();
-        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa món: " + ma + "?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (JOptionPane.showConfirmDialog(this, "Xóa món " + ma + " khỏi SQL?", "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             if (sp_dao.deleteSanPham(ma)) {
-                JOptionPane.showMessageDialog(this, "Đã xóa món ăn khỏi SQL!");
                 loadDataToTable();
-                clearFields();
+                clearInputs();
             }
         }
     }
 
-    private void clearFields() {
+    private void clearInputs() {
         txtMaMon.setText("");
         txtTenMon.setText("");
         txtDonGia.setText("");
-        txtMoTa.setText("");
+        txtHinhAnh.setText("");
         cbTrangThai.setSelectedIndex(0);
-        cbDanhMuc.setSelectedIndex(0);
-        txtSearch.setText("");
+        isFiltering = true;
+        cbDanhMuc.setSelectedIndex(-1);
+        isFiltering = false;
         selectedImagePath = "";
         updateImageDisplay("");
         table.clearSelection();
+    }
+
+    private void clearFields() {
+        clearInputs();
+        txtSearch.setText("");
         loadDataToTable();
     }
 
@@ -420,7 +542,8 @@ public class QuanLyMonAn extends JPanel {
                     tableModel.addRow(new Object[]{
                         sp.getMaMon(), sp.getTenMon(), sp.getLoaiSanPham().getTenLoai(),
                         String.format("%,.0fđ", sp.getDonGia()),
-                        sp.isTrangThai() ? "Còn món" : "Hết món", sp.getHinhAnh()
+                        sp.isTrangThai() ? "Còn món" : "Hết món", 
+                        getFileName(sp.getHinhAnh())
                     });
                 }
             }

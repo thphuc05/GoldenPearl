@@ -116,7 +116,11 @@ public class HoaDon_DAO {
     public HoaDon getHoaDonByMa(String maHD) {
         Connection con = ConnectDB.getConnection();
         try {
-            String sql = "SELECT * FROM HoaDon WHERE maHD = ?";
+            String sql = "SELECT hd.*, nv.tenNV, kh.tenKH " +
+                         "FROM HoaDon hd " +
+                         "LEFT JOIN NhanVien nv ON hd.maNV = nv.maNV " +
+                         "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH " +
+                         "WHERE hd.maHD = ?";
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, maHD);
             ResultSet rs = statement.executeQuery();
@@ -127,24 +131,16 @@ public class HoaDon_DAO {
                 hd.setTongTien(rs.getDouble("tongTien"));
                 hd.setTrangThai(rs.getBoolean("trangThai"));
                 
-                DonDatBan don = new DonDatBan();
-                don.setMaDon(rs.getString("maDon"));
-                hd.setDonDatBan(don);
-
                 NhanVien nv = new NhanVien();
                 nv.setMaNV(rs.getString("maNV"));
+                nv.setTenNV(rs.getString("tenNV"));
                 hd.setNhanVien(nv);
 
                 KhachHang kh = new KhachHang();
                 kh.setMaKH(rs.getString("maKH"));
+                kh.setTenKH(rs.getString("tenKH"));
                 hd.setKhachHang(kh);
 
-                String maKM = rs.getString("maKM");
-                if (maKM != null) {
-                    KhuyenMai km = new KhuyenMai();
-                    km.setMaKM(maKM);
-                    hd.setKhuyenMai(km);
-                }
                 return hd;
             }
         } catch (SQLException e) {

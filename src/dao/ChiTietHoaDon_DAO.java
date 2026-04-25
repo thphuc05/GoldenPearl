@@ -15,13 +15,14 @@ public class ChiTietHoaDon_DAO {
     public List<ChiTietHoaDon> getChiTietByMaHD(String maHD) {
         List<ChiTietHoaDon> dsCTHD = new ArrayList<>();
         Connection con = ConnectDB.getConnection();
-        String sql = "SELECT * FROM ChiTietHoaDon WHERE maHD = ?";
+        String sql = "SELECT ct.*, sp.tenMon FROM ChiTietHoaDon ct JOIN SanPham sp ON ct.maMon = sp.maMon WHERE ct.maHD = ?";
         try {
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, maHD);
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
                 String maMon = rs.getString("maMon");
+                String tenMon = rs.getString("tenMon");
                 int soLuong = rs.getInt("soLuong");
                 double donGia = rs.getDouble("donGia");
                 String ghiChu = rs.getString("ghiChu");
@@ -29,6 +30,7 @@ public class ChiTietHoaDon_DAO {
 
                 SanPham sp = new SanPham();
                 sp.setMaMon(maMon);
+                sp.setTenMon(tenMon);
 
                 HoaDon hd = new HoaDon();
                 hd.setMaHD(maHD);

@@ -16,8 +16,6 @@ public class FontLoader {
 
             Font font = Font.createFont(Font.TRUETYPE_FONT, fontFile);
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-
-            System.out.println("✅ Font đã thêm: " + font.getFontName());
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -9,17 +9,19 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.SwingUtilities;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public class QuanLyThongKe extends JPanel {
-    private JTextField txtFromDate, txtToDate;
+    private JTextField txtFromDate, txtToDate, txtSearch;
     private JButton btnSearch, btnRefresh, btnExport;
     private JLabel lblTotalRevenue, lblTotalInvoices, lblAvgOrderValue, lblBestSeller;
     private JTable table;
@@ -48,10 +50,10 @@ public class QuanLyThongKe extends JPanel {
         pHeader.setOpaque(false);
         pHeader.setBorder(new EmptyBorder(20, 30, 10, 30));
         
-        JLabel lblTitle = new JLabel("BÁO CÁO DOANH THU NHÀ HÀNG");
-        lblTitle.setFont(new Font("Inter Bold", Font.BOLD, 28));
+        JLabel lblTitle = new JLabel("BÁO CÁO DOANH THU NHÀ HÀNG", SwingConstants.CENTER);
+        lblTitle.setFont(new Font("Inter Bold", Font.BOLD, 32));
         lblTitle.setForeground(GOLD_COLOR);
-        pHeader.add(lblTitle, BorderLayout.WEST);
+        pHeader.add(lblTitle, BorderLayout.CENTER);
         
         add(pHeader, BorderLayout.NORTH);
 
@@ -80,43 +82,75 @@ public class QuanLyThongKe extends JPanel {
 
         add(pMain, BorderLayout.CENTER);
 
-        // Initialize Data
-        initDates();
-        loadStatistics();
-
         // Events
         btnSearch.addActionListener(e -> loadStatistics());
         btnRefresh.addActionListener(e -> {
+            txtSearch.setText("");
             initDates();
             loadStatistics();
         });
         btnExport.addActionListener(e -> JOptionPane.showMessageDialog(this, "Chức năng xuất báo cáo đang được phát triển!"));
     }
 
+    public void refreshData() {
+        txtSearch.setText("");
+        initDates();
+        loadStatistics();
+    }
+
     private JPanel createFilterPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 25, 15));
+        JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(CARD_BG);
         TitledBorder border = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(GOLD_COLOR, 1), "BỘ LỌC THỜI GIAN");
+                BorderFactory.createLineBorder(GOLD_COLOR, 1), "BỘ LỌC TÌM KIẾM");
         border.setTitleColor(GOLD_COLOR);
         border.setTitleFont(new Font("Inter Bold", Font.BOLD, 14));
         panel.setBorder(border);
 
-        txtFromDate = new JTextField(12);
-        txtToDate = new JTextField(12);
-        
-        panel.add(createLabel("Từ ngày:"));
-        panel.add(txtFromDate);
-        panel.add(createLabel("Đến ngày:"));
-        panel.add(txtToDate);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 15, 10, 15);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Mã hóa đơn
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
+        panel.add(createLabel("Mã hóa đơn:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 0.2;
+        txtSearch = new JTextField();
+        txtSearch.setPreferredSize(new Dimension(150, 35));
+        panel.add(txtSearch, gbc);
+
+        // Từ ngày
+        gbc.gridx = 2; gbc.weightx = 0;
+        panel.add(createLabel("Từ ngày:"), gbc);
+        gbc.gridx = 3; gbc.weightx = 0.2;
+        txtFromDate = createReadOnlyDateField();
+        JButton btnPickFrom = createCalendarButton(txtFromDate);
+        JPanel pFrom = new JPanel(new BorderLayout());
+        pFrom.add(txtFromDate, BorderLayout.CENTER);
+        pFrom.add(btnPickFrom, BorderLayout.EAST);
+        panel.add(pFrom, gbc);
+
+        // Đến ngày
+        gbc.gridx = 4; gbc.weightx = 0;
+        panel.add(createLabel("Đến ngày:"), gbc);
+        gbc.gridx = 5; gbc.weightx = 0.2;
+        txtToDate = createReadOnlyDateField();
+        JButton btnPickTo = createCalendarButton(txtToDate);
+        JPanel pTo = new JPanel(new BorderLayout());
+        pTo.add(txtToDate, BorderLayout.CENTER);
+        pTo.add(btnPickTo, BorderLayout.EAST);
+        panel.add(pTo, gbc);
         
         btnSearch = createStyledButton("THỰC HIỆN");
         btnRefresh = createStyledButton("TẢI LẠI");
         btnExport = createStyledButton("XUẤT EXCEL");
         
-        panel.add(btnSearch);
-        panel.add(btnRefresh);
-        panel.add(btnExport);
+        gbc.gridx = 6; gbc.weightx = 0;
+        panel.add(btnSearch, gbc);
+        gbc.gridx = 7;
+        panel.add(btnRefresh, gbc);
+        gbc.gridx = 8;
+        panel.add(btnExport, gbc);
 
         return panel;
     }
@@ -198,17 +232,27 @@ public class QuanLyThongKe extends JPanel {
         table.getTableHeader().setForeground(MAIN_BLUE);
         table.getTableHeader().setPreferredSize(new Dimension(0, 50));
         
-        table.setBackground(MAIN_BLUE);
-        table.setForeground(TEXT_WHITE);
-        table.setSelectionBackground(LIGHT_BLUE);
-        table.setSelectionForeground(TEXT_WHITE);
+        table.setBackground(Color.decode("#EBF5FB"));
+        table.setForeground(MAIN_BLUE);
+        table.setSelectionBackground(GOLD_COLOR);
+        table.setSelectionForeground(MAIN_BLUE);
         table.setGridColor(new Color(255, 255, 255, 30));
         table.setShowVerticalLines(false);
 
         // Center Alignment
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (isSelected) {
+                    setForeground(MAIN_BLUE);
+                } else {
+                    setForeground(Color.BLACK);
+                }
+                return c;
+            }
+        };
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        centerRenderer.setOpaque(false);
         table.getColumnModel().getColumn(0).setPreferredWidth(50);
         table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
         
@@ -217,14 +261,31 @@ public class QuanLyThongKe extends JPanel {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setForeground(GOLD_COLOR);
                 setFont(new Font("Inter Bold", Font.BOLD, 14));
+                if (isSelected) {
+                    setForeground(MAIN_BLUE);
+                } else {
+                    setForeground(GOLD_COLOR);
+                }
                 return c;
             }
         };
         rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
-        rightRenderer.setOpaque(false);
         table.getColumnModel().getColumn(6).setCellRenderer(rightRenderer);
+
+        // Default renderer for other columns to fix selection color
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (isSelected) {
+                    setForeground(MAIN_BLUE);
+                } else {
+                    setForeground(Color.BLACK);
+                }
+                return c;
+            }
+        });
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.getViewport().setBackground(MAIN_BLUE);
@@ -243,6 +304,9 @@ public class QuanLyThongKe extends JPanel {
 
     private void loadStatistics() {
         try {
+            List<HoaDon> dsHD = new ArrayList<>();
+            String maSearch = txtSearch.getText().trim();
+
             Date fromDate = sdf.parse(txtFromDate.getText());
             Date toDate = sdf.parse(txtToDate.getText());
 
@@ -252,15 +316,32 @@ public class QuanLyThongKe extends JPanel {
             cal.set(Calendar.HOUR_OF_DAY, 0);
             cal.set(Calendar.MINUTE, 0);
             cal.set(Calendar.SECOND, 0);
-            fromDate = cal.getTime();
+            Date start = cal.getTime();
 
             cal.setTime(toDate);
             cal.set(Calendar.HOUR_OF_DAY, 23);
             cal.set(Calendar.MINUTE, 59);
             cal.set(Calendar.SECOND, 59);
-            toDate = cal.getTime();
+            Date end = cal.getTime();
 
-            List<HoaDon> dsHD = hd_dao.getHoaDonByDateRange(fromDate, toDate);
+            if (!maSearch.isEmpty()) {
+                // Search by MaHD with Date Range validation
+                HoaDon hdFound = hd_dao.getHoaDonByMa(maSearch);
+                if (hdFound != null) {
+                    Date lap = hdFound.getNgayLap();
+                    if (lap != null && !lap.before(start) && !lap.after(end)) {
+                        dsHD.add(hdFound);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Hóa đơn mã '" + maSearch + "' không nằm trong khoảng ngày đã chọn!");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn mã: " + maSearch);
+                }
+            } else {
+                // Search by Date Range
+                dsHD = hd_dao.getHoaDonByDateRange(start, end);
+            }
+
             tableModel.setRowCount(0);
 
             double totalRevenue = 0;
@@ -285,8 +366,8 @@ public class QuanLyThongKe extends JPanel {
                         i + 1,
                         hd.getMaHD(),
                         new SimpleDateFormat("dd/MM/yyyy HH:mm").format(hd.getNgayLap()),
-                        hd.getNhanVien().getTenNV(),
-                        hd.getKhachHang().getTenKH(),
+                        hd.getNhanVien() != null ? hd.getNhanVien().getTenNV() : "N/A",
+                        hd.getKhachHang() != null ? hd.getKhachHang().getTenKH() : "N/A",
                         hd.isTrangThai() ? "Đã thanh toán" : "Chưa thanh toán",
                         df.format(hd.getTongTien())
                 };
@@ -308,8 +389,36 @@ public class QuanLyThongKe extends JPanel {
             }
 
         } catch (ParseException e) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập ngày theo định dạng dd/MM/yyyy");
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn ngày hợp lệ.");
         }
+    }
+
+    private JTextField createReadOnlyDateField() {
+        JTextField f = new JTextField();
+        f.setEditable(false);
+        f.setBackground(Color.WHITE);
+        f.setForeground(MAIN_BLUE);
+        f.setFont(new Font("Inter Bold", Font.BOLD, 14));
+        f.setPreferredSize(new Dimension(100, 35));
+        f.setHorizontalAlignment(SwingConstants.CENTER);
+        f.setBorder(BorderFactory.createLineBorder(GOLD_COLOR, 1));
+        return f;
+    }
+
+    private JButton createCalendarButton(JTextField target) {
+        JButton btn = new JButton("📅");
+        btn.setPreferredSize(new Dimension(45, 35));
+        btn.setBackground(GOLD_COLOR);
+        btn.setForeground(MAIN_BLUE);
+        btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createLineBorder(GOLD_COLOR, 1));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> {
+            CustomDatePicker dialog = new CustomDatePicker((JFrame) SwingUtilities.getWindowAncestor(this), target);
+            dialog.setVisible(true);
+        });
+        return btn;
     }
 
     private JLabel createLabel(String text) {
@@ -338,5 +447,141 @@ public class QuanLyThongKe extends JPanel {
         });
 
         return btn;
+    }
+
+    class CustomDatePicker extends JDialog {
+        private JTextField targetField;
+        private Calendar cal;
+        private JPanel daysPanel;
+        private JLabel monthLabel;
+        private final Color CAL_BG = Color.decode("#EBF5FB"); 
+        private final Color DAY_TEXT = Color.decode("#0B3D59");
+
+        public CustomDatePicker(JFrame parent, JTextField target) {
+            super(parent, "Chọn ngày", true);
+            this.targetField = target;
+            this.cal = Calendar.getInstance();
+            
+            try {
+                if(!target.getText().isEmpty()) cal.setTime(sdf.parse(target.getText()));
+            } catch(Exception e) {}
+
+            setSize(320, 380);
+            setLocationRelativeTo(target);
+            setLayout(new BorderLayout());
+            getContentPane().setBackground(CAL_BG);
+
+            JPanel header = new JPanel(new BorderLayout());
+            header.setBackground(MAIN_BLUE);
+            header.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+            JButton btnPrev = createNavButton("<");
+            JButton btnNext = createNavButton(">");
+            
+            monthLabel = new JLabel("", SwingConstants.CENTER);
+            monthLabel.setForeground(GOLD_COLOR);
+            monthLabel.setFont(new Font("Inter Bold", Font.BOLD, 18));
+            
+            updateHeader();
+
+            btnPrev.addActionListener(e -> { cal.add(Calendar.MONTH, -1); updateCalendar(); });
+            btnNext.addActionListener(e -> { cal.add(Calendar.MONTH, 1); updateCalendar(); });
+
+            header.add(btnPrev, BorderLayout.WEST);
+            header.add(monthLabel, BorderLayout.CENTER);
+            header.add(btnNext, BorderLayout.EAST);
+            add(header, BorderLayout.NORTH);
+
+            daysPanel = new JPanel(new GridLayout(0, 7, 2, 2));
+            daysPanel.setBackground(CAL_BG);
+            daysPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+            updateCalendar();
+            add(daysPanel, BorderLayout.CENTER);
+        }
+
+        private JButton createNavButton(String text) {
+            JButton btn = new JButton(text);
+            btn.setFont(new Font("Inter Bold", Font.BOLD, 16));
+            btn.setForeground(GOLD_COLOR);
+            btn.setContentAreaFilled(false);
+            btn.setBorder(BorderFactory.createLineBorder(GOLD_COLOR, 1));
+            btn.setFocusPainted(false);
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btn.setPreferredSize(new Dimension(45, 30));
+            return btn;
+        }
+
+        private void updateHeader() {
+            SimpleDateFormat monthYearSdf = new SimpleDateFormat("MMMM yyyy");
+            monthLabel.setText(monthYearSdf.format(cal.getTime()).toUpperCase());
+        }
+
+        private void updateCalendar() {
+            daysPanel.removeAll();
+            updateHeader();
+
+            String[] dayNames = {"CN", "T2", "T3", "T4", "T5", "T6", "T7"};
+            for(String name : dayNames) {
+                JLabel l = new JLabel(name, SwingConstants.CENTER);
+                l.setFont(new Font("Inter Bold", Font.BOLD, 13));
+                l.setForeground(DAY_TEXT);
+                daysPanel.add(l);
+            }
+
+            Calendar temp = (Calendar) cal.clone();
+            temp.set(Calendar.DAY_OF_MONTH, 1);
+            int startDay = temp.get(Calendar.DAY_OF_WEEK) - 1;
+            int daysInMonth = temp.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+            for(int i=0; i<startDay; i++) daysPanel.add(new JLabel(""));
+
+            Calendar today = Calendar.getInstance();
+
+            for(int i=1; i<=daysInMonth; i++) {
+                final int day = i;
+                JButton btnDay = new JButton(String.valueOf(i));
+                btnDay.setFont(new Font("Inter", Font.BOLD, 14));
+                btnDay.setFocusPainted(false);
+                btnDay.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                
+                btnDay.setBackground(Color.WHITE);
+                btnDay.setForeground(DAY_TEXT);
+                btnDay.setBorder(BorderFactory.createLineBorder(new Color(0,0,0,20)));
+
+                temp.set(Calendar.DAY_OF_MONTH, day);
+                if (sdf.format(temp.getTime()).equals(targetField.getText())) {
+                    btnDay.setBackground(GOLD_COLOR);
+                    btnDay.setForeground(MAIN_BLUE);
+                } else if (sdf.format(temp.getTime()).equals(sdf.format(today.getTime()))) {
+                    btnDay.setBorder(BorderFactory.createLineBorder(GOLD_COLOR, 2));
+                }
+
+                btnDay.addActionListener(e -> {
+                    cal.set(Calendar.DAY_OF_MONTH, day);
+                    targetField.setText(sdf.format(cal.getTime()));
+                    dispose();
+                });
+
+                btnDay.addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseEntered(java.awt.event.MouseEvent e) {
+                        if (!btnDay.getBackground().equals(GOLD_COLOR)) {
+                            btnDay.setBackground(new Color(255, 255, 255, 180));
+                            btnDay.setBorder(BorderFactory.createLineBorder(GOLD_COLOR, 1));
+                        }
+                    }
+                    public void mouseExited(java.awt.event.MouseEvent e) {
+                        if (!btnDay.getBackground().equals(GOLD_COLOR)) {
+                            btnDay.setBackground(Color.WHITE);
+                            btnDay.setBorder(BorderFactory.createLineBorder(new Color(0,0,0,20)));
+                        }
+                    }
+                });
+
+                daysPanel.add(btnDay);
+            }
+
+            daysPanel.revalidate();
+            daysPanel.repaint();
+        }
     }
 }

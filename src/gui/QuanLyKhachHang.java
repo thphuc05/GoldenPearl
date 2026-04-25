@@ -47,43 +47,70 @@ public class QuanLyKhachHang extends JPanel {
                 BorderFactory.createLineBorder(GOLD_COLOR), "Thông tin khách hàng");
         formBorder.setTitleColor(GOLD_COLOR);
         pForm.setBorder(formBorder);
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 20, 10, 20);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Row 0
-        gbc.gridx = 0; gbc.gridy = 0;
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(12, 25, 12, 25); // Tăng padding
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+
+// Row 0
+        gbc.gridy = 0;
+
+// Cột 0: Nhãn Mã KH
+        gbc.gridx = 0; gbc.weightx = 0;
         pForm.add(createLabel("Mã khách hàng:"), gbc);
-        gbc.gridx = 1;
-        txtMaKH = new JTextField(60);
-        txtMaKH.setEditable(false);
+
+// Cột 1: Ô nhập Mã KH (Giãn rộng)
+        gbc.gridx = 1; gbc.weightx = 0.5;
+        txtMaKH = new JTextField();
+        txtMaKH.setPreferredSize(new Dimension(300, 35)); // Tăng kích thước
+        txtMaKH.setEditable(true);
         pForm.add(txtMaKH, gbc);
 
-        gbc.gridx = 2;
+// Cột 2: Nhãn Tên KH
+        gbc.gridx = 2; gbc.weightx = 0;
         pForm.add(createLabel("Tên khách hàng:"), gbc);
-        gbc.gridx = 3;
-        txtTenKH = new JTextField(60);
+
+// Cột 3: Ô nhập Tên KH (Giãn rộng)
+        gbc.gridx = 3; gbc.weightx = 0.5;
+        txtTenKH = new JTextField();
+        txtTenKH.setPreferredSize(new Dimension(300, 35));
         pForm.add(txtTenKH, gbc);
 
-        // Row 1
-        gbc.gridx = 0; gbc.gridy = 1;
+// Row 1
+        gbc.gridy = 1;
+
+// Cột 0: Nhãn SĐT
+        gbc.gridx = 0; gbc.weightx = 0;
         pForm.add(createLabel("Số điện thoại:"), gbc);
-        gbc.gridx = 1;
-        txtSoDT = new JTextField(60);
+
+// Cột 1: Ô nhập SĐT
+        gbc.gridx = 1; gbc.weightx = 0.5;
+        txtSoDT = new JTextField();
+        txtSoDT.setPreferredSize(new Dimension(300, 35));
         pForm.add(txtSoDT, gbc);
 
-        gbc.gridx = 2;
+// Cột 2: Nhãn Email
+        gbc.gridx = 2; gbc.weightx = 0;
         pForm.add(createLabel("Email:"), gbc);
-        gbc.gridx = 3;
-        txtEmail = new JTextField(60);
+
+// Cột 3: Ô nhập Email
+        gbc.gridx = 3; gbc.weightx = 0.5;
+        txtEmail = new JTextField();
+        txtEmail.setPreferredSize(new Dimension(300, 35));
+        pForm.add(txtEmail, gbc);
         pForm.add(txtEmail, gbc);
 
         pMain.add(pForm, BorderLayout.NORTH);
 
         // Table panel
         String[] columnNames = {"Mã KH", "Tên khách hàng", "Số điện thoại", "Email"};
-        tableModel = new DefaultTableModel(columnNames, 0);
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         table = new JTable(tableModel);
         table.setRowHeight(35);
         table.setFont(new Font("Inter", Font.PLAIN, 14));
@@ -91,7 +118,8 @@ public class QuanLyKhachHang extends JPanel {
         table.getTableHeader().setBackground(GOLD_COLOR);
         table.getTableHeader().setForeground(MAIN_BLUE);
         
-        table.setBackground(new Color(255, 255, 255, 240));
+        table.setBackground(Color.decode("#EBF5FB"));
+        table.setForeground(MAIN_BLUE);
         table.setSelectionBackground(GOLD_COLOR);
         table.setSelectionForeground(MAIN_BLUE);
 
@@ -144,11 +172,16 @@ public class QuanLyKhachHang extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 int row = table.getSelectedRow();
                 if (row != -1) {
-                    txtMaKH.setText(tableModel.getValueAt(row, 0).toString());
-                    txtTenKH.setText(tableModel.getValueAt(row, 1).toString());
-                    txtSoDT.setText(tableModel.getValueAt(row, 2).toString());
-                    txtEmail.setText(tableModel.getValueAt(row, 3).toString());
+                    txtMaKH.setText(getValueOrEmpty(row, 0));
+                    txtTenKH.setText(getValueOrEmpty(row, 1));
+                    txtSoDT.setText(getValueOrEmpty(row, 2));
+                    txtEmail.setText(getValueOrEmpty(row, 3));
                 }
+            }
+            
+            private String getValueOrEmpty(int row, int col) {
+                Object val = tableModel.getValueAt(row, col);
+                return (val == null) ? "" : val.toString();
             }
         });
 
@@ -158,7 +191,10 @@ public class QuanLyKhachHang extends JPanel {
         btnClear.addActionListener(e -> clearFields());
         btnSearch.addActionListener(e -> searchKhachHang());
 
-        // Load data initially
+        // Đã gỡ bỏ loadDataToTable() để tăng tốc đăng nhập
+    }
+
+    public void refreshData() {
         loadDataToTable();
     }
 
@@ -185,32 +221,27 @@ public class QuanLyKhachHang extends JPanel {
         List<KhachHang> dsKH = kh_dao.getAllKhachHang();
         if (dsKH != null) {
             for (KhachHang kh : dsKH) {
-                tableModel.addRow(new Object[]{kh.getMaKH(), kh.getTenKH(), kh.getSoDT(), kh.getEmail()});
+                tableModel.addRow(new Object[]{
+                    kh.getMaKH(), 
+                    kh.getTenKH(), 
+                    kh.getSoDT(), 
+                    (kh.getEmail() == null) ? "" : kh.getEmail()
+                });
             }
         }
     }
 
     private void addKhachHang() {
-        String ten = txtTenKH.getText().trim();
+        if (!validateData(true)) return;
+
+        String maKH = txtMaKH.getText().trim();
+        String ten = formatName(txtTenKH.getText().trim());
         String sdt = txtSoDT.getText().trim();
         String email = txtEmail.getText().trim();
 
-        if (ten.isEmpty() || sdt.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ Tên và Số điện thoại!");
-            return;
-        }
-
-        if (!sdt.matches("\\d{10,11}")) {
-            JOptionPane.showMessageDialog(this, "Số điện thoại phải có 10-11 chữ số!");
-            return;
-        }
-
-        // Tự sinh mã khách hàng dựa trên số lượng hiện tại
-        String maKH = "KH" + String.format("%03d", kh_dao.getAllKhachHang().size() + 1);
-
         KhachHang kh = new KhachHang(maKH, ten, sdt, email);
         if (kh_dao.addKhachHang(kh)) {
-            JOptionPane.showMessageDialog(this, "Thêm khách hàng thành công và đã lưu vào SQL!");
+            JOptionPane.showMessageDialog(this, "Thêm khách hàng thành công!");
             loadDataToTable();
             clearFields();
         } else {
@@ -219,23 +250,111 @@ public class QuanLyKhachHang extends JPanel {
     }
 
     private void updateKhachHang() {
-        String ma = txtMaKH.getText();
+        String ma = txtMaKH.getText().trim();
         if (ma.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng cần cập nhật từ bảng!");
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập Mã khách hàng cần cập nhật!");
+            txtMaKH.requestFocus();
             return;
         }
 
-        String ten = txtTenKH.getText().trim();
+        if (!validateData(false)) return;
+
+        // Kiểm tra xem khách hàng có tồn tại trong SQL không
+        boolean exists = false;
+        List<KhachHang> ds = kh_dao.getAllKhachHang();
+        for (KhachHang kh : ds) {
+            if (kh.getMaKH().equalsIgnoreCase(ma)) {
+                exists = true;
+                break;
+            }
+        }
+
+        if (!exists) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy khách hàng mã " + ma + " để cập nhật!");
+            return;
+        }
+
+        String ten = formatName(txtTenKH.getText().trim());
         String sdt = txtSoDT.getText().trim();
         String email = txtEmail.getText().trim();
 
         KhachHang kh = new KhachHang(ma, ten, sdt, email);
         if (kh_dao.updateKhachHang(kh)) {
-            JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+            JOptionPane.showMessageDialog(this, "Cập nhật thông tin vào SQL thành công!");
             loadDataToTable();
         } else {
             JOptionPane.showMessageDialog(this, "Cập nhật thất bại!");
         }
+    }
+
+    private String formatName(String name) {
+        if (name == null || name.isEmpty()) return "";
+        String[] words = name.trim().toLowerCase().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String word : words) {
+            if (word.length() > 0) {
+                sb.append(Character.toUpperCase(word.charAt(0)))
+                  .append(word.substring(1)).append(" ");
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    private boolean validateData(boolean isAdd) {
+        String ma = txtMaKH.getText().trim();
+        String ten = txtTenKH.getText().trim();
+        String sdt = txtSoDT.getText().trim();
+        String email = txtEmail.getText().trim();
+
+        if (ma.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Mã khách hàng không được để trống!");
+            txtMaKH.requestFocus();
+            return false;
+        }
+
+        if (ten.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Tên khách hàng không được để trống!");
+            txtTenKH.requestFocus();
+            return false;
+        }
+
+        if (!sdt.matches("^0\\d{9}$")) {
+            JOptionPane.showMessageDialog(this, "Số điện thoại phải bắt đầu bằng 0 và có đúng 10 chữ số!");
+            txtSoDT.requestFocus();
+            return false;
+        }
+
+        if (!email.isEmpty() && !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+            JOptionPane.showMessageDialog(this, "Email không hợp lệ!");
+            txtEmail.requestFocus();
+            return false;
+        }
+
+        // Kiểm tra trùng lặp trong Database
+        List<KhachHang> ds = kh_dao.getAllKhachHang();
+        if (ds != null) {
+            for (KhachHang kh : ds) {
+                // Kiểm tra trùng Mã khi thêm mới
+                if (isAdd && kh.getMaKH().equalsIgnoreCase(ma)) {
+                    JOptionPane.showMessageDialog(this, "Mã khách hàng " + ma + " đã tồn tại!");
+                    txtMaKH.requestFocus();
+                    return false;
+                }
+                // Kiểm tra trùng SĐT (loại trừ khách hàng đang cập nhật)
+                if (kh.getSoDT().equals(sdt) && (isAdd || !kh.getMaKH().equalsIgnoreCase(ma))) {
+                    JOptionPane.showMessageDialog(this, "Số điện thoại " + sdt + " đã được đăng ký bởi khách hàng " + kh.getMaKH() + "!");
+                    txtSoDT.requestFocus();
+                    return false;
+                }
+                // Kiểm tra trùng Email
+                if (!email.isEmpty() && email.equalsIgnoreCase(kh.getEmail()) && (isAdd || !kh.getMaKH().equalsIgnoreCase(ma))) {
+                    JOptionPane.showMessageDialog(this, "Email " + email + " đã được đăng ký bởi khách hàng " + kh.getMaKH() + "!");
+                    txtEmail.requestFocus();
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private void deleteKhachHang() {

@@ -186,6 +186,45 @@ INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP02', N'Đồ u
 -- Insert SanPham
 INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP001', N'Bò Wagyu nướng', 500000, 1, 'LSP01');
 INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP002', N'Rượu Vang Đỏ', 1200000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP003', N'Súp Bào Ngư Vi Cá', 850000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP004', N'Tôm Hùm Bỏ Lò Phô Mai', 1250000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP005', N'Cua Hoàng Đế Hấp Thủy Nhiệt', 2500000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP006', N'Gan Ngỗng Pháp Áp Chảo', 650000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP007', N'Cơm Chiên Hải Sản Cung Đình', 350000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP008', N'Rượu Vang Trắng Sauvignon', 1500000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP009', N'Nước Ép Trái Cây Nhiệt Đới', 85000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP010', N'Trà Hoa Cúc Mật Ong', 65000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP011', N'Cà Phê Muối Golden Pearl', 75000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP012', N'Cocktail Signature Night', 185000, 1, 'LSP02');
 
 -- Insert KhuyenMai
 INSERT INTO KhuyenMai (maKM, tenKM, phanTramGiam, ngayBatDau, ngayKetThuc) VALUES ('KM001', N'Khai trương', 10, '2024-01-01', '2024-12-31');
+
+-- NEW SAMPLE DATA (5 Invoices)
+-- Extra Customers
+INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH002', N'Phạm Minh Hoàng', '0912345678', 'hoangpm@gmail.com');
+INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH003', N'Nguyễn Thùy Linh', '0988777666', 'linhnt@gmail.com');
+
+-- Booking Orders
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan) 
+VALUES ('DDB001', '2026-04-20 10:00:00', '2026-04-20 12:00:00', 4, 'KH001', 1, 'NV001', 'B001');
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan) 
+VALUES ('DDB002', '2026-04-21 17:30:00', '2026-04-21 19:00:00', 2, 'KH002', 1, 'NV002', 'B002');
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan) 
+VALUES ('DDB003', '2026-04-22 18:00:00', '2026-04-22 20:00:00', 6, 'KH003', 1, 'NV001', 'B005');
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan) 
+VALUES ('DDB004', '2026-04-23 11:00:00', '2026-04-23 13:00:00', 3, 'KH001', 1, 'NV003', 'B004');
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan) 
+VALUES ('DDB005', '2026-04-24 19:00:00', '2026-04-24 21:00:00', 2, 'KH002', 1, 'NV004', 'B009');
+
+-- 5 Invoices
+INSERT INTO HoaDon (maHD, ngayLap, tongTien, trangThai, maDon, maNV, maKH, maKM)
+VALUES ('HD001', '2026-04-20 13:45:00', 1550000, 1, 'DDB001', 'NV001', 'KH001', 'KM001');
+INSERT INTO HoaDon (maHD, ngayLap, tongTien, trangThai, maDon, maNV, maKH, maKM)
+VALUES ('HD002', '2026-04-21 20:15:00', 890000, 1, 'DDB002', 'NV002', 'KH002', NULL);
+INSERT INTO HoaDon (maHD, ngayLap, tongTien, trangThai, maDon, maNV, maKH, maKM)
+VALUES ('HD003', '2026-04-22 21:30:00', 2450000, 1, 'DDB003', 'NV001', 'KH003', 'KM001');
+INSERT INTO HoaDon (maHD, ngayLap, tongTien, trangThai, maDon, maNV, maKH, maKM)
+VALUES ('HD004', '2026-04-23 14:20:00', 1200000, 1, 'DDB004', 'NV003', 'KH001', NULL);
+INSERT INTO HoaDon (maHD, ngayLap, tongTien, trangThai, maDon, maNV, maKH, maKM)
+VALUES ('HD005', '2026-04-24 22:10:00', 3150000, 1, 'DDB005', 'NV004', 'KH002', 'KM001');
