@@ -19,10 +19,8 @@ public class ConnectDB {
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             // Quay lại chuỗi kết nối cũ, chỉ đổi mật khẩu thành sapassword
-            String url = "jdbc:sqlserver://localhost:1433;databaseName=GoldenPearlDB;encrypt=false;trustServerCertificate=true;loginTimeout=30;";
-            String user = "sa";
-            String password = "sapassword";
-            con = DriverManager.getConnection(url, user, password);
+            String url = "jdbc:sqlserver://127.0.0.1;databaseName=GoldenPearlDB;user=sa;password=sa;encrypt=false;trustServerCertificate=true;loginTimeout=5;";
+            con = DriverManager.getConnection(url);
             System.out.println("✅ Kết nối Database thành công!");
         } catch (ClassNotFoundException e) {
             System.err.println("❌ Không tìm thấy thư viện JDBC Driver!");

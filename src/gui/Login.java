@@ -59,6 +59,7 @@ public class Login {
 
     /**
      * Cấu hình Font và Theme (FlatLaf)
+     * ⛔ CÓ THỂ SỄ SỬA ĐỂ SỬ DỤNG CODE CÓ SẴN CỦA JAVA
      */
     private void initConfiguration() {
         FontLoader.registerFont("data/fonts/InstrumentSerif-Regular.ttf");
@@ -157,9 +158,6 @@ public class Login {
         panel.add(btnLogin);
 
         bg.add(panel);
-
-        // Cập nhật UI và hiển thị
-        SwingUtilities.updateComponentTreeUI(frame);
         frame.setVisible(true);
     }
 
@@ -235,15 +233,14 @@ public class Login {
         SwingUtilities.invokeLater(Login::new);
     }
 
-    // --- INNER CLASSES ---
-
+    // Custom classes
     public class JPanelWithBackground extends JPanel {
         private Image backgroundImage;
 
         public JPanelWithBackground(String fileName) throws IOException {
             backgroundImage = ImageIO.read(new File(fileName));
         }
-        
+
         public JPanelWithBackground() {} // Constructor dự phòng
 
         @Override
