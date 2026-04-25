@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="dataSourceStorageLocal" created-in="IU-261.22158.277">
-    <data-source name="GoldenPearLDB@PC" uuid="4a6ff0f6-13b9-4a55-bb77-9bc5f3bce45a">
-      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MSSQL" />
-      <schema-mapping />
-    </data-source>
-  </component>
-</project>
