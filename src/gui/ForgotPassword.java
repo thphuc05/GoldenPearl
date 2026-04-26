@@ -27,7 +27,6 @@ public class ForgotPassword extends JFrame {
     };
 
     private JLabel screenTitle = new JLabel("Khôi phục mật khẩu");
-    private JLabel restaurantName = new JGradientLabel("GOLDEN PEARL");
     private JLabel phoneLabel = new JLabel("Số điện thoại");
     private JLabel otpLabel = new JLabel("Mã xác nhận");
 
@@ -91,20 +90,18 @@ public class ForgotPassword extends JFrame {
         centerContainer.setLayout(new BoxLayout(centerContainer, BoxLayout.Y_AXIS));
 
         // Tiêu đề
+        screenTitle.setBounds((SCREEN_WIDTH - 450) / 2, 220, 450, 45);
         screenTitle.setFont(new Font("Inter Bold", Font.BOLD, 35));
         screenTitle.setForeground(Color.BLACK);
         screenTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         screenTitle.setHorizontalAlignment(SwingConstants.CENTER);
 
-        restaurantName.setFont(new Font("Instrument Serif Regular", Font.BOLD, 120));
-        restaurantName.setAlignmentX(Component.CENTER_ALIGNMENT);
-        restaurantName.setHorizontalAlignment(SwingConstants.CENTER);
-        restaurantName.setPreferredSize(new Dimension(800, 130));
-        restaurantName.setMaximumSize(new Dimension(800, 130));
-
         // Panel chính
         int panelWidth = 704;
-        int panelHeight = 350;
+        int panelHeight = 300;
+        int x = (SCREEN_WIDTH - panelWidth) / 2;
+        int y = (SCREEN_HEIGHT - panelHeight) / 2 + 30;
+
         panel.setOpaque(false);
         panel.setLayout(null);
         panel.setPreferredSize(new Dimension(panelWidth, panelHeight));
@@ -128,12 +125,11 @@ public class ForgotPassword extends JFrame {
         btnSendOTP.setFont(new Font("Inter Bold", Font.BOLD, 14));
 
         // Nút chức năng phía dưới
-        btnBack.setBounds(100, 240, 236, 50);
+        btnBack.setBounds(100, 220, 236, 50);
         btnBack.setBackground(Color.BLACK);
-        btnBack.setForeground(Color.WHITE);
         btnBack.setFont(new Font("Inter Bold", Font.BOLD, 20));
 
-        btnConfirm.setBounds(410, 240, 181, 50);
+        btnConfirm.setBounds(410, 220, 181, 50);
         btnConfirm.setFont(new Font("Inter Bold", Font.BOLD, 20));
 
         panel.add(phoneLabel);
@@ -144,13 +140,7 @@ public class ForgotPassword extends JFrame {
         panel.add(btnBack);
         panel.add(btnConfirm);
 
-        centerContainer.add(screenTitle);
-        centerContainer.add(restaurantName);
-        centerContainer.add(Box.createVerticalStrut(20));
-        centerContainer.add(panel);
-
-        bg.add(centerContainer, new GridBagConstraints());
-
+        bg.add(panel);
         SwingUtilities.updateComponentTreeUI(this);
     }
 
@@ -178,24 +168,6 @@ public class ForgotPassword extends JFrame {
             if (backgroundImage != null) {
                 g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
             }
-        }
-    }
-
-    public class JGradientLabel extends JLabel {
-        private Color color1 = Color.decode("#FF4B2B");
-        private Color color2 = Color.decode("#FFAD06");
-        public JGradientLabel(String text) { super(text); }
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            FontMetrics fm = g2.getFontMetrics();
-            int x = (getWidth() - fm.stringWidth(getText())) / 2;
-            int y = fm.getAscent();
-            GradientPaint gp = new GradientPaint(0, 0, color1, getWidth(), 0, color2);
-            g2.setPaint(gp);
-            g2.drawString(getText(), x, y);
-            g2.dispose();
         }
     }
 }

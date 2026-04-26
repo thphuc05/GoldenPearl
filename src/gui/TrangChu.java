@@ -119,10 +119,10 @@ public class TrangChu extends JFrame {
         JLabel lblUserIcon = new JLabel(getScaledIcon("data/icons/people_300dp_FFFFFF.png", 50, 50)); 
         JPanel userInfo = new JPanel(new GridLayout(3, 1));
         userInfo.setOpaque(false);
-        
+
         String vaiTroStr = (taiKhoan != null) ? taiKhoan.getVaiTro() : "N/A";
         String tenTKStr = (taiKhoan != null) ? taiKhoan.getTenTK() : "Chưa đăng nhập";
-        
+
         JLabel lblRole = new JLabel("Vai trò: " + vaiTroStr);
         lblRole.setForeground(new Color(255, 255, 255, 200));
         lblRole.setFont(new Font("Inter", Font.PLAIN, 13));
@@ -183,6 +183,7 @@ public class TrangChu extends JFrame {
         panel.add(Box.createVerticalStrut(20));
 
         return panel;
+
     }
 
     private void showCard(String cardName, JButton source) {

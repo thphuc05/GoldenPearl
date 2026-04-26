@@ -6,11 +6,9 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.util.List;
-import java.util.ArrayList;
 
 public class QuanLyDatBan extends JPanel {
     private CardLayout cardLayout;
