@@ -19,11 +19,19 @@ public class TrangChu extends JFrame {
     private TaiKhoan taiKhoan;
     private NhanVien nhanVien;
 
+    // Các panel quản lý
+    private QuanLyDatBan pDatBan;
+    private QuanLyHoaDon pHoaDon;
+    private QuanLyNhanVien pNhanVien;
+    private QuanLyKhachHang pKhachHang;
+    private QuanLyMonAn pMonAn;
+    private QuanLyThongKe pThongKe;
+
     // Màu sắc chủ đạo theo ảnh
     private final Color MAIN_BLUE = Color.decode("#0B3D59"); // Xanh đậm nền chính
     private final Color GOLD_COLOR = Color.decode("#C5A059"); // Vàng đồng
-    private final Color SIDEBAR_BG = Color.decode("#F0F4F8"); // Xám xanh nhạt sidebar
-    private final Color USER_INFO_BG = Color.decode("#1A4D6D"); // Xanh cho panel user
+    private final Color SIDEBAR_BG = Color.decode("#1A4D6D"); // Xanh nhạt hơn một chút cho sidebar
+    private final Color USER_INFO_BG = Color.decode("#0B3D59"); // Xanh đậm cho panel user
     private final Color TEXT_WHITE = Color.WHITE;
     private final Color TEXT_DARK_BLUE = Color.decode("#0B3D59");
 
@@ -47,7 +55,7 @@ public class TrangChu extends JFrame {
     }
 
     private void initUI() {
-        setSize(1400, 900);
+        setExtendedState(JFrame.MAXIMIZED_BOTH); // Phóng to toàn màn hình
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
@@ -60,13 +68,23 @@ public class TrangChu extends JFrame {
         cardLayout = new CardLayout();
         contentArea = new JPanel(cardLayout);
         contentArea.setBackground(MAIN_BLUE);
+        
         contentArea.add(createWelcomePanel(), "TrangChủ");
-        contentArea.add(new QuanLyDatBan(), "ĐặtBàn");
-        contentArea.add(new QuanLyHoaDon(), "HóaĐơn");
-        contentArea.add(new QuanLyNhanVien(), "NhânViên");
-        contentArea.add(new QuanLyKhachHang(), "KháchHàng");
-        contentArea.add(new QuanLyMonAn(), "MónĂn");
-        contentArea.add(new QuanLyThongKe(), "ThốngKê");
+        
+        // Khởi tạo các panel (Dữ liệu sẽ được nạp sau để tăng tốc khởi động)
+        pDatBan = new QuanLyDatBan();
+        pHoaDon = new QuanLyHoaDon();
+        pNhanVien = new QuanLyNhanVien();
+        pKhachHang = new QuanLyKhachHang();
+        pMonAn = new QuanLyMonAn();
+        pThongKe = new QuanLyThongKe();
+
+        contentArea.add(pDatBan, "ĐặtBàn");
+        contentArea.add(pHoaDon, "HóaĐơn");
+        contentArea.add(pNhanVien, "NhânViên");
+        contentArea.add(pKhachHang, "KháchHàng");
+        contentArea.add(pMonAn, "MónĂn");
+        contentArea.add(pThongKe, "ThốngKê");
 
         add(contentArea, BorderLayout.CENTER);
     }
@@ -74,9 +92,9 @@ public class TrangChu extends JFrame {
     private JPanel createSidebar() {
         JPanel panel = new JPanel();
         panel.setBackground(SIDEBAR_BG);
-        panel.setPreferredSize(new Dimension(350, getHeight()));
+        panel.setPreferredSize(new Dimension(300, getHeight()));
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(0, 0, 0, 20)));
+        panel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, GOLD_COLOR.darker()));
 
         // User Info Panel
         JPanel userOuterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
@@ -93,12 +111,12 @@ public class TrangChu extends JFrame {
                 g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
             }
         };
-        userPanel.setPreferredSize(new Dimension(310, 120));
-        userPanel.setLayout(new BorderLayout(15, 0));
-        userPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        userPanel.setPreferredSize(new Dimension(270, 120));
+        userPanel.setLayout(new BorderLayout(10, 0));
+        userPanel.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
         userPanel.setOpaque(false);
 
-        JLabel lblUserIcon = new JLabel(getScaledIcon("data/icons/people_300dp_FFFFFF.png", 60, 60)); // Placeholder for user icon
+        JLabel lblUserIcon = new JLabel(getScaledIcon("data/icons/people_300dp_FFFFFF.png", 50, 50)); 
         JPanel userInfo = new JPanel(new GridLayout(3, 1));
         userInfo.setOpaque(false);
 
@@ -107,13 +125,13 @@ public class TrangChu extends JFrame {
 
         JLabel lblRole = new JLabel("Vai trò: " + vaiTroStr);
         lblRole.setForeground(new Color(255, 255, 255, 200));
-        lblRole.setFont(new Font("Inter", Font.PLAIN, 14));
+        lblRole.setFont(new Font("Inter", Font.PLAIN, 13));
         JLabel lblName = new JLabel(tenTKStr);
         lblName.setForeground(TEXT_WHITE);
-        lblName.setFont(new Font("Inter Bold", Font.BOLD, 18));
+        lblName.setFont(new Font("Inter Bold", Font.BOLD, 16));
 
         JButton btnLogoutSmall = new JButton("Đăng xuất");
-        btnLogoutSmall.setFont(new Font("Inter", Font.PLAIN, 12));
+        btnLogoutSmall.setFont(new Font("Inter", Font.PLAIN, 11));
         btnLogoutSmall.setForeground(new Color(255, 255, 255, 180));
         btnLogoutSmall.setBackground(new Color(255, 255, 255, 20));
         btnLogoutSmall.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 50)));
@@ -132,24 +150,31 @@ public class TrangChu extends JFrame {
         panel.add(userOuterPanel);
         panel.add(Box.createVerticalStrut(10));
 
-        // Sidebar Buttons
+        // Sidebar Buttons Container
+        JPanel pButtons = new JPanel();
+        pButtons.setOpaque(false);
+        pButtons.setLayout(new BoxLayout(pButtons, BoxLayout.Y_AXIS));
+
         JButton btnHome = createSidebarButton("Trang chủ", "home_filled_300dp_FFFFFF.png", e -> showCard("TrangChủ", (JButton)e.getSource()));
-        panel.add(btnHome);
         lastSelectedButton = btnHome;
-        btnHome.setBackground(Color.WHITE);
-        btnHome.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 5, 0, 0, GOLD_COLOR),
-                BorderFactory.createEmptyBorder(0, 15, 0, 10)
-        ));
+        
+        pButtons.add(btnHome);
+        pButtons.add(Box.createVerticalStrut(12));
+        pButtons.add(createSidebarButton("Đặt bàn", "menu_open_300dp_FFFFFF.png", e -> showCard("ĐặtBàn", (JButton)e.getSource())));
+        pButtons.add(Box.createVerticalStrut(12));
+        pButtons.add(createSidebarButton("Quản lý hoá đơn", "receipt_300dp_FFFFFF.png", e -> showCard("HóaĐơn", (JButton)e.getSource())));
+        pButtons.add(Box.createVerticalStrut(12));
+        pButtons.add(createSidebarButton("Quản lý nhân viên", "badge_300dp_FFFFFF.png", e -> showCard("NhânViên", (JButton)e.getSource())));
+        pButtons.add(Box.createVerticalStrut(12));
+        pButtons.add(createSidebarButton("Quản lý khách hàng", "people_300dp_FFFFFF.png", e -> showCard("KháchHàng", (JButton)e.getSource())));
+        pButtons.add(Box.createVerticalStrut(12));
+        pButtons.add(createSidebarButton("Quản lý món ăn", "dinner_dining_300dp_FFFFFF.png", e -> showCard("MónĂn", (JButton)e.getSource())));
+        pButtons.add(Box.createVerticalStrut(12));
+        pButtons.add(createSidebarButton("Thống kê doanh thu", "attach_money_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png", e -> showCard("ThốngKê", (JButton)e.getSource())));
 
-        panel.add(createSidebarButton("Đặt bàn", "menu_open_300dp_FFFFFF.png", e -> showCard("ĐặtBàn", (JButton)e.getSource())));
-        panel.add(createSidebarButton("Quản lý hoá đơn", "receipt_300dp_FFFFFF.png", e -> showCard("HóaĐơn", (JButton)e.getSource())));
-        panel.add(createSidebarButton("Quản lý nhân viên", "badge_300dp_FFFFFF.png", e -> showCard("NhânViên", (JButton)e.getSource())));
-        panel.add(createSidebarButton("Quản lý khách hàng", "people_300dp_FFFFFF.png", e -> showCard("KháchHàng", (JButton)e.getSource())));
-        panel.add(createSidebarButton("Quản lý món ăn", "dinner_dining_300dp_FFFFFF.png", e -> showCard("MónĂn", (JButton)e.getSource())));
-        panel.add(createSidebarButton("Thống kê doanh thu", "attach_money_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png", e -> showCard("ThốngKê", (JButton)e.getSource())));
-
+        panel.add(pButtons);
         panel.add(Box.createVerticalGlue());
+        
         JButton btnLogout = createSidebarButton("Đăng xuất", "attach_money_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png", e -> {
             dispose();
             new Login();
@@ -163,46 +188,63 @@ public class TrangChu extends JFrame {
 
     private void showCard(String cardName, JButton source) {
         cardLayout.show(contentArea, cardName);
-        if (lastSelectedButton != null) {
-            lastSelectedButton.setBackground(SIDEBAR_BG);
-            lastSelectedButton.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 10));
+        
+        // Kích hoạt tải dữ liệu cho trang được chọn (Lazy Loading)
+        switch(cardName) {
+            case "NhânViên": pNhanVien.refreshData(); break;
+            case "HóaĐơn": pHoaDon.refreshData(); break;
+            case "KháchHàng": pKhachHang.refreshData(); break;
+            case "MónĂn": pMonAn.refreshData(); break;
+            case "ThốngKê": pThongKe.refreshData(); break;
+            case "ĐặtBàn": /* Trang đặt bàn tự load trong class của nó */ break;
         }
-        source.setBackground(Color.WHITE);
-        source.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 5, 0, 0, GOLD_COLOR),
-                BorderFactory.createEmptyBorder(0, 15, 0, 10)
-        ));
+
+        if (lastSelectedButton != null) {
+            lastSelectedButton.repaint();
+        }
         lastSelectedButton = source;
+        lastSelectedButton.repaint();
     }
 
     private JButton createSidebarButton(String text, String iconName, ActionListener action) {
-        JButton btn = new JButton(text);
-        // Tint the white icon to dark blue for the light sidebar
-        ImageIcon icon = getScaledIcon("data/icons/" + iconName, 24, 24);
-        if (icon != null) {
-            btn.setIcon(tintIcon(icon, TEXT_DARK_BLUE));
-        }
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
-        btn.setPreferredSize(new Dimension(350, 55));
-        btn.setFont(new Font("Inter Medium", Font.PLAIN, 16));
-        btn.setForeground(TEXT_DARK_BLUE);
-        btn.setBackground(SIDEBAR_BG);
-        btn.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 10));
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(true);
-        btn.setOpaque(true);
-        btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setIconTextGap(20);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (this == lastSelectedButton) {
+                    g2.setColor(USER_INFO_BG);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                    g2.setColor(GOLD_COLOR);
+                    g2.setStroke(new BasicStroke(2f));
+                    g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+                } else if (getModel().isRollover()) {
+                    g2.setColor(new Color(255, 255, 255, 20));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                }
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
 
-        btn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                if (btn != lastSelectedButton) btn.setBackground(new Color(255, 255, 255, 180));
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                if (btn != lastSelectedButton) btn.setBackground(SIDEBAR_BG);
-            }
-        });
+        ImageIcon icon = getScaledIcon("data/icons/" + iconName, 22, 22);
+        if (icon != null) {
+            btn.setIcon(icon);
+        }
+        
+        btn.setMaximumSize(new Dimension(270, 50));
+        btn.setPreferredSize(new Dimension(270, 50));
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btn.setFont(new Font("Inter Medium", Font.PLAIN, 14));
+        btn.setForeground(TEXT_WHITE);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setIconTextGap(15);
+        btn.setMargin(new Insets(0, 15, 0, 10));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btn.addActionListener(action);
         return btn;
@@ -273,7 +315,7 @@ public class TrangChu extends JFrame {
         txtIntro.setOpaque(false);
         txtIntro.setForeground(TEXT_WHITE);
         txtIntro.setAlignmentX(Component.CENTER_ALIGNMENT);
-        txtIntro.setMaximumSize(new Dimension(900, 150));
+        txtIntro.setMaximumSize(new Dimension(1000, 200));
         mainContent.add(txtIntro);
         mainContent.add(Box.createVerticalStrut(50));
 

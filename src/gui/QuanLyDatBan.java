@@ -6,9 +6,9 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.util.List;
-import java.util.ArrayList;
 
 public class QuanLyDatBan extends JPanel {
     private CardLayout cardLayout;
@@ -31,6 +31,7 @@ public class QuanLyDatBan extends JPanel {
     // Image Colors
     private final Color BLUE_DARK = Color.decode("#2874A6");
     private final Color ORANGE_MAIN = Color.decode("#E67E22");
+    private final Color GOLD_COLOR = Color.decode("#C5A059");
     private final Color BG_LIGHT = Color.decode("#F2F3F4");
     private final Color TEXT_GRAY = Color.decode("#7F8C8D");
 
@@ -53,20 +54,20 @@ public class QuanLyDatBan extends JPanel {
 
     private void initTableSelectionPanel() {
         tableSelectionPanel = new JPanel(new BorderLayout());
-        tableSelectionPanel.setBackground(BG_LIGHT);
+        tableSelectionPanel.setBackground(Color.decode("#0B3D59")); // Đồng bộ màu xanh chính
         
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(ORANGE_MAIN);
-        header.setPreferredSize(new Dimension(0, 60));
+        header.setOpaque(false);
+        header.setPreferredSize(new Dimension(0, 80));
         JLabel title = new JLabel("HỆ THỐNG ĐẶT BÀN", SwingConstants.CENTER);
-        title.setFont(new Font("Inter Bold", Font.BOLD, 24));
-        title.setForeground(Color.WHITE);
+        title.setFont(new Font("Inter Bold", Font.BOLD, 32));
+        title.setForeground(Color.decode("#C5A059")); // Màu vàng đồng đồng bộ
         header.add(title, BorderLayout.CENTER);
         tableSelectionPanel.add(header, BorderLayout.NORTH);
 
-        tableGrid = new JPanel(new GridLayout(0, 5, 20, 20));
+        tableGrid = new JPanel(new GridLayout(0, 6, 25, 25)); // Tăng lên 6 cột cho màn hình rộng
         tableGrid.setOpaque(false);
-        tableGrid.setBorder(new EmptyBorder(30, 40, 30, 40));
+        tableGrid.setBorder(new EmptyBorder(30, 50, 30, 50));
         loadTables();
 
         JScrollPane scroll = new JScrollPane(tableGrid);
@@ -193,12 +194,33 @@ public class QuanLyDatBan extends JPanel {
         f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         f.setPreferredSize(new Dimension(0, 45));
         f.setFont(new Font("Inter", Font.PLAIN, 15));
+
+        Color defaultBorderColor = new Color(210, 210, 210);
         f.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(new Color(210, 210, 210), 1),
+            new LineBorder(defaultBorderColor, 1),
             new EmptyBorder(0, 10, 0, 10)
         ));
         f.setForeground(TEXT_GRAY);
         f.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        f.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                f.setBorder(BorderFactory.createCompoundBorder(
+                    new LineBorder(ORANGE_MAIN, 2),
+                    new EmptyBorder(0, 10, 0, 10)
+                ));
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                f.setBorder(BorderFactory.createCompoundBorder(
+                    new LineBorder(defaultBorderColor, 1),
+                    new EmptyBorder(0, 10, 0, 10)
+                ));
+            }
+        });
+
         return f;
     }
 
@@ -275,6 +297,25 @@ public class QuanLyDatBan extends JPanel {
             b.setBackground(ORANGE_MAIN);
             b.setForeground(Color.WHITE);
             b.setFont(new Font("Inter Bold", Font.BOLD, 16));
+            b.setFocusPainted(false);
+            b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            
+            // Thiết lập viền mặc định
+            b.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
+
+            // Thêm hiệu ứng di chuột (hover)
+            b.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseEntered(java.awt.event.MouseEvent e) {
+                    b.setBorder(BorderFactory.createLineBorder(GOLD_COLOR, 4));
+                }
+
+                @Override
+                public void mouseExited(java.awt.event.MouseEvent e) {
+                    b.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
+                }
+            });
+
             b.addActionListener(e -> {
                 selectedBan = ban;
                 lblTableID.setText("ĐANG PHỤC VỤ: BÀN SỐ " + ban.getSoBan());

@@ -67,7 +67,6 @@ public class NhanVien_DAO {
                     System.err.println("⚠️ Lỗi dòng " + count + ": " + e.getMessage());
                 }
             }
-            System.out.println("✅ Đã tìm thấy " + count + " nhân viên trong DB.");
         } catch (SQLException e) {
             System.err.println("❌ Lỗi SQL: " + e.getMessage());
             e.printStackTrace();
@@ -163,7 +162,7 @@ public class NhanVien_DAO {
             statement.setString(2, nv.getTenNV());
             statement.setString(3, nv.getSoDT());
             statement.setString(4, nv.getSoCCCD());
-            statement.setString(5, nv.getChucVu().name());
+            statement.setString(5, nv.getChucVu().toDatabaseValue());
             statement.setBoolean(6, nv.isTrangThai());
             if (nv.getTaiKhoan() != null) {
                 statement.setString(7, nv.getTaiKhoan().getMaTK());
@@ -193,7 +192,7 @@ public class NhanVien_DAO {
             statement.setString(1, nv.getTenNV());
             statement.setString(2, nv.getSoDT());
             statement.setString(3, nv.getSoCCCD());
-            statement.setString(4, nv.getChucVu().name());
+            statement.setString(4, nv.getChucVu().toDatabaseValue());
             statement.setBoolean(5, nv.isTrangThai());
             if (nv.getTaiKhoan() != null) {
                 statement.setString(6, nv.getTaiKhoan().getMaTK());
