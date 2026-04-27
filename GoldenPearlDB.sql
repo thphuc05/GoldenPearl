@@ -178,7 +178,9 @@ INSERT INTO Ban (maBan, soBan, sucChua, loaiBan, maKV, maTinhTrang) VALUES ('B01
 
 -- Insert KhachHang
 INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH001', N'Lê Văn C', '0888111222', 'levanc@gmail.com');
-
+INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH002', N'Nguyễn Văn A', '0909123456', 'nguyenvana@gmail.com');
+INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH003', N'Trần Thị B', '0911222333', 'tranthib@gmail.com');
+INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH004', N'Phạm Văn D', '0933444555', 'phamvand@gmail.com');
 -- Insert LoaiSanPham
 INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP01', N'Món chính', N'Các món chính của nhà hàng');
 INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP02', N'Đồ uống', N'Nước giải khát, rượu, bia');
