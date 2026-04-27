@@ -1,8 +1,9 @@
 package gui;
 
 import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.FlatLightLaf;
 import lib.FontLoader;
+import themes.DefaultTheme;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -53,6 +54,7 @@ public class ForgotPassword extends JFrame {
         FontLoader.registerFont("data/fonts/Inter-Bold.otf");
 
         try {
+            UIManager.put("Label.foreground", Color.WHITE);
             Properties props = new Properties();
             File themeFile = new File("themes/DefaultTheme.properties");
             if (themeFile.exists()) {
@@ -60,12 +62,12 @@ public class ForgotPassword extends JFrame {
                     props.load(fis);
                 }
                 FlatLaf.registerCustomDefaultsSource(themeFile);
-                com.formdev.flatlaf.FlatLaf.setGlobalExtraDefaults((Map) props);
+                FlatLaf.setGlobalExtraDefaults((Map) props);
             }
+            DefaultTheme.setup(); //
         } catch (Exception e) {
             e.printStackTrace();
         }
-        FlatLightLaf.setup();
     }
 
     private void initUI() {
@@ -92,7 +94,6 @@ public class ForgotPassword extends JFrame {
         // Tiêu đề
         screenTitle.setBounds((SCREEN_WIDTH - 450) / 2, 220, 450, 45);
         screenTitle.setFont(new Font("Inter Bold", Font.BOLD, 35));
-        screenTitle.setForeground(Color.BLACK);
         screenTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         screenTitle.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -111,27 +112,29 @@ public class ForgotPassword extends JFrame {
         // Nội dung bên trong panel
         phoneLabel.setBounds(50, 50, 250, 50);
         phoneLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
-        phoneLabel.setForeground(Color.BLACK);
         txtPhone.setBounds(300, 50, 350, 50);
         txtPhone.setFont(new Font("Inter Medium", Font.PLAIN, 23));
 
         otpLabel.setBounds(50, 130, 250, 50);
         otpLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
-        otpLabel.setForeground(Color.BLACK);
         txtOTP.setBounds(300, 130, 230, 50);
         txtOTP.setFont(new Font("Inter Medium", Font.PLAIN, 23));
 
         btnSendOTP.setBounds(540, 130, 110, 50);
         btnSendOTP.setFont(new Font("Inter Bold", Font.BOLD, 14));
+        btnSendOTP.setForeground(Color.WHITE);
+        btnSendOTP.setBackground(Color.decode("#FF5F1F"));
 
         // Nút chức năng phía dưới
         btnBack.setBounds(100, 220, 236, 50);
         btnBack.setBackground(Color.BLACK);
-        btnBack.setFont(new Font("Inter Bold", Font.BOLD, 20));
+        btnBack.setForeground(Color.WHITE);
 
         btnConfirm.setBounds(410, 220, 181, 50);
-        btnConfirm.setFont(new Font("Inter Bold", Font.BOLD, 20));
+        btnConfirm.setForeground(Color.WHITE);
+        btnConfirm.setBackground(Color.decode("#FF5F1F"));
 
+        // panel.add(screenTitle); - Tắt do kích cỡ màn hình chưa là cuối cùng
         panel.add(phoneLabel);
         panel.add(txtPhone);
         panel.add(otpLabel);
