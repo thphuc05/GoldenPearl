@@ -230,12 +230,11 @@ public class Login {
 
         btnForget.addActionListener(e -> {
             frame.dispose();
-            new ForgotPassword().setVisible(true);
+            new ForgotPassword();
         });
     }
 
     public static void main(String[] args) {
-        // Chạy giao diện trên Event Dispatch Thread (EDT)
         new Login();
     }
 

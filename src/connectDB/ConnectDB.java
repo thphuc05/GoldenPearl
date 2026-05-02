@@ -20,7 +20,7 @@ public class ConnectDB {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             String url = "jdbc:sqlserver://localhost:1433;databaseName=GoldenPearlDB;encrypt=true;trustServerCertificate=true;loginTimeout=30;";
             String user = "sa";
-            String password = "sapassword";
+            String password = "sa";
             con = DriverManager.getConnection(url, user, password);
             System.out.println("✅ Kết nối Database thành công!");
         } catch (ClassNotFoundException e) {

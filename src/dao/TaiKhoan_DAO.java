@@ -57,7 +57,7 @@ public class TaiKhoan_DAO {
         return null;
     }
 
-    public boolean updateMatKhau(String tenTK, String matKhauMoi) {
+    /*public boolean updateMatKhau(String tenTK, String matKhauMoi) {
         Connection con = ConnectDB.getConnection();
         PreparedStatement statement = null;
         int n = 0;
@@ -77,5 +77,45 @@ public class TaiKhoan_DAO {
             }
         }
         return n > 0;
+    }*/
+
+    public TaiKhoan checkQuenTK(String tenTK, String soDT) {
+        String sql = "SELECT tk.* FROM TaiKhoan tk " +
+                "JOIN NhanVien nv ON tk.maTK = nv.maTK " +
+                "WHERE tk.tenTK = ? AND nv.soDT = ?";
+        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
+            ps.setString(1, tenTK);
+            ps.setString(2, soDT);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new TaiKhoan(
+                        rs.getString("maTK"),
+                        rs.getString("tenTK"),
+                        rs.getString("matKhau"),
+                        rs.getString("vaiTro")
+                );
+            }
+            else System.out.println("Không tìm thấy tài khoản"); // ← add
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean resetMatKhau(String maTK, String soCCCD) {
+        String defaultPassword = "123456";
+        String sql = "UPDATE TaiKhoan SET matKhau = ? " +
+                "WHERE maTK = ? AND maTK IN " +
+                "(SELECT maTK FROM NhanVien WHERE soCCCD = ?)";
+        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
+            ps.setString(1, defaultPassword);
+            ps.setString(2, maTK);
+            ps.setString(3, soCCCD);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

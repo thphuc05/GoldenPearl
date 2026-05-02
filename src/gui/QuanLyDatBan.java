@@ -413,6 +413,7 @@ public class QuanLyDatBan extends JPanel {
         card.add(fieldLabel("Ghi chú"), g);
         g.gridx = 1;
         txtCustNote = new JTextArea(4, 28);
+        txtCustNote.setForeground(Color.black);
         txtCustNote.setFont(FONT_PLAIN_14);
         txtCustNote.setLineWrap(true);
         txtCustNote.setWrapStyleWord(true);

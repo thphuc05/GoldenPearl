@@ -116,8 +116,9 @@ public class TrangChu extends JFrame {
         userPanel.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
         userPanel.setOpaque(false);
 
-        JLabel lblUserIcon = new JLabel(getScaledIcon("data/icons/people_300dp_FFFFFF.png", 50, 50)); 
-        JPanel userInfo = new JPanel(new GridLayout(3, 1));
+        JLabel lblUserIcon = new JLabel(getScaledIcon("data/icons/people_300dp_FFFFFF.png", 50, 50));
+        JPanel userInfo = new JPanel();
+        userInfo.setLayout(new BoxLayout(userInfo, BoxLayout.Y_AXIS));
         userInfo.setOpaque(false);
 
         String vaiTroStr = (taiKhoan != null) ? taiKhoan.getVaiTro() : "N/A";
@@ -126,24 +127,13 @@ public class TrangChu extends JFrame {
         JLabel lblRole = new JLabel("Vai trò: " + vaiTroStr);
         lblRole.setForeground(new Color(255, 255, 255, 200));
         lblRole.setFont(new Font("Inter", Font.PLAIN, 13));
-        JLabel lblName = new JLabel(tenTKStr);
+        JLabel lblName = new JLabel();
+        lblName.setText("<html><div style='width:300px'>" + tenTKStr + "</html>"); // Cho chữ wrap khi không đủ chỗ
         lblName.setForeground(TEXT_WHITE);
-        lblName.setFont(new Font("Inter Bold", Font.BOLD, 16));
+        lblName.setFont(new Font("Inter Bold", Font.BOLD, 20));
 
-        JButton btnLogoutSmall = new JButton("Đăng xuất");
-        btnLogoutSmall.setFont(new Font("Inter", Font.PLAIN, 11));
-        btnLogoutSmall.setForeground(new Color(255, 255, 255, 180));
-        btnLogoutSmall.setBackground(new Color(255, 255, 255, 20));
-        btnLogoutSmall.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 50)));
-        btnLogoutSmall.setFocusPainted(false);
-        btnLogoutSmall.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnLogoutSmall.addActionListener(e -> {
-            dispose();
-            new Login();
-        });
         userInfo.add(lblRole);
         userInfo.add(lblName);
-        userInfo.add(btnLogoutSmall);
         userPanel.add(lblUserIcon, BorderLayout.WEST);
         userPanel.add(userInfo, BorderLayout.CENTER);
         userOuterPanel.add(userPanel);
