@@ -93,7 +93,7 @@ public class Login {
         // Background
         JPanelWithBackground bg;
         try {
-            bg = new JPanelWithBackground("data/image/LoginBG.jpg");
+            bg = new JPanelWithBackground("data/image/Mẫu 1/LoginBG.jpg");
         } catch (IOException e) {
             System.err.println("❌ Không tìm thấy ảnh nền: " + e.getMessage());
             bg = new JPanelWithBackground();
@@ -157,7 +157,12 @@ public class Login {
         // Sắp xếp vào container chính
         centerContainer.add(screenTitle);
         centerContainer.add(restaurantName);
-        centerContainer.add(Box.createVerticalStrut(20));
+        // Thay thế Box.createVerticalStrut(20) bằng JPanel để tránh lỗi ClassCastException
+        JPanel spacer = new JPanel();
+        spacer.setOpaque(false);
+        spacer.setPreferredSize(new Dimension(1, 20));
+        spacer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+        centerContainer.add(spacer);
         centerContainer.add(panel);
 
         // Add container vào background với ràng buộc căn giữa
@@ -175,7 +180,7 @@ public class Login {
         try {
             ConnectDB.getInstance().connect();
         } catch (java.sql.SQLException e) {
-            JOptionPane.showMessageDialog(frame, 
+            JOptionPane.showMessageDialog(null, 
                 "❌ Không thể kết nối SQL Server!\n" +
                 "Vui lòng kiểm tra:\n" +
                 "1. SQL Server đã được chạy chưa?\n" +
@@ -190,7 +195,7 @@ public class Login {
             String pass = new String(txtPassword.getPassword());
             
             if (user.isEmpty() || pass.isEmpty()) {
-                JOptionPane.showMessageDialog(frame, "Vui lòng nhập đầy đủ thông tin!");
+                JOptionPane.showMessageDialog(null, "Vui lòng nhập đầy đủ thông tin!");
                 return;
             }
 
@@ -212,14 +217,14 @@ public class Login {
                     try {
                         TaiKhoan tk = get();
                         if (tk != null) {
-                            JOptionPane.showMessageDialog(frame, "Đăng nhập thành công!");
+                            JOptionPane.showMessageDialog(null, "Đăng nhập thành công!");
                             frame.dispose();
                             new TrangChu(tk).setVisible(true);
                         } else {
-                            JOptionPane.showMessageDialog(frame, "Tên đăng nhập hoặc mật khẩu sai!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(null, "Tên đăng nhập hoặc mật khẩu sai!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                         }
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(frame, "Lỗi kết nối database: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "Lỗi kết nối database: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
                     } finally {
                         btnLogin.setEnabled(true);
                         btnLogin.setText("ĐĂNG NHẬP");

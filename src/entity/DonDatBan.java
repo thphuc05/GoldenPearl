@@ -11,6 +11,8 @@ public class DonDatBan {
     private boolean trangThai;
     private NhanVien nhanVien;
     private Ban ban;
+    private String khungGio;
+    private String ghiChu;
 
     public DonDatBan() {}
 
@@ -48,6 +50,12 @@ public class DonDatBan {
 
     public Ban getBan() { return ban; }
     public void setBan(Ban ban) { this.ban = ban; }
+
+    public String getKhungGio() { return khungGio; }
+    public void setKhungGio(String khungGio) { this.khungGio = khungGio; }
+
+    public String getGhiChu() { return ghiChu; }
+    public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
 
     public double tinhTienCoc() { return 0; }
     public boolean kiemTraTinhTrang() { return true; }

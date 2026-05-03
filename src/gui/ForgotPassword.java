@@ -63,7 +63,7 @@ public class ForgotPassword extends JFrame {
         // Background
         JPanelWithBackground bg;
         try {
-            bg = new JPanelWithBackground("data/image/LoginBG.jpg");
+            bg = new JPanelWithBackground("data/image/Mẫu 1/ForgetBG.png");
         } catch (IOException e) {
             bg = new JPanelWithBackground();
         }
