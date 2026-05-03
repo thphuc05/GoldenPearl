@@ -3,7 +3,8 @@ package entity;
 public class SanPham {
     private String maMon;
     private String tenMon;
-    private double donGia;
+    private double giaGoc;
+    private double giaBan;
     private String moTa;
     private boolean trangThai;
     private LoaiSanPham loaiSanPham;
@@ -11,10 +12,11 @@ public class SanPham {
 
     public SanPham() {}
 
-    public SanPham(String maMon, String tenMon, double donGia, String moTa, boolean trangThai, LoaiSanPham loaiSanPham, String hinhAnh) {
+    public SanPham(String maMon, String tenMon, double giaGoc, double giaBan, String moTa, boolean trangThai, LoaiSanPham loaiSanPham, String hinhAnh) {
         this.maMon = maMon;
         this.tenMon = tenMon;
-        this.donGia = donGia;
+        this.giaGoc = giaGoc;
+        this.giaBan = giaBan;
         this.moTa = moTa;
         this.trangThai = trangThai;
         this.loaiSanPham = loaiSanPham;
@@ -27,8 +29,14 @@ public class SanPham {
     public String getTenMon() { return tenMon; }
     public void setTenMon(String tenMon) { this.tenMon = tenMon; }
 
-    public double getDonGia() { return donGia; }
-    public void setDonGia(double donGia) { this.donGia = donGia; }
+    public double getGiaGoc() { return giaGoc; }
+    public void setGiaGoc(double giaGoc) { this.giaGoc = giaGoc; }
+
+    public double getGiaBan() { return giaBan; }
+    public void setGiaBan(double giaBan) { this.giaBan = giaBan; }
+
+    public double getDonGia() { return giaBan; }
+    public void setDonGia(double donGia) { this.giaBan = donGia; }
 
     public String getMoTa() { return moTa; }
     public void setMoTa(String moTa) { this.moTa = moTa; }
@@ -42,7 +50,7 @@ public class SanPham {
     public String getHinhAnh() { return hinhAnh; }
     public void setHinhAnh(String hinhAnh) { this.hinhAnh = hinhAnh; }
 
-    public void capNhatGia(double giaMoi) { this.donGia = giaMoi; }
+    public void capNhatGia(double giaMoi) { this.giaBan = giaMoi; }
 
     @Override
     public String toString() {
