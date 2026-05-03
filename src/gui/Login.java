@@ -26,7 +26,6 @@ public class Login {
         protected void paintComponent(Graphics g) {
             Graphics2D g2d = (Graphics2D) g.create();
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            // Màu trắng với độ trong suốt 153 (~60%)
             g2d.setColor(new Color(255, 255, 255, 153));
             g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
             g2d.dispose();
