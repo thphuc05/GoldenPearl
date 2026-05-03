@@ -194,6 +194,9 @@ INSERT INTO Ban (maBan, soBan, sucChua, loaiBan, maKV, maTinhTrang) VALUES ('B02
 INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH001', N'Lê Văn C', '0888111222', 'levanc@gmail.com');
 INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH002', N'Phạm Minh Hoàng', '0912345678', 'hoangpm@gmail.com');
 INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH003', N'Nguyễn Thùy Linh', '0988777666', 'linhnt@gmail.com');
+INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH002', N'Nguyễn Văn A', '0909123456', 'nguyenvana@gmail.com');
+INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH003', N'Trần Thị B', '0911222333', 'tranthib@gmail.com');
+INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH004', N'Phạm Văn D', '0933444555', 'phamvand@gmail.com');
 
 -- Insert LoaiSanPham
 INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP01', N'Món chính', N'Các món chính');

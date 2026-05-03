@@ -1,5 +1,8 @@
 package gui;
 
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.components.DatePickerSettings;
+import entity.*;
 import dao.*;
 import entity.*;
 import javax.swing.*;
@@ -15,6 +18,15 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
+/**
+ * QuanLyDatBan – full rewrite
+ *
+ * Cards:
+ *   "TableSelection"  – chon ban (filter + grid)
+ *   "CustomerForm"    – thong tin khach hang
+ *   "OrderSelection"  – goi mon
+ *   "Payment"         – thanh toan
+ */
 public class QuanLyDatBan extends JPanel {
 
     // ── constants ────────────────────────────────────────────────────────
@@ -1525,5 +1537,120 @@ public class QuanLyDatBan extends JPanel {
             g2.dispose();
             super.paintComponent(g);
         }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  SHARED HELPERS
+    // ════════════════════════════════════════════════════════════════════════
+
+    // form helpers
+    private void addSectionTitle(JPanel p, GridBagConstraints g, int row, String text) {
+        g.gridy = row; g.gridx = 0; g.gridwidth = 2;
+        g.insets = new Insets(18, 12, 4, 12);
+        JLabel l = new JLabel(text);
+        l.setFont(FONT_BOLD_16); l.setForeground(NAVY);
+        l.setBorder(new MatteBorder(0, 0, 2, 0, GOLD));
+        p.add(l, g);
+        g.gridwidth = 1; g.insets = new Insets(8, 12, 8, 12);
+    }
+
+    private JTextField addDisabledRow(JPanel p, GridBagConstraints g, int row, String label) {
+        g.gridy = row; g.gridx = 0;
+        p.add(fieldLabel(label), g);
+        JTextField f = new JTextField();
+        f.setFont(FONT_PLAIN_14);
+        f.setBackground(new Color(245, 245, 245));
+        f.setForeground(TEXT_GRAY);
+        f.setEditable(false);
+        f.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(220, 220, 220), 1),
+                new EmptyBorder(6, 10, 6, 10)));
+        f.setPreferredSize(new Dimension(300, 38));
+        g.gridx = 1; p.add(f, g);
+        return f;
+    }
+
+    private JTextField addInputRow(JPanel p, GridBagConstraints g, int row, String label) {
+        g.gridy = row; g.gridx = 0;
+        p.add(fieldLabel(label), g);
+        JTextField f = new JTextField();
+        f.setFont(FONT_PLAIN_14);
+        f.setPreferredSize(new Dimension(300, 38));
+        f.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(210, 210, 210), 1),
+                new EmptyBorder(6, 10, 6, 10)));
+        f.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusGained(java.awt.event.FocusEvent e) {
+                f.setBorder(BorderFactory.createCompoundBorder(
+                        new LineBorder(ORANGE, 2), new EmptyBorder(6, 10, 6, 10)));
+            }
+            @Override public void focusLost(java.awt.event.FocusEvent e) {
+                f.setBorder(BorderFactory.createCompoundBorder(
+                        new LineBorder(new Color(210, 210, 210), 1), new EmptyBorder(6, 10, 6, 10)));
+            }
+        });
+        g.gridx = 1; p.add(f, g);
+        return f;
+    }
+
+    private JLabel fieldLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(FONT_BOLD_14);
+        l.setForeground(Color.decode("#1A252F"));
+        l.setHorizontalAlignment(SwingConstants.RIGHT);
+        return l;
+    }
+
+    // table header with proportional columns using GridBagLayout
+    private JPanel buildColHeader(Color bg, Color fg, int[] weights, String[] cols) {
+        JPanel h = new JPanel(new GridBagLayout());
+        h.setBackground(bg);
+        h.setPreferredSize(new Dimension(0, 42));
+        GridBagConstraints g = new GridBagConstraints();
+        g.fill = GridBagConstraints.BOTH; g.gridy = 0;
+        for (int i = 0; i < cols.length; i++) {
+            g.gridx = i; g.weightx = weights[i];
+            JLabel lbl = new JLabel(cols[i], SwingConstants.CENTER);
+            lbl.setFont(FONT_BOLD_14); lbl.setForeground(fg);
+            lbl.setBorder(new EmptyBorder(0, 6, 0, 6));
+            h.add(lbl, g);
+        }
+        return h;
+    }
+
+    // thin horizontal separator
+    private JSeparator thinDivider() {
+        JSeparator s = new JSeparator();
+        s.setForeground(new Color(230, 230, 230));
+        s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        return s;
+    }
+
+    // rounded circle button
+    private JButton circleBtn(String text, Color bg) {
+        JButton b = new JButton(text);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        b.setPreferredSize(new Dimension(32, 32));
+        b.setBackground(bg); b.setForeground(Color.WHITE);
+        b.setFocusPainted(false); b.setBorderPainted(false);
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return b;
+    }
+
+    // navigation button (outlined or filled)
+    private JButton navButton(String text, Color bg, Color fg) {
+        return navButton(text, bg, fg, false);
+    }
+
+    private JButton navButton(String text, Color bg, Color fg, boolean outlined) {
+        JButton b = new JButton(text);
+        b.setFont(FONT_BOLD_14);
+        b.setBackground(bg); b.setForeground(fg);
+        b.setFocusPainted(false);
+        b.setPreferredSize(new Dimension(0, 42));
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        if (outlined) b.setBorder(new LineBorder(NAVY, 2));
+        else          b.setBorderPainted(false);
+        return b;
     }
 }

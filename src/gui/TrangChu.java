@@ -175,6 +175,7 @@ public class TrangChu extends JFrame {
         panel.add(Box.createVerticalStrut(10));
 
         return panel;
+
     }
 
     private JPanel createUserBox() {
