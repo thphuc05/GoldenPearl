@@ -20,6 +20,7 @@ public class QuanLyNhanVien extends JPanel {
     private NhanVien selectedNhanVien;
     private NhanVien_DAO nv_dao;
     private String currentFilter = "NHAN_VIEN";
+    private int loadListVersion = 0;
 
     private final Color MAIN_BLUE  = Color.decode("#0B3D59");
     private final Color GOLD_COLOR = Color.decode("#C5A059");
@@ -48,6 +49,8 @@ public class QuanLyNhanVien extends JPanel {
 
         initEvents();
         setActiveTab(btnTabNhanVien);
+
+        clearInputs();
         loadList();
     }
 
@@ -138,7 +141,7 @@ public class QuanLyNhanVien extends JPanel {
         styleCombo(cbChucVu);
         pFields.add(mkFieldGroup("Chức vụ:", cbChucVu));
 
-        cbTrangThai = new JComboBox<>(new String[]{"Đang làm việc", "Nghỉ việc"});
+        cbTrangThai = new JComboBox<>(new String[]{"Đang làm việc"});
         styleCombo(cbTrangThai);
         pFields.add(mkFieldGroup("Trạng thái:", cbTrangThai));
 
@@ -196,6 +199,8 @@ public class QuanLyNhanVien extends JPanel {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Inter Bold", Font.BOLD, 13));
         btn.setFocusPainted(false);
+        btn.setOpaque(true);
+        btn.setContentAreaFilled(true);
         btn.setBackground(Color.WHITE);
         btn.setForeground(TEXT_DARK);
         btn.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
@@ -286,39 +291,63 @@ public class QuanLyNhanVien extends JPanel {
 
     // ---- events ----
     private void initEvents() {
-        btnTabNhanVien.addActionListener(e -> { currentFilter = "NHAN_VIEN"; setActiveTab(btnTabNhanVien); loadList(); });
-        btnTabQuanLy.addActionListener(e -> { currentFilter = "QUAN_LY"; setActiveTab(btnTabQuanLy); loadList(); });
+        btnTabNhanVien.addActionListener(e -> { currentFilter = "NHAN_VIEN"; setActiveTab(btnTabNhanVien); clearInputs(); loadList(); });
+        btnTabQuanLy.addActionListener(e -> { currentFilter = "QUAN_LY"; setActiveTab(btnTabQuanLy); clearInputs(); loadList(); });
         btnAdd.addActionListener(e -> addNhanVien());
         btnUpdate.addActionListener(e -> updateNhanVien());
         btnRemove.addActionListener(e -> deleteNhanVien());
         btnReset.addActionListener(e -> clearInputs());
         btnClear.addActionListener(e -> { txtSearch.setText(""); clearInputs(); loadList(); });
         btnSearch.addActionListener(e -> searchNhanVien());
+
+        cbChucVu.addActionListener(e -> {
+            if (cbChucVu.getSelectedItem() == null) return;
+            if (selectedNhanVien != null) return;
+            if (txtTenNV.getText().trim().isEmpty()) return;
+            ChucVu cv = ChucVu.fromString(cbChucVu.getSelectedItem().toString());
+            String prefix = cv == ChucVu.QUAN_LY ? "QL" : "NV";
+            txtMaNV.setText(nv_dao.getNextMaByPrefix(prefix));
+        });
     }
 
     // ---- load list ----
     public void refreshData() { loadList(); }
 
     private void loadList() {
+        final String filter = currentFilter;
+        final int version = ++loadListVersion;
         listContainer.removeAll();
-        List<NhanVien> ds = nv_dao.getAllNhanVien();
-        if (ds == null) { listContainer.revalidate(); listContainer.repaint(); return; }
-
-        long countNV = ds.stream().filter(n -> n.getChucVu() == ChucVu.NHAN_VIEN).count();
-        long countQL = ds.stream().filter(n -> n.getChucVu() == ChucVu.QUAN_LY).count();
-        btnTabNhanVien.setText("Nhân Viên (" + countNV + ")");
-        btnTabQuanLy.setText("Quản Lý (" + countQL + ")");
-
-        for (NhanVien nv : ds) {
-            boolean match = "NHAN_VIEN".equals(currentFilter)
-                    ? nv.getChucVu() == ChucVu.NHAN_VIEN
-                    : nv.getChucVu() == ChucVu.QUAN_LY;
-            if (!match) continue;
-            listContainer.add(makeEmployeeCard(nv));
-            listContainer.add(Box.createVerticalStrut(4));
-        }
         listContainer.revalidate();
         listContainer.repaint();
+        new SwingWorker<List<NhanVien>, Void>() {
+            @Override
+            protected List<NhanVien> doInBackground() {
+                return nv_dao.getAllNhanVien();
+            }
+            @Override
+            protected void done() {
+                if (version != loadListVersion) return;
+                try {
+                    List<NhanVien> ds = get();
+                    listContainer.removeAll();
+                    if (ds == null) { listContainer.revalidate(); listContainer.repaint(); return; }
+                    long countNV = ds.stream().filter(n -> n.getChucVu() == ChucVu.NHAN_VIEN).count();
+                    long countQL = ds.stream().filter(n -> n.getChucVu() == ChucVu.QUAN_LY).count();
+                    btnTabNhanVien.setText("Nhân Viên (" + countNV + ")");
+                    btnTabQuanLy.setText("Quản Lý (" + countQL + ")");
+                    for (NhanVien nv : ds) {
+                        boolean match = "NHAN_VIEN".equals(filter)
+                                ? nv.getChucVu() == ChucVu.NHAN_VIEN
+                                : nv.getChucVu() == ChucVu.QUAN_LY;
+                        if (!match) continue;
+                        listContainer.add(makeEmployeeCard(nv));
+                        listContainer.add(Box.createVerticalStrut(4));
+                    }
+                    listContainer.revalidate();
+                    listContainer.repaint();
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+        }.execute();
     }
 
     private JPanel makeEmployeeCard(NhanVien nv) {
@@ -369,14 +398,14 @@ public class QuanLyNhanVien extends JPanel {
         txtSoDT.setText(nv.getSoDT() != null ? nv.getSoDT() : "");
         txtSoCCCD.setText(nv.getSoCCCD() != null ? nv.getSoCCCD() : "");
         cbChucVu.setSelectedItem(nv.getChucVu().getTenHienThi());
-        cbTrangThai.setSelectedItem(nv.isTrangThai() ? "Đang làm việc" : "Nghỉ việc");
+        cbTrangThai.setSelectedIndex(0);
     }
 
     private void clearInputs() {
-        txtMaNV.setText(nv_dao.getNextMaNV());
+        selectedNhanVien = null;
+        txtMaNV.setText("");
         txtTenNV.setText(""); txtSoDT.setText(""); txtSoCCCD.setText("");
         cbChucVu.setSelectedIndex(0); cbTrangThai.setSelectedIndex(0);
-        selectedNhanVien = null;
         listContainer.repaint();
     }
 
@@ -396,9 +425,10 @@ public class QuanLyNhanVien extends JPanel {
         String sdt  = txtSoDT.getText().trim();
         String cccd = txtSoCCCD.getText().trim();
         boolean tt  = "Đang làm việc".equals(cbTrangThai.getSelectedItem().toString());
-        String maNV = nv_dao.getNextMaNV();
-        NhanVien nv = new NhanVien(maNV, ten, sdt, cccd,
-                ChucVu.fromString(cbChucVu.getSelectedItem().toString()), tt, null);
+        ChucVu cv = ChucVu.fromString(cbChucVu.getSelectedItem().toString());
+        String prefix = cv == ChucVu.QUAN_LY ? "QL" : "NV";
+        String maNV = nv_dao.getNextMaByPrefix(prefix);
+        NhanVien nv = new NhanVien(maNV, ten, sdt, cccd, cv, tt, null);
         if (nv_dao.addNhanVien(nv)) {
             JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công!");
             loadList(); clearInputs();
@@ -407,7 +437,13 @@ public class QuanLyNhanVien extends JPanel {
 
     private void updateNhanVien() {
         String ma = txtMaNV.getText().trim();
-        if (ma.isEmpty()) { JOptionPane.showMessageDialog(this, "Chọn nhân viên cần cập nhật!"); return; }
+        if (ma.isEmpty()) {
+            if (cbChucVu.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "Vui lòng chọn chức vụ!"); return; }
+            ChucVu cvAuto = ChucVu.fromString(cbChucVu.getSelectedItem().toString());
+            String prefixAuto = cvAuto == ChucVu.QUAN_LY ? "QL" : "NV";
+            ma = nv_dao.getNextMaByPrefix(prefixAuto);
+            txtMaNV.setText(ma);
+        }
         if (!validateData(false)) return;
         String ten  = formatName(txtTenNV.getText().trim());
         String sdt  = txtSoDT.getText().trim();
@@ -415,10 +451,14 @@ public class QuanLyNhanVien extends JPanel {
         boolean tt  = "Đang làm việc".equals(cbTrangThai.getSelectedItem().toString());
         NhanVien nv = new NhanVien(ma, ten, sdt, cccd,
                 ChucVu.fromString(cbChucVu.getSelectedItem().toString()), tt, null);
-        if (nv_dao.updateNhanVien(nv)) {
-            JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
-            loadList();
-        } else JOptionPane.showMessageDialog(this, "Cập nhật thất bại!");
+        List<NhanVien> ds = nv_dao.getAllNhanVien();
+        final String maFinal = ma;
+        boolean exists = ds != null && ds.stream().anyMatch(n -> n.getMaNV().equals(maFinal));
+        boolean ok = exists ? nv_dao.updateNhanVien(nv) : nv_dao.addNhanVien(nv);
+        if (ok) {
+            JOptionPane.showMessageDialog(this, exists ? "Cập nhật thành công!" : "Thêm mới thành công!");
+            loadList(); clearInputs();
+        } else JOptionPane.showMessageDialog(this, "Lưu thất bại!");
     }
 
     private void deleteNhanVien() {

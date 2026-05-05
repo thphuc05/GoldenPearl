@@ -10,19 +10,24 @@ import java.util.List;
 
 public class NhanVien_DAO {
     public String getNextMaNV() {
+        return getNextMaByPrefix("NV");
+    }
+
+    public String getNextMaByPrefix(String prefix) {
         Connection con = ConnectDB.getConnection();
-        String ma = "NV001";
+        String ma = prefix + "001";
         if (con == null) return ma;
         try {
-            String sql = "SELECT MAX(maNV) FROM NhanVien";
-            Statement st = con.createStatement();
-            ResultSet rs = st.executeQuery(sql);
+            String sql = "SELECT MAX(maNV) FROM NhanVien WHERE maNV LIKE ?";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setString(1, prefix + "%");
+            ResultSet rs = ps.executeQuery();
             if (rs.next() && rs.getString(1) != null) {
                 String maxMa = rs.getString(1);
-                int num = Integer.parseInt(maxMa.substring(2)) + 1;
-                ma = String.format("NV%03d", num);
+                int num = Integer.parseInt(maxMa.substring(prefix.length())) + 1;
+                ma = String.format("%s%03d", prefix, num);
             }
-            st.close();
+            ps.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }

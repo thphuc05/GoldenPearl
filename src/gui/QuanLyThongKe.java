@@ -53,7 +53,6 @@ QuanLyThongKe extends JPanel {
         add(createContentPanel(), BorderLayout.CENTER);
 
         initDates();
-        loadData();
     }
 
     public void refreshData() {
@@ -83,7 +82,6 @@ QuanLyThongKe extends JPanel {
 
         panel.add(createTopRow(), BorderLayout.NORTH);
         panel.add(createBottomRow(), BorderLayout.CENTER);
-        panel.add(createActionBar(), BorderLayout.SOUTH);
         return panel;
     }
 
@@ -270,34 +268,6 @@ QuanLyThongKe extends JPanel {
         return panel;
     }
 
-    // ── Action bar ────────────────────────────────────────────────────────────
-    private JPanel createActionBar() {
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        bar.setBackground(CONTENT_BG);
-        bar.setBorder(new EmptyBorder(8, 0, 0, 0));
-
-        JButton btnDetail = new JButton("  📄  XEM CHI TIẾT GIAO DỊCH");
-        btnDetail.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnDetail.setBackground(CARD_BG);
-        btnDetail.setForeground(MAIN_BLUE);
-        btnDetail.setFocusPainted(false);
-        btnDetail.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnDetail.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(GOLD_COLOR, 1, true),
-            new EmptyBorder(9, 24, 9, 24)
-        ));
-        btnDetail.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btnDetail.setBackground(new Color(245, 235, 210)); }
-            public void mouseExited(MouseEvent e)  { btnDetail.setBackground(CARD_BG); }
-        });
-        btnDetail.addActionListener(e ->
-            JOptionPane.showMessageDialog(this,
-                "Chức năng xem chi tiết giao dịch đang được phát triển.",
-                "Thông báo", JOptionPane.INFORMATION_MESSAGE));
-        bar.add(btnDetail);
-        return bar;
-    }
-
     // ── Data loading ──────────────────────────────────────────────────────────
     private void initDates() {
         Calendar cal = Calendar.getInstance();
@@ -307,40 +277,47 @@ QuanLyThongKe extends JPanel {
     }
 
     private void loadData() {
-        try {
-            Date fromDate = sdf.parse(txtFromDate.getText());
-            Date toDate   = sdf.parse(txtToDate.getText());
-
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(fromDate);
-            cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0);
-            Timestamp tsFrom = new Timestamp(cal.getTimeInMillis());
-
-            cal.setTime(toDate);
-            cal.set(Calendar.HOUR_OF_DAY, 23); cal.set(Calendar.MINUTE, 59); cal.set(Calendar.SECOND, 59);
-            Timestamp tsTo = new Timestamp(cal.getTimeInMillis());
-
-            List<HoaDon> invoices = hd_dao.getHoaDonByDateRange(fromDate, toDate);
-            long paidCount = invoices.stream().filter(HoaDon::isTrangThai).count();
-            double revenue = invoices.stream()
-                .filter(HoaDon::isTrangThai)
-                .mapToDouble(HoaDon::getTongTien)
-                .sum();
-
-            lblTotalRevenue.setText(df.format(revenue) + " VNĐ");
-            lblTotalInvoices.setText(String.valueOf(paidCount));
-
-            Map<String, Double> catRevenue = ct_dao.getRevenueByCategoryInDateRange(tsFrom, tsTo);
-            donutChart.setData(catRevenue);
-            updateLegend(catRevenue);
-
-            Map<String, Integer> top5 = ct_dao.getTop5SellingDishes();
-            updateMiniCards(top5);
-            updateBestSellers(top5);
-
-        } catch (ParseException e) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn ngày hợp lệ.");
-        }
+        final String fromText = txtFromDate.getText();
+        final String toText   = txtToDate.getText();
+        new SwingWorker<Object[], Void>() {
+            @Override
+            protected Object[] doInBackground() throws Exception {
+                Date fromDate = sdf.parse(fromText);
+                Date toDate   = sdf.parse(toText);
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(fromDate);
+                cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0);
+                Timestamp tsFrom = new Timestamp(cal.getTimeInMillis());
+                cal.setTime(toDate);
+                cal.set(Calendar.HOUR_OF_DAY, 23); cal.set(Calendar.MINUTE, 59); cal.set(Calendar.SECOND, 59);
+                Timestamp tsTo = new Timestamp(cal.getTimeInMillis());
+                List<HoaDon> invoices = hd_dao.getHoaDonByDateRange(fromDate, toDate);
+                long paidCount = invoices.stream().filter(HoaDon::isTrangThai).count();
+                double revenue = invoices.stream().filter(HoaDon::isTrangThai).mapToDouble(HoaDon::getTongTien).sum();
+                Map<String, Double> catRevenue = ct_dao.getRevenueByCategoryInDateRange(tsFrom, tsTo);
+                Map<String, Integer> top5 = ct_dao.getTop5SellingDishes();
+                return new Object[]{paidCount, revenue, catRevenue, top5};
+            }
+            @Override
+            @SuppressWarnings("unchecked")
+            protected void done() {
+                try {
+                    Object[] r = get();
+                    long paidCount = (long) r[0];
+                    double revenue = (double) r[1];
+                    Map<String, Double>  catRevenue = (Map<String, Double>)  r[2];
+                    Map<String, Integer> top5       = (Map<String, Integer>) r[3];
+                    lblTotalRevenue.setText(df.format(revenue) + " VNĐ");
+                    lblTotalInvoices.setText(String.valueOf(paidCount));
+                    donutChart.setData(catRevenue);
+                    updateLegend(catRevenue);
+                    updateMiniCards(top5);
+                    updateBestSellers(top5);
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(QuanLyThongKe.this, "Vui lòng chọn ngày hợp lệ.");
+                }
+            }
+        }.execute();
     }
 
     private void updateLegend(Map<String, Double> catRevenue) {
