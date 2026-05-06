@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(javac -cp \"lib/*;src;out/production/GoldenPearl\" -sourcepath src -d out/production/GoldenPearl src/gui/TrangChu.java src/gui/QuanLyDatBan.java src/gui/QuanLyHoaDon.java src/dao/HoaDon_DAO.java)",
+      "Bash(dir lib *)",
+      "Bash(dir *.jar)",
+      "Bash(dir .idea\\\\libraries)"
+    ]
+  }
+}

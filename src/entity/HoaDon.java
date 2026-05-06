@@ -1,16 +1,19 @@
 package entity;
 
 import java.util.Date;
+import java.sql.Time;
 
 public class HoaDon {
     private String maHD;
     private Date ngayLap;
+    private Time thoiGian;
     private double tongTien;
     private boolean trangThai;
     private DonDatBan donDatBan;
     private NhanVien nhanVien;
     private KhuyenMai khuyenMai;
     private KhachHang khachHang;
+    private double tienCoc;
 
     public HoaDon() {}
 
@@ -25,11 +28,27 @@ public class HoaDon {
         this.khachHang = khachHang;
     }
 
+    public HoaDon(String maHD, Date ngayLap, Time thoiGian, double tongTien, boolean trangThai, DonDatBan donDatBan, NhanVien nhanVien, KhuyenMai khuyenMai, KhachHang khachHang) {
+        this(maHD, ngayLap, tongTien, trangThai, donDatBan, nhanVien, khuyenMai, khachHang);
+        this.thoiGian = thoiGian;
+    }
+
+    public HoaDon(String maHD, Date ngayLap, Time thoiGian, double tongTien, boolean trangThai, DonDatBan donDatBan, NhanVien nhanVien, KhuyenMai khuyenMai, KhachHang khachHang, double tienCoc) {
+        this(maHD, ngayLap, thoiGian, tongTien, trangThai, donDatBan, nhanVien, khuyenMai, khachHang);
+        this.tienCoc = tienCoc;
+    }
+
+    public double getTienCoc() { return tienCoc; }
+    public void setTienCoc(double tienCoc) { this.tienCoc = tienCoc; }
+
     public String getMaHD() { return maHD; }
     public void setMaHD(String maHD) { this.maHD = maHD; }
 
     public Date getNgayLap() { return ngayLap; }
     public void setNgayLap(Date ngayLap) { this.ngayLap = ngayLap; }
+
+    public Time getThoiGian() { return thoiGian; }
+    public void setThoiGian(Time thoiGian) { this.thoiGian = thoiGian; }
 
     public double getTongTien() { return tongTien; }
     public void setTongTien(double tongTien) { this.tongTien = tongTien; }

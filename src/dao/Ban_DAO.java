@@ -4,6 +4,7 @@ import connectDB.ConnectDB;
 import entity.Ban;
 import entity.KhuVuc;
 import entity.TrangThaiBan;
+import util.SQLLogger;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,7 @@ public class Ban_DAO {
         List<Ban> dsBan = new ArrayList<>();
         Connection con = ConnectDB.getConnection();
         try {
-            String sql = "SELECT * FROM Ban";
+            String sql = "SELECT * FROM Ban ORDER BY soBan ASC";
             Statement statement = con.createStatement();
             ResultSet rs = statement.executeQuery(sql);
             while (rs.next()) {
@@ -38,6 +39,28 @@ public class Ban_DAO {
         return dsBan;
     }
 
+    public Ban getBanByMa(String maBan) {
+        Connection con = ConnectDB.getConnection();
+        try {
+            PreparedStatement st = con.prepareStatement("SELECT * FROM Ban WHERE maBan = ?");
+            st.setString(1, maBan);
+            ResultSet rs = st.executeQuery();
+            if (rs.next()) {
+                Ban ban = new Ban();
+                ban.setMaBan(rs.getString("maBan"));
+                ban.setSoBan(rs.getInt("soBan"));
+                ban.setSucChua(rs.getInt("sucChua"));
+                ban.setLoaiBan(rs.getString("loaiBan"));
+                KhuVuc kv = new KhuVuc();
+                kv.setMaKV(rs.getString("maKV"));
+                ban.setKhuVuc(kv);
+                ban.setTinhTrangBan(TrangThaiBan.fromString(rs.getString("maTinhTrang")));
+                return ban;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
+    }
+
     public boolean updateTinhTrangBan(String maBan, TrangThaiBan tinhTrang) {
         Connection con = ConnectDB.getConnection();
         PreparedStatement statement = null;
@@ -54,6 +77,9 @@ public class Ban_DAO {
             statement.setString(1, dbValue);
             statement.setString(2, maBan);
             n = statement.executeUpdate();
+            if (n > 0) SQLLogger.log(
+                "UPDATE Ban SET maTinhTrang = " + SQLLogger.str(dbValue) +
+                " WHERE maBan = " + SQLLogger.str(maBan) + ";");
         } catch (SQLException e) {
             e.printStackTrace();
         }

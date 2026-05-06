@@ -20,7 +20,8 @@ public class SanPham_DAO {
                 SanPham sp = new SanPham();
                 sp.setMaMon(rs.getString("maMon"));
                 sp.setTenMon(rs.getString("tenMon"));
-                sp.setDonGia(rs.getDouble("donGia"));
+                sp.setGiaGoc(rs.getDouble("giaGoc"));
+                sp.setGiaBan(rs.getDouble("giaBan"));
                 sp.setTrangThai(rs.getBoolean("trangThai"));
                 
                 // Khôi phục cơ chế an toàn: Bỏ qua nếu cột không tồn tại
@@ -45,14 +46,14 @@ public class SanPham_DAO {
         PreparedStatement statement = null;
         int n = 0;
         try {
-            // Quay lại INSERT cơ bản (không có moTa, hinhAnh để tránh lỗi SQL)
-            String sql = "INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES (?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES (?, ?, ?, ?, ?, ?)";
             statement = con.prepareStatement(sql);
             statement.setString(1, sp.getMaMon());
             statement.setString(2, sp.getTenMon());
-            statement.setDouble(3, sp.getDonGia());
-            statement.setBoolean(4, sp.isTrangThai());
-            statement.setString(5, sp.getLoaiSanPham().getMaLoai());
+            statement.setDouble(3, sp.getGiaGoc());
+            statement.setDouble(4, sp.getGiaBan());
+            statement.setBoolean(5, sp.isTrangThai());
+            statement.setString(6, sp.getLoaiSanPham().getMaLoai());
             n = statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -65,14 +66,14 @@ public class SanPham_DAO {
         PreparedStatement statement = null;
         int n = 0;
         try {
-            // Quay lại UPDATE cơ bản
-            String sql = "UPDATE SanPham SET tenMon = ?, donGia = ?, trangThai = ?, maDanhMuc = ? WHERE maMon = ?";
+            String sql = "UPDATE SanPham SET tenMon = ?, giaGoc = ?, giaBan = ?, trangThai = ?, maDanhMuc = ? WHERE maMon = ?";
             statement = con.prepareStatement(sql);
             statement.setString(1, sp.getTenMon());
-            statement.setDouble(2, sp.getDonGia());
-            statement.setBoolean(3, sp.isTrangThai());
-            statement.setString(4, sp.getLoaiSanPham().getMaLoai());
-            statement.setString(5, sp.getMaMon());
+            statement.setDouble(2, sp.getGiaGoc());
+            statement.setDouble(3, sp.getGiaBan());
+            statement.setBoolean(4, sp.isTrangThai());
+            statement.setString(5, sp.getLoaiSanPham().getMaLoai());
+            statement.setString(6, sp.getMaMon());
             n = statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
