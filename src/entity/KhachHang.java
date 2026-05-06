@@ -4,15 +4,13 @@ public class KhachHang {
     private String maKH;
     private String tenKH;
     private String soDT;
-    private String email;
 
     public KhachHang() {}
 
-    public KhachHang(String maKH, String tenKH, String soDT, String email) {
+    public KhachHang(String maKH, String tenKH, String soDT) {
         this.maKH = maKH;
         this.tenKH = tenKH;
         this.soDT = soDT;
-        this.email = email;
     }
 
     public String getMaKH() { return maKH; }
@@ -23,9 +21,6 @@ public class KhachHang {
 
     public String getSoDT() { return soDT; }
     public void setSoDT(String soDT) { this.soDT = soDT; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
 
     // Các phương thức nghiệp vụ từ diagram
     public double tinhTongChi() { return 0; }
