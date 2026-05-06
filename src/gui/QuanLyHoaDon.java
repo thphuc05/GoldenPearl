@@ -24,8 +24,7 @@ public class QuanLyHoaDon extends JPanel {
     private JButton btnSearch, btnRefresh, btnPrint, btnViewDetail;
     private JTable tableHoaDon, tableChiTiet;
     private DefaultTableModel modelHoaDon, modelChiTiet;
-
-    private JLabel lblMaHD, lblNgayLap, lblNhanVien, lblKhachHang, lblTongTien, lblTrangThai;
+    private JLabel lblMaHD, lblNgayLap, lblNhanVien, lblKhachHang, lblTongTien, lblTienCoc, lblTongCong, lblTrangThai;
 
     private final HoaDon_DAO hd_dao = new HoaDon_DAO();
     private final ChiTietHoaDon_DAO ct_dao = new ChiTietHoaDon_DAO();
@@ -63,16 +62,20 @@ public class QuanLyHoaDon extends JPanel {
         content.add(createFilterPanel(), BorderLayout.NORTH);
         content.add(createCenterPanel(), BorderLayout.CENTER);
         content.add(createBottomPanel(), BorderLayout.SOUTH);
-
-        // Load khu vuc
-        cmbKhuVuc.addItem("Tất cả");
-        for (KhuVuc kv : kv_dao.getAllKhuVuc()) cmbKhuVuc.addItem(kv.getTenKV());
-
         txtFromDate.setText(dateSdf.format(new Date()));
         txtToDate.setText(dateSdf.format(new Date()));
 
         bindEvents();
-        loadDataFromDB();
+
+        // Load khu vuc async
+        cmbKhuVuc.addItem("Tất cả");
+        new SwingWorker<java.util.List<KhuVuc>, Void>() {
+            @Override protected java.util.List<KhuVuc> doInBackground() { return kv_dao.getAllKhuVuc(); }
+            @Override protected void done() {
+                try { for (KhuVuc kv : get()) cmbKhuVuc.addItem(kv.getTenKV()); }
+                catch (Exception e) { e.printStackTrace(); }
+            }
+        }.execute();
     }
 
     private JPanel createFilterPanel() {
@@ -162,7 +165,7 @@ public class QuanLyHoaDon extends JPanel {
         tableHoaDon.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object val, boolean sel,
-                    boolean focus, int row, int col) {
+                                                           boolean focus, int row, int col) {
                 super.getTableCellRendererComponent(t, val, sel, focus, row, col);
                 String s = val == null ? "" : val.toString();
                 if (!sel) {
@@ -212,7 +215,7 @@ public class QuanLyHoaDon extends JPanel {
     }
 
     private JPanel createInfoPanel() {
-        JPanel info = new JPanel(new GridLayout(6, 1, 0, 4));
+        JPanel info = new JPanel(new GridLayout(8, 1, 0, 4));
         info.setBackground(Color.WHITE);
         info.setBorder(new EmptyBorder(8, 10, 4, 10));
 
@@ -221,6 +224,8 @@ public class QuanLyHoaDon extends JPanel {
         lblNhanVien   = mkInfoLabel();
         lblKhachHang  = mkInfoLabel();
         lblTongTien   = mkInfoLabel();
+        lblTienCoc    = mkInfoLabel();
+        lblTongCong   = mkInfoLabel();
         lblTrangThai  = mkInfoLabel();
 
         info.add(lblMaHD);
@@ -228,6 +233,8 @@ public class QuanLyHoaDon extends JPanel {
         info.add(lblNhanVien);
         info.add(lblKhachHang);
         info.add(lblTongTien);
+        info.add(lblTienCoc);
+        info.add(lblTongCong);
         info.add(lblTrangThai);
 
         setInvoiceDetail(null, null);
@@ -274,7 +281,7 @@ public class QuanLyHoaDon extends JPanel {
             HoaDon hd = hd_dao.getHoaDonByMa(maHD);
             if (hd != null) {
                 List<ChiTietHoaDon> dsCT = ct_dao.getChiTietByMaHD(maHD);
-                new InvoiceDialog((JFrame) SwingUtilities.getWindowAncestor(this), hd, dsCT, true).setVisible(true);
+                new InvoiceDialog(SwingUtilities.getWindowAncestor(this), hd, dsCT, true).setVisible(true);
             }
         });
 
@@ -282,11 +289,15 @@ public class QuanLyHoaDon extends JPanel {
             int row = tableHoaDon.getSelectedRow();
             if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn hóa đơn cần in!"); return; }
             String maHD = modelHoaDon.getValueAt(row, 0).toString();
-            HoaDon hd = hd_dao.getHoaDonByMa(maHD);
-            if (hd != null) {
-                List<ChiTietHoaDon> dsCT = ct_dao.getChiTietByMaHD(maHD);
-                new InvoiceDialog((JFrame) SwingUtilities.getWindowAncestor(this), hd, dsCT, false).setVisible(true);
-            }
+            Object[] options = {"Xác nhận", "Hủy"};
+            int choice = JOptionPane.showOptionDialog(this,
+                    "Bạn chắc chắn muốn in hóa đơn " + maHD + "?",
+                    "Xác nhận in hóa đơn",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null, options, options[0]);
+            if (choice == 0) {
+                JOptionPane.showMessageDialog(this, "In hóa đơn thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);}
         });
     }
 
@@ -295,10 +306,25 @@ public class QuanLyHoaDon extends JPanel {
     private void loadDataFromDB() {
         modelHoaDon.setRowCount(0);
         modelChiTiet.setRowCount(0);
-        maHDToKhuVuc = hd_dao.getKhuVucMapForAllHoaDon();
-        List<HoaDon> ds = hd_dao.getAllHoaDon();
-        cachedHoaDon = ds != null ? ds : new ArrayList<>();
-        applyCurrentFilters();
+        new SwingWorker<Object[], Void>() {
+            @Override
+            protected Object[] doInBackground() {
+                Map<String, String> kvMap = hd_dao.getKhuVucMapForAllHoaDon();
+                List<HoaDon> ds = hd_dao.getAllHoaDon();
+                return new Object[]{kvMap, ds};
+            }
+            @Override
+            @SuppressWarnings("unchecked")
+            protected void done() {
+                try {
+                    Object[] result = get();
+                    maHDToKhuVuc = (Map<String, String>) result[0];
+                    List<HoaDon> ds = (List<HoaDon>) result[1];
+                    cachedHoaDon = ds != null ? ds : new ArrayList<>();
+                    applyCurrentFilters();
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+        }.execute();
     }
 
     private void applyCurrentFilters() {
@@ -328,8 +354,8 @@ public class QuanLyHoaDon extends JPanel {
         modelHoaDon.addRow(new Object[]{
                 hd.getMaHD(),
                 hd.getNgayLap() != null ? dateSdf.format(hd.getNgayLap()) + " " +
-                        (hd.getThoiGian() != null ? hd.getThoiGian().toString().substring(0, 5)
-                                                  : timeSdf.format(hd.getNgayLap())) : "",
+                                          (hd.getThoiGian() != null ? hd.getThoiGian().toString().substring(0, 5)
+                                           : timeSdf.format(hd.getNgayLap())) : "",
                 hd.getNhanVien() != null ? hd.getNhanVien().getMaNV() : "",
                 hd.getKhachHang() != null ? hd.getKhachHang().getMaKH() : "Khách vãng lai",
                 hd.isTrangThai() ? "Đã thanh toán" : "Chưa thanh toán"
@@ -339,10 +365,23 @@ public class QuanLyHoaDon extends JPanel {
     private void loadSelectedDetail() {
         int row = tableHoaDon.getSelectedRow();
         if (row == -1) { setInvoiceDetail(null, null); modelChiTiet.setRowCount(0); return; }
-        String maHD = modelHoaDon.getValueAt(row, 0).toString();
-        HoaDon hd = hd_dao.getHoaDonByMa(maHD);
-        List<ChiTietHoaDon> dsCT = ct_dao.getChiTietByMaHD(maHD);
-        setInvoiceDetail(hd, dsCT);
+        final String maHD = modelHoaDon.getValueAt(row, 0).toString();
+        new SwingWorker<Object[], Void>() {
+            @Override
+            protected Object[] doInBackground() {
+                HoaDon hd = hd_dao.getHoaDonByMa(maHD);
+                List<ChiTietHoaDon> dsCT = ct_dao.getChiTietByMaHD(maHD);
+                return new Object[]{hd, dsCT};
+            }
+            @Override
+            @SuppressWarnings("unchecked")
+            protected void done() {
+                try {
+                    Object[] result = get();
+                    setInvoiceDetail((HoaDon) result[0], (List<ChiTietHoaDon>) result[1]);
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+        }.execute();
     }
 
     private void setInvoiceDetail(HoaDon hd, List<ChiTietHoaDon> dsCT) {
@@ -353,6 +392,8 @@ public class QuanLyHoaDon extends JPanel {
             lblNhanVien.setText("Nhân Viên: ");
             lblKhachHang.setText("Khách Hàng: ");
             lblTongTien.setText("Tổng Tiền: ");
+            lblTienCoc.setText("Tiền Cọc: ");
+            lblTongCong.setText("Tổng Cộng: ");
             lblTrangThai.setText("Trạng Thái: ");
             return;
         }
@@ -366,6 +407,11 @@ public class QuanLyHoaDon extends JPanel {
         lblKhachHang.setText("Khách Hàng: " + (hd.getKhachHang() != null
                 ? hd.getKhachHang().getMaKH() : "Khách vãng lai"));
         lblTongTien.setText("Tổng Tiền: " + String.format("%,.0fđ", hd.getTongTien()));
+        double coc = hd.getTienCoc();
+        double tongCong = hd.getTongTien() - coc;
+        lblTienCoc.setText("Tiền Cọc: " + String.format("%,.0fđ", coc));
+        lblTongCong.setText("Tổng Cộng: " + String.format("%,.0fđ", tongCong));
+        lblTongCong.setForeground(tongCong < 0 ? Color.decode("#E74C3C") : TEXT_DARK);
         boolean paid = hd.isTrangThai();
         lblTrangThai.setText("Trạng Thái: " + (paid ? "Đã thanh toán" : "Chưa thanh toán"));
         lblTrangThai.setForeground(paid ? GREEN_STATUS : Color.decode("#E67E22"));
@@ -500,7 +546,10 @@ public class QuanLyHoaDon extends JPanel {
     }
 
     // ---- InvoiceDialog ----
-    class InvoiceDialog extends JDialog {
+    static class InvoiceDialog extends JDialog {
+        private static final Color S_TEXT_DARK = Color.decode("#333333");
+        private static final java.text.SimpleDateFormat S_DATETIME_SDF =
+                new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
         private final Color R_NAVY  = Color.decode("#0B3D59");
         private final Color R_GOLD  = Color.decode("#C5A059");
         private final Color R_LINE  = new Color(220, 220, 220);
@@ -508,9 +557,9 @@ public class QuanLyHoaDon extends JPanel {
         private final Color R_BG    = Color.WHITE;
 
         private JPanel receiptPanel;
-
-        public InvoiceDialog(JFrame parent, HoaDon hd, List<ChiTietHoaDon> dsCT, boolean isDetail) {
-            super(parent, isDetail ? "Chi Tiết Hóa Đơn" : "Phiếu Thanh Toán", true);
+        public InvoiceDialog(java.awt.Window parent, HoaDon hd, List<ChiTietHoaDon> dsCT, boolean isDetail) {
+            super(parent, isDetail ? "Chi Tiết Hóa Đơn" : "Phiếu Thanh Toán",
+                    java.awt.Dialog.ModalityType.APPLICATION_MODAL);
             setSize(460, 648);
             setLocationRelativeTo(parent);
             setResizable(false);
@@ -528,22 +577,22 @@ public class QuanLyHoaDon extends JPanel {
             bar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, R_LINE));
 
             if (isDetail) {
-                JButton btnClose = mkDialogBtn("ĐÓNG", Color.WHITE, TEXT_DARK);
+                JButton btnClose = mkDialogBtn("ĐÓNG", Color.WHITE, S_TEXT_DARK);
                 btnClose.setBorder(BorderFactory.createLineBorder(R_LINE));
                 btnClose.addActionListener(e -> dispose());
                 bar.add(btnClose);
             } else {
-                JButton btnCancel = mkDialogBtn("HỦY", Color.WHITE, TEXT_DARK);
+                JButton btnCancel = mkDialogBtn("HỦY", Color.WHITE, S_TEXT_DARK);
                 btnCancel.setBorder(BorderFactory.createLineBorder(R_LINE));
                 btnCancel.addActionListener(e -> dispose());
-                JButton btnPay = mkDialogBtn("THANH TOÁN", R_NAVY, Color.WHITE);
-                btnPay.addActionListener(e -> {
+                JButton btnConfirm = mkDialogBtn("XÁC NHẬN", R_NAVY, Color.WHITE);
+                btnConfirm.addActionListener(e -> {
                     JOptionPane.showMessageDialog(InvoiceDialog.this,
                             "In hóa đơn thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                     dispose();
                 });
                 bar.add(btnCancel);
-                bar.add(btnPay);
+                bar.add(btnConfirm);
             }
             add(bar, BorderLayout.SOUTH);
         }
@@ -574,7 +623,7 @@ public class QuanLyHoaDon extends JPanel {
             // ── Invoice info ──────────────────────────────────────────────
             p.add(mkInfoRow("Mã hóa đơn", hd.getMaHD()));
             p.add(Box.createVerticalStrut(3));
-            p.add(mkInfoRow("Ngày lập", hd.getNgayLap() != null ? dateTimeSdf.format(hd.getNgayLap()) : "—"));
+            p.add(mkInfoRow("Ngày lập", hd.getNgayLap() != null ? S_DATETIME_SDF.format(hd.getNgayLap()) : "—"));
             p.add(Box.createVerticalStrut(3));
             String nvText = hd.getNhanVien() != null
                     ? hd.getNhanVien().getMaNV() + "  –  " + hd.getNhanVien().getTenNV() : "—";
@@ -611,16 +660,50 @@ public class QuanLyHoaDon extends JPanel {
             // ── Total ─────────────────────────────────────────────────────
             JPanel totalRow = new JPanel(new BorderLayout());
             totalRow.setOpaque(false);
-            totalRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
-            JLabel kLbl = new JLabel("TỔNG TIỀN");
-            kLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            totalRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+            JLabel kLbl = new JLabel("Tổng tiền");
+            kLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
             kLbl.setForeground(R_NAVY);
             JLabel vLbl = new JLabel(numFmt.format(hd.getTongTien()) + "đ", SwingConstants.RIGHT);
-            vLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            vLbl.setForeground(R_GOLD);
+            vLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            vLbl.setForeground(new Color(60, 60, 60));
             totalRow.add(kLbl, BorderLayout.WEST);
             totalRow.add(vLbl, BorderLayout.EAST);
             p.add(totalRow);
+            p.add(Box.createVerticalStrut(3));
+
+            // ── Tiền cọc ──────────────────────────────────────────────────
+            double coc = hd.getTienCoc();
+            JPanel cocRow = new JPanel(new BorderLayout());
+            cocRow.setOpaque(false);
+            cocRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+            JLabel cocK = new JLabel("Tiền cọc");
+            cocK.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            cocK.setForeground(R_NAVY);
+            JLabel cocV = new JLabel("-" + numFmt.format(coc) + "đ", SwingConstants.RIGHT);
+            cocV.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            cocV.setForeground(new Color(100, 100, 100));
+            cocRow.add(cocK, BorderLayout.WEST);
+            cocRow.add(cocV, BorderLayout.EAST);
+            p.add(cocRow);
+            p.add(Box.createVerticalStrut(5));
+            p.add(mkSolidLine(R_LINE));
+            p.add(Box.createVerticalStrut(5));
+
+            // ── Tổng cộng ─────────────────────────────────────────────────
+            double tongCong = hd.getTongTien() - coc;
+            JPanel tongCongRow = new JPanel(new BorderLayout());
+            tongCongRow.setOpaque(false);
+            tongCongRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+            JLabel tcK = new JLabel("TỔNG CỘNG");
+            tcK.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            tcK.setForeground(R_NAVY);
+            JLabel tcV = new JLabel(numFmt.format(tongCong) + "đ", SwingConstants.RIGHT);
+            tcV.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            tcV.setForeground(tongCong < 0 ? Color.decode("#E74C3C") : R_GOLD);
+            tongCongRow.add(tcK, BorderLayout.WEST);
+            tongCongRow.add(tcV, BorderLayout.EAST);
+            p.add(tongCongRow);
             p.add(Box.createVerticalStrut(7));
 
             // ── Status badge (chỉ hiện khi xem chi tiết) ─────────────────

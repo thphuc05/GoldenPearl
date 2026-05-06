@@ -1,8 +1,4 @@
 package gui;
-
-import com.github.lgooddatepicker.components.DatePicker;
-import com.github.lgooddatepicker.components.DatePickerSettings;
-import entity.*;
 import dao.*;
 import entity.*;
 import javax.swing.*;
@@ -74,11 +70,7 @@ public class QuanLyDatBan extends JPanel {
     // booking widgets
     private JLabel            lblBookingTitle, lblSlotDisplay;
     private JTextField        txtTenKH, txtSdtKH, txtGhiChu;
-    private JPanel            pDishArea;
-    private JButton           btnToggleDish;
-    private boolean           dishExpanded = false;
-    private DefaultTableModel tmBookingCart;
-    private JLabel            lblBookingTotal;
+    private JLabel            lblCartSummary;
     private Map<String,Integer> bookingCart = new LinkedHashMap<>();
 
     // reserved widgets
@@ -536,26 +528,32 @@ public class QuanLyDatBan extends JPanel {
         });
 
         // ── optional pre-order
-        btnToggleDish = new JButton("▶  GỌI MÓN TRƯỚC  (Tùy chọn)");
-        btnToggleDish.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnToggleDish.setBackground(new Color(236, 244, 255));
-        btnToggleDish.setForeground(MAIN_BLUE);
-        btnToggleDish.setFocusPainted(false);
-        btnToggleDish.setBorder(new EmptyBorder(7, 12, 7, 12));
-        btnToggleDish.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        btnToggleDish.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnToggleDish.addActionListener(e -> {
-            dishExpanded = !dishExpanded;
-            pDishArea.setVisible(dishExpanded);
-            btnToggleDish.setText((dishExpanded ? "▼" : "▶") + "  GỌI MÓN TRƯỚC  (Tùy chọn)");
-            body.revalidate();
+        JButton btnPreorder = new JButton("GỌI MÓN TRƯỚC  (Tùy chọn)");
+        btnPreorder.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnPreorder.setBackground(new Color(236, 244, 255));
+        btnPreorder.setForeground(MAIN_BLUE);
+        btnPreorder.setFocusPainted(false);
+        btnPreorder.setBorder(new EmptyBorder(7, 12, 7, 12));
+        btnPreorder.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        btnPreorder.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnPreorder.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnPreorder.addActionListener(e -> {
+            new PreorderDishDialog(
+                    (Frame) SwingUtilities.getWindowAncestor(this),
+                    spDAO, bookingCart, updatedCart -> {
+                        bookingCart.clear();
+                        bookingCart.putAll(updatedCart);
+                        refreshCartSummary();
+                    }).setVisible(true);
         });
-        body.add(btnToggleDish);
+        body.add(btnPreorder);
 
-        pDishArea = new JPanel(new BorderLayout());
-        pDishArea.setOpaque(false);
-        pDishArea.setVisible(false);
-        body.add(pDishArea);
+        lblCartSummary = new JLabel("Chưa gọi món trước");
+        lblCartSummary.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        lblCartSummary.setForeground(new Color(130, 130, 130));
+        lblCartSummary.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblCartSummary.setBorder(new EmptyBorder(3, 4, 3, 4));
+        body.add(lblCartSummary);
         body.add(hsep());
 
         JScrollPane bodyScroll = new JScrollPane(body);
@@ -577,137 +575,23 @@ public class QuanLyDatBan extends JPanel {
         return root;
     }
 
-    private void buildDishArea() {
-        pDishArea.removeAll();
-        List<SanPham> allSP = spDAO.getAllSanPham();
-        Map<String, List<SanPham>> byLoai = new LinkedHashMap<>();
-        for (SanPham sp : allSP) {
-            String loai = (sp.getLoaiSanPham() != null) ? sp.getLoaiSanPham().getTenLoai() : "Khác";
-            byLoai.computeIfAbsent(loai, k -> new ArrayList<>()).add(sp);
+
+    private void refreshCartSummary() {
+        if (lblCartSummary == null) return;
+        if (bookingCart.isEmpty()) {
+            lblCartSummary.setText("Chưa gọi món trước");
+            return;
         }
-
-        JPanel inner = new JPanel(new BorderLayout(0, 6));
-        inner.setOpaque(false);
-        inner.setBorder(new EmptyBorder(8, 0, 4, 0));
-
-        JPanel catRow = new JPanel(new WrapLayout(FlowLayout.LEFT, 5, 4));
-        catRow.setOpaque(false);
-        ButtonGroup catBg = new ButtonGroup();
-        JPanel dishGrid = new JPanel(new GridLayout(0, 2, 6, 6));
-        dishGrid.setOpaque(false);
-
-        String[] firstCat = {null};
-        for (String cat : byLoai.keySet()) {
-            JToggleButton tb = new JToggleButton(cat) {
-                @Override protected void paintComponent(Graphics g) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(isSelected() ? MAIN_BLUE : new Color(210, 234, 255));
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                    g2.dispose();
-                    setForeground(isSelected() ? Color.WHITE : TEXT_DARK);
-                    super.paintComponent(g);
-                }
-            };
-            tb.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            tb.setFocusPainted(false);
-            tb.setContentAreaFilled(false);
-            tb.setOpaque(false);
-            tb.setBorderPainted(false);
-            tb.setBorder(new EmptyBorder(4, 10, 4, 10));
-            catBg.add(tb);
-            catRow.add(tb);
-            if (firstCat[0] == null) { firstCat[0] = cat; tb.setSelected(true); }
-            tb.addActionListener(e -> {
-                dishGrid.removeAll();
-                for (SanPham sp : byLoai.getOrDefault(cat, new ArrayList<>())) dishGrid.add(dishCard(sp));
-                dishGrid.revalidate(); dishGrid.repaint();
-            });
-        }
-        if (firstCat[0] != null)
-            for (SanPham sp : byLoai.getOrDefault(firstCat[0], new ArrayList<>())) dishGrid.add(dishCard(sp));
-
-        inner.add(catRow, BorderLayout.NORTH);
-        JScrollPane gs = new JScrollPane(dishGrid);
-        gs.setPreferredSize(new Dimension(0, 190));
-        gs.setBorder(new LineBorder(BORDER_CLR));
-        inner.add(gs, BorderLayout.CENTER);
-
-        tmBookingCart = new DefaultTableModel(new String[]{"Tên món", "SL", "Thành tiền"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        JTable tCart = new JTable(tmBookingCart);
-        styleTable(tCart);
-        tCart.setPreferredScrollableViewportSize(new Dimension(0, 80));
-        JScrollPane cs = new JScrollPane(tCart);
-        cs.setBorder(new LineBorder(BORDER_CLR));
-
-        lblBookingTotal = new JLabel("Tổng gọi món: 0đ");
-        lblBookingTotal.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblBookingTotal.setForeground(RED_DANG);
-
-        JPanel cartWrap = new JPanel(new BorderLayout(0, 3));
-        cartWrap.setOpaque(false);
-        cartWrap.add(cs, BorderLayout.CENTER);
-        cartWrap.add(lblBookingTotal, BorderLayout.SOUTH);
-        inner.add(cartWrap, BorderLayout.SOUTH);
-
-        pDishArea.add(inner, BorderLayout.CENTER);
-        pDishArea.revalidate();
-    }
-
-    private JPanel dishCard(SanPham sp) {
-        RoundedPanel card = new RoundedPanel(10, Color.WHITE);
-        card.setLayout(new BorderLayout(4, 2));
-        card.setBorder(new CompoundBorder(new LineBorder(BORDER_CLR, 1), new EmptyBorder(6, 8, 6, 8)));
-
-        JLabel nameLbl = new JLabel("<html><b>" + sp.getTenMon() + "</b><br>"
-                + "<font color='#E74C3C'>" + FMT.format(sp.getGiaBan()) + "đ</font></html>");
-        nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        card.add(nameLbl, BorderLayout.CENTER);
-
-        JPanel qtyRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
-        qtyRow.setOpaque(false);
-        JButton minus = qtyBtn("−");
-        JLabel  cnt   = new JLabel(String.valueOf(bookingCart.getOrDefault(sp.getMaMon(), 0)));
-        cnt.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        cnt.setPreferredSize(new Dimension(24, 22));
-        cnt.setHorizontalAlignment(SwingConstants.CENTER);
-        JButton plus  = qtyBtn("+");
-
-        plus.addActionListener(e -> {
-            int q = bookingCart.getOrDefault(sp.getMaMon(), 0) + 1;
-            bookingCart.put(sp.getMaMon(), q);
-            cnt.setText(String.valueOf(q));
-            refreshBookingCart();
-        });
-        minus.addActionListener(e -> {
-            int q = bookingCart.getOrDefault(sp.getMaMon(), 0);
-            if (q > 0) {
-                if (--q == 0) bookingCart.remove(sp.getMaMon()); else bookingCart.put(sp.getMaMon(), q);
-                cnt.setText(String.valueOf(q));
-                refreshBookingCart();
-            }
-        });
-        qtyRow.add(minus); qtyRow.add(cnt); qtyRow.add(plus);
-        card.add(qtyRow, BorderLayout.EAST);
-        return card;
-    }
-
-    private void refreshBookingCart() {
-        if (tmBookingCart == null) return;
-        tmBookingCart.setRowCount(0);
         Map<String, SanPham> map = new HashMap<>();
         for (SanPham sp : spDAO.getAllSanPham()) map.put(sp.getMaMon(), sp);
-        double total = 0;
+        int totalQty = 0; double total = 0;
         for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {
             SanPham sp = map.get(e.getKey()); if (sp == null) continue;
-            double tt = sp.getGiaBan() * e.getValue();
-            tmBookingCart.addRow(new Object[]{sp.getTenMon(), e.getValue(), FMT.format(tt) + "đ"});
-            total += tt;
+            totalQty += e.getValue();
+            total += sp.getGiaBan() * e.getValue();
         }
-        if (lblBookingTotal != null)
-            lblBookingTotal.setText("Tổng gọi món: " + FMT.format(total) + "đ");
+        lblCartSummary.setText("Đã gọi trước: " + totalQty + " món  |  Tổng: " + FMT.format(total) + "đ");
+        lblCartSummary.setForeground(RED_DANG);
     }
 
     // ── reserved card ────────────────────────────────────────────────────
@@ -875,10 +759,7 @@ public class QuanLyDatBan extends JPanel {
         lblSlotDisplay.setText("  Ngày:  " + sdf.format(selectedBookingDate)
                 + "     Khung giờ:  " + getSlotLabel(currentFilter));
         bookingCart.clear();
-        dishExpanded = false;
-        pDishArea.setVisible(false);
-        btnToggleDish.setText("▶  GỌI MÓN TRƯỚC  (Tùy chọn)");
-        buildDishArea();
+        refreshCartSummary();
         txtTenKH.setText(""); txtSdtKH.setText(""); txtGhiChu.setText("");
         rightCard.show(rightPanel, "booking");
     }
@@ -1155,6 +1036,286 @@ public class QuanLyDatBan extends JPanel {
 
     private String getSlotLabel(String key) { return SLOT_LABELS[getSlotIndex(key)]; }
 
+    // ── PreorderDishDialog ────────────────────────────────────────────────
+    interface CartCallback { void onConfirm(Map<String,Integer> cart); }
+
+    private static class PreorderDishDialog extends JDialog {
+        private final SanPham_DAO spDAO;
+        private final Map<String,Integer> initialCart;
+        private final CartCallback callback;
+        private final Map<String,Integer> cart = new LinkedHashMap<>();
+        private DefaultTableModel tmCart;
+        private JLabel lblTotal;
+
+        PreorderDishDialog(Frame owner, SanPham_DAO spDAO, Map<String,Integer> initialCart, CartCallback callback) {
+            super(owner, "Gọi món trước", true);
+            this.spDAO = spDAO; this.initialCart = initialCart; this.callback = callback;
+            cart.putAll(initialCart);
+            setSize(880, 580);
+            setLocationRelativeTo(owner);
+            setLayout(new BorderLayout());
+            build();
+        }
+
+        private void build() {
+            List<SanPham> allSP = spDAO.getAllSanPham();
+            Map<String, List<SanPham>> byLoai = new LinkedHashMap<>();
+            for (SanPham sp : allSP) {
+                if (!sp.isTrangThai()) continue; // skip hết món
+                String loai = (sp.getLoaiSanPham() != null) ? sp.getLoaiSanPham().getTenLoai() : "Khác";
+                byLoai.computeIfAbsent(loai, k -> new ArrayList<>()).add(sp);
+            }
+
+            JPanel catPanel = new JPanel(new BorderLayout(0, 6));
+            catPanel.setPreferredSize(new Dimension(190, 0));
+            catPanel.setBackground(BG_LIGHT);
+            catPanel.setBorder(new EmptyBorder(8, 8, 8, 4));
+            JLabel catTitle = new JLabel("Danh mục");
+            catTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            catPanel.add(catTitle, BorderLayout.NORTH);
+
+            JPanel dishGrid = new JPanel(new GridLayout(0, 3, 8, 8));
+            dishGrid.setBackground(Color.WHITE);
+            dishGrid.setBorder(new EmptyBorder(6, 6, 6, 6));
+
+            JPanel catList = new JPanel(new GridLayout(0, 1, 0, 4));
+            catList.setOpaque(false);
+            ButtonGroup bg = new ButtonGroup();
+            String[] first = {byLoai.keySet().stream().findFirst().orElse(null)};
+            for (String cat : byLoai.keySet()) {
+                JToggleButton tb = new JToggleButton(cat) {
+                    @Override protected void paintComponent(Graphics g) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(isSelected() ? MAIN_BLUE : new Color(210, 234, 255));
+                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                        g2.dispose();
+                        setForeground(isSelected() ? Color.WHITE : TEXT_DARK);
+                        super.paintComponent(g);
+                    }
+                };
+                tb.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                tb.setFocusPainted(false); tb.setContentAreaFilled(false);
+                tb.setOpaque(false); tb.setBorderPainted(false);
+                tb.setBorder(new EmptyBorder(6, 10, 6, 10));
+                if (cat.equals(first[0])) tb.setSelected(true);
+                bg.add(tb); catList.add(tb);
+                tb.addActionListener(e -> {
+                    dishGrid.removeAll();
+                    for (SanPham sp : byLoai.getOrDefault(cat, new ArrayList<>()))
+                        dishGrid.add(buildDishCard(sp, allSP));
+                    dishGrid.revalidate(); dishGrid.repaint();
+                });
+            }
+            catPanel.add(new JScrollPane(catList), BorderLayout.CENTER);
+            if (first[0] != null)
+                for (SanPham sp : byLoai.getOrDefault(first[0], new ArrayList<>()))
+                    dishGrid.add(buildDishCard(sp, allSP));
+
+            JScrollPane dishScroll = new JScrollPane(dishGrid);
+
+            tmCart = new DefaultTableModel(new String[]{"Tên món", "SL", "Thành tiền"}, 0) {
+                @Override public boolean isCellEditable(int r, int c) { return false; }
+            };
+            JTable tCart = new JTable(tmCart);
+            styleTableStatic(tCart);
+            tCart.setPreferredScrollableViewportSize(new Dimension(0, 100));
+
+            lblTotal = new JLabel("Tổng gọi món: 0đ");
+            lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            lblTotal.setForeground(RED_DANG);
+
+            JButton bCancel = btnStatic("Hủy",     Color.WHITE, TEXT_DARK, true);
+            JButton bOk     = btnStatic("XÁC NHẬN", MAIN_BLUE,  Color.WHITE, false);
+            bCancel.addActionListener(e -> dispose());
+            bOk.addActionListener(e -> { callback.onConfirm(new LinkedHashMap<>(cart)); dispose(); });
+
+            JPanel southBottom = new JPanel(new BorderLayout(8, 0));
+            southBottom.setOpaque(false);
+            southBottom.add(lblTotal, BorderLayout.WEST);
+            JPanel bRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+            bRow.setOpaque(false); bRow.add(bCancel); bRow.add(bOk);
+            southBottom.add(bRow, BorderLayout.EAST);
+
+            JPanel south = new JPanel(new BorderLayout(0, 6));
+            south.setBorder(new EmptyBorder(6, 8, 8, 8));
+            south.setBackground(Color.WHITE);
+            south.add(new JScrollPane(tCart), BorderLayout.CENTER);
+            south.add(southBottom, BorderLayout.SOUTH);
+
+            JSplitPane topSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, catPanel, dishScroll);
+            topSplit.setDividerLocation(190); topSplit.setDividerSize(4); topSplit.setBorder(null);
+            JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topSplit, south);
+            mainSplit.setDividerLocation(330); mainSplit.setDividerSize(4); mainSplit.setBorder(null);
+            add(mainSplit, BorderLayout.CENTER);
+
+            refreshCart(allSP);
+        }
+
+        private JPanel buildDishCard(SanPham sp, List<SanPham> allSP) {
+            RoundedPanel card = new RoundedPanel(10, Color.WHITE);
+            card.setLayout(new BorderLayout(4, 4));
+            card.setBorder(new CompoundBorder(new LineBorder(BORDER_CLR, 1), new EmptyBorder(7, 8, 7, 8)));
+            JLabel name = new JLabel("<html><b>" + sp.getTenMon() + "</b><br>"
+                    + "<font color='#E74C3C'>" + FMT.format(sp.getGiaBan()) + "đ</font></html>");
+            name.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            card.add(name, BorderLayout.CENTER);
+
+            JPanel qr = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 0));
+            qr.setOpaque(false);
+            JButton minus = qtyBtnS("−");
+            JLabel cnt = new JLabel(String.valueOf(cart.getOrDefault(sp.getMaMon(), 0)));
+            cnt.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            cnt.setPreferredSize(new Dimension(24, 22));
+            cnt.setHorizontalAlignment(SwingConstants.CENTER);
+            JButton plus = qtyBtnS("+");
+            plus.addActionListener(e -> {
+                int q = cart.getOrDefault(sp.getMaMon(), 0) + 1;
+                cart.put(sp.getMaMon(), q); cnt.setText(String.valueOf(q)); refreshCart(allSP);
+            });
+            minus.addActionListener(e -> {
+                int q = cart.getOrDefault(sp.getMaMon(), 0);
+                if (q > 0) {
+                    if (--q == 0) cart.remove(sp.getMaMon()); else cart.put(sp.getMaMon(), q);
+                    cnt.setText(String.valueOf(q)); refreshCart(allSP);
+                }
+            });
+            qr.add(minus); qr.add(cnt); qr.add(plus);
+            card.add(qr, BorderLayout.SOUTH);
+            return card;
+        }
+
+        private void refreshCart(List<SanPham> allSP) {
+            if (tmCart == null) return;
+            tmCart.setRowCount(0);
+            double total = 0;
+            Map<String,SanPham> map = new HashMap<>();
+            for (SanPham sp : allSP) map.put(sp.getMaMon(), sp);
+            for (Map.Entry<String,Integer> e : cart.entrySet()) {
+                SanPham sp = map.get(e.getKey()); if (sp == null) continue;
+                double tt = sp.getGiaBan() * e.getValue();
+                tmCart.addRow(new Object[]{sp.getTenMon(), e.getValue(), FMT.format(tt) + "đ"});
+                total += tt;
+            }
+            if (lblTotal != null) lblTotal.setText("Tổng gọi món: " + FMT.format(total) + "đ");
+        }
+
+        private static void styleTableStatic(JTable t) {
+            t.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            t.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+            t.setRowHeight(24); t.setShowGrid(false);
+            t.setIntercellSpacing(new Dimension(0, 0));
+            t.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        }
+
+        private static JButton btnStatic(String text, Color bg, Color fg, boolean outlined) {
+            JButton b = new JButton(text);
+            b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            b.setBackground(bg); b.setForeground(fg); b.setFocusPainted(false);
+            b.setPreferredSize(new Dimension(160, 36));
+            b.setBorder(outlined
+                ? new CompoundBorder(new LineBorder(BORDER_CLR), new EmptyBorder(7, 24, 7, 24))
+                : new EmptyBorder(7, 24, 7, 24));
+            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            return b;
+        }
+
+        private static JButton qtyBtnS(String t) {
+            JButton b = new JButton(t);
+            b.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            b.setPreferredSize(new Dimension(26, 26));
+            b.setMargin(new Insets(0, 0, 0, 0)); b.setFocusPainted(false);
+            b.setBackground(BG_LIGHT);
+            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            return b;
+        }
+    }
+
+    // ── UI helpers ───────────────────────────────────────────────────────
+    private JLabel sectionLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        l.setForeground(new Color(100, 120, 150));
+        l.setAlignmentX(0f);
+        l.setBorder(new EmptyBorder(6, 0, 3, 0));
+        return l;
+    }
+
+    private JSeparator hsep() {
+        JSeparator s = new JSeparator();
+        s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        s.setAlignmentX(Component.LEFT_ALIGNMENT);
+        s.setForeground(BORDER_CLR);
+        return s;
+    }
+
+    private JPanel fieldRow(String label, JTextField field) {
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        row.setOpaque(false);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lbl.setForeground(TEXT_DARK);
+        lbl.setPreferredSize(new Dimension(130, 20));
+        row.add(lbl, BorderLayout.WEST);
+        if (field != null) row.add(field, BorderLayout.CENTER);
+        return row;
+    }
+
+    private JTextField inputField() {
+        JTextField f = new JTextField();
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+        f.setPreferredSize(new Dimension(0, 32));
+        f.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_CLR, 1), new EmptyBorder(3, 8, 3, 8)));
+        return f;
+    }
+
+    private JButton actionBtn(String text, Color bg, Color fg, boolean outlined) {
+        JButton b = new JButton(text);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setBackground(bg); b.setForeground(fg); b.setFocusPainted(false);
+        b.setBorder(outlined ? new LineBorder(BORDER_CLR) : new EmptyBorder(8, 14, 8, 14));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return b;
+    }
+
+    private JLabel infoKey(String t) {
+        JLabel l = new JLabel(t);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        l.setForeground(new Color(100, 110, 130));
+        return l;
+    }
+
+    private JLabel infoVal(String t) {
+        JLabel l = new JLabel(t);
+        l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        l.setForeground(TEXT_DARK);
+        return l;
+    }
+
+    private void styleTable(JTable t) {
+        t.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        t.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        t.getTableHeader().setBackground(new Color(245, 247, 250));
+        t.setRowHeight(26); t.setShowGrid(false);
+        t.setIntercellSpacing(new Dimension(0, 0));
+        t.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        t.setSelectionBackground(new Color(220, 235, 255));
+    }
+
+    private void centerCol(JTable t, int col) {
+        DefaultTableCellRenderer r = new DefaultTableCellRenderer();
+        r.setHorizontalAlignment(SwingConstants.CENTER);
+        t.getColumnModel().getColumn(col).setCellRenderer(r);
+    }
+
+    private void msg(String m) {
+        JOptionPane.showMessageDialog(this, m, "Thông báo", JOptionPane.WARNING_MESSAGE);
+    }
+
     // ── AddDishDialog ────────────────────────────────────────────────────
     private static class AddDishDialog extends JDialog {
         private final HoaDon hd;
@@ -1377,99 +1538,6 @@ public class QuanLyDatBan extends JPanel {
             b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             return b;
         }
-    }
-
-    // ── UI helpers ───────────────────────────────────────────────────────
-    private JButton qtyBtn(String t) {
-        JButton b = new JButton(t);
-        b.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        b.setPreferredSize(new Dimension(26, 26));
-        b.setMargin(new Insets(0, 0, 0, 0)); b.setFocusPainted(false);
-        b.setBackground(BG_LIGHT);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        return b;
-    }
-
-    private JLabel sectionLabel(String text) {
-        JLabel l = new JLabel(text);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        l.setForeground(new Color(100, 120, 150));
-        l.setAlignmentX(0f);
-        l.setBorder(new EmptyBorder(6, 0, 3, 0));
-        return l;
-    }
-
-    private JSeparator hsep() {
-        JSeparator s = new JSeparator();
-        s.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-        s.setForeground(BORDER_CLR);
-        return s;
-    }
-
-    private JPanel fieldRow(String label, JTextField field) {
-        JPanel row = new JPanel(new BorderLayout(8, 0));
-        row.setOpaque(false);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        JLabel lbl = new JLabel(label);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl.setForeground(TEXT_DARK);
-        lbl.setPreferredSize(new Dimension(130, 20));
-        row.add(lbl, BorderLayout.WEST);
-        if (field != null) row.add(field, BorderLayout.CENTER);
-        return row;
-    }
-
-    private JTextField inputField() {
-        JTextField f = new JTextField();
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
-        f.setPreferredSize(new Dimension(0, 32));
-        f.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BORDER_CLR, 1), new EmptyBorder(3, 8, 3, 8)));
-        return f;
-    }
-
-    private JButton actionBtn(String text, Color bg, Color fg, boolean outlined) {
-        JButton b = new JButton(text);
-        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        b.setBackground(bg); b.setForeground(fg); b.setFocusPainted(false);
-        b.setBorder(outlined ? new LineBorder(BORDER_CLR) : new EmptyBorder(8, 14, 8, 14));
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        return b;
-    }
-
-    private JLabel infoKey(String t) {
-        JLabel l = new JLabel(t);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        l.setForeground(new Color(100, 110, 130));
-        return l;
-    }
-
-    private JLabel infoVal(String t) {
-        JLabel l = new JLabel(t);
-        l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        l.setForeground(TEXT_DARK);
-        return l;
-    }
-
-    private void styleTable(JTable t) {
-        t.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        t.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        t.getTableHeader().setBackground(new Color(245, 247, 250));
-        t.setRowHeight(26); t.setShowGrid(false);
-        t.setIntercellSpacing(new Dimension(0, 0));
-        t.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-        t.setSelectionBackground(new Color(220, 235, 255));
-    }
-
-    private void centerCol(JTable t, int col) {
-        DefaultTableCellRenderer r = new DefaultTableCellRenderer();
-        r.setHorizontalAlignment(SwingConstants.CENTER);
-        t.getColumnModel().getColumn(col).setCellRenderer(r);
-    }
-
-    private void msg(String m) {
-        JOptionPane.showMessageDialog(this, m, "Thông báo", JOptionPane.WARNING_MESSAGE);
     }
 
     // ── WrapLayout ───────────────────────────────────────────────────────

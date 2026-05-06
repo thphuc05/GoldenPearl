@@ -53,11 +53,18 @@ public class TrangChu extends JFrame {
     public TrangChu(TaiKhoan tk) {
         super("Hệ thống quản lý nhà hàng Golden Pearl");
         this.taiKhoan = tk;
-        if (tk != null) {
-            this.nhanVien = new NhanVien_DAO().getNhanVienByMaTK(tk.getMaTK());
-        }
         loadFonts();
         initUI();
+        if (tk != null) {
+            new SwingWorker<NhanVien, Void>() {
+                @Override protected NhanVien doInBackground() {
+                    return new NhanVien_DAO().getNhanVienByMaTK(tk.getMaTK());
+                }
+                @Override protected void done() {
+                    try { nhanVien = get(); } catch (Exception e) { e.printStackTrace(); }
+                }
+            }.execute();
+        }
     }
 
     public TrangChu() { this(null); }
@@ -175,7 +182,6 @@ public class TrangChu extends JFrame {
         panel.add(Box.createVerticalStrut(10));
 
         return panel;
-
     }
 
     private JPanel createUserBox() {
@@ -220,28 +226,11 @@ public class TrangChu extends JFrame {
         lblName.setForeground(Color.WHITE);
         lblName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton btnBoxLogout = new JButton("Đăng xuất");
-        btnBoxLogout.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-        btnBoxLogout.setForeground(GOLD_COLOR);
-        btnBoxLogout.setOpaque(false);
-        btnBoxLogout.setContentAreaFilled(false);
-        btnBoxLogout.setBorderPainted(false);
-        btnBoxLogout.setFocusPainted(false);
-        btnBoxLogout.setHorizontalAlignment(SwingConstants.LEFT);
-        btnBoxLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnBoxLogout.setMargin(new Insets(0, 0, 0, 0));
-        btnBoxLogout.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btnBoxLogout.addActionListener(e -> {
-            int res = JOptionPane.showConfirmDialog(TrangChu.this,
-                    "Bạn có muốn đăng xuất không?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-            if (res == JOptionPane.YES_OPTION) { dispose(); new Login(); }
-        });
 
         pInfo.add(lblRole);
         pInfo.add(Box.createVerticalStrut(2));
         pInfo.add(lblName);
         pInfo.add(Box.createVerticalStrut(4));
-        pInfo.add(btnBoxLogout);
 
         box.add(lblIcon, BorderLayout.WEST);
         box.add(pInfo, BorderLayout.CENTER);
@@ -295,25 +284,25 @@ public class TrangChu extends JFrame {
         switch (cardName) {
             case "TrangChủ":
                 if (pDashboard == null) { pDashboard = new DashboardPanel(); contentArea.add(pDashboard, "TrangChủ"); }
-                pDashboard.refreshData(); break;
+                pDashboard.refreshData(); break;  // dashboard luôn refresh (live stats)
             case "NhânViên":
-                if (pNhanVien == null) { pNhanVien = new QuanLyNhanVien(); contentArea.add(pNhanVien, "NhânViên"); }
-                pNhanVien.refreshData(); break;
+                if (pNhanVien == null) { pNhanVien = new QuanLyNhanVien(); contentArea.add(pNhanVien, "NhânViên"); pNhanVien.refreshData(); }
+                break;
             case "HóaĐơn":
-                if (pHoaDon == null) { pHoaDon = new QuanLyHoaDon(); contentArea.add(pHoaDon, "HóaĐơn"); }
-                pHoaDon.refreshData(); break;
+                if (pHoaDon == null) { pHoaDon = new QuanLyHoaDon(); contentArea.add(pHoaDon, "HóaĐơn"); pHoaDon.refreshData(); }
+                break;
             case "KháchHàng":
-                if (pKhachHang == null) { pKhachHang = new QuanLyKhachHang(); contentArea.add(pKhachHang, "KháchHàng"); }
-                pKhachHang.refreshData(); break;
+                if (pKhachHang == null) { pKhachHang = new QuanLyKhachHang(); contentArea.add(pKhachHang, "KháchHàng"); pKhachHang.refreshData(); }
+                break;
             case "MónĂn":
-                if (pMonAn == null) { pMonAn = new QuanLyMonAn(); contentArea.add(pMonAn, "MónĂn"); }
-                pMonAn.refreshData(); break;
+                if (pMonAn == null) { pMonAn = new QuanLyMonAn(); contentArea.add(pMonAn, "MónĂn"); pMonAn.refreshData(); }
+                break;
             case "ThốngKê":
                 if (pThongKe == null) { pThongKe = new QuanLyThongKe(); contentArea.add(pThongKe, "ThốngKê"); }
-                pThongKe.refreshData(); break;
+                pThongKe.refreshData(); break;  // thống kê luôn refresh
             case "ĐặtBàn":
                 if (pDatBan == null) { pDatBan = new QuanLyDatBan(nhanVien); contentArea.add(pDatBan, "ĐặtBàn"); }
-                pDatBan.refreshData(); break;
+                pDatBan.refreshData(); break;  // đặt bàn luôn refresh (trạng thái bàn thay đổi liên tục)
         }
         cardLayout.show(contentArea, cardName);
         if (lastSelectedButton != null) {
@@ -600,12 +589,12 @@ public class TrangChu extends JFrame {
                             if (hd.getKhachHang() != null) customers.add(hd.getKhachHang().getMaKH());
                             String ds = sdf.format(hd.getNgayLap());
                             if (chartData.containsKey(ds)) chartData.put(ds, chartData.get(ds) + hd.getTongTien());
-                        }
-                        if (rows.size() < 10) {
-                            double rowProfit = profitMap.getOrDefault(hd.getMaHD(), 0.0);
-                            rows.add(new Object[]{hd.getMaHD(), dfmt.format(hd.getNgayLap()),
-                                    new DecimalFormat("#,###").format(hd.getTongTien()) + " VNĐ",
-                                    rowProfit > 0 ? new DecimalFormat("#,###").format(rowProfit) + " VNĐ" : "—"});
+                            if (rows.size() < 10) {
+                                double rowProfit = profitMap.getOrDefault(hd.getMaHD(), 0.0);
+                                rows.add(new Object[]{hd.getMaHD(), dfmt.format(hd.getNgayLap()),
+                                        new DecimalFormat("#,###").format(hd.getTongTien()) + " VNĐ",
+                                        rowProfit > 0 ? new DecimalFormat("#,###").format(rowProfit) + " VNĐ" : "—"});
+                            }
                         }
                     }
 
@@ -643,8 +632,8 @@ public class TrangChu extends JFrame {
 
                         pChartContainer.removeAll();
                         pChartContainer.add(new SimpleBarChart(
-                            (Map<String, Double>) res.get("chart"),
-                            (Map<String, Double>) res.get("profitByDate")), BorderLayout.CENTER);
+                                (Map<String, Double>) res.get("chart"),
+                                (Map<String, Double>) res.get("profitByDate")), BorderLayout.CENTER);
                         pChartContainer.revalidate(); pChartContainer.repaint();
 
                         pBestSellers.removeAll();
