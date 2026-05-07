@@ -28,6 +28,26 @@ public class DonDatBan_DAO {
         return dsDon;
     }
 
+    public DonDatBan getDonDatBanTheoSdtKhach(String sdt, Date thoiGianDen, String khungGio, KhachHang_DAO khDAO) {
+        // 1. Tìm khách hàng theo SĐT
+        KhachHang kh = khDAO.getKhachHangBySdt(sdt);
+        if (kh == null) return null;
+
+        // 2. Tìm đơn đặt bàn thỏa mãn điều kiện
+        List<DonDatBan> allDons = getAllDonDatBan(); // Hoặc Select SQL từ DB
+        for (DonDatBan d : allDons) {
+            // Giả sử bạn có hàm isSameDay ở Utils, hoặc so sánh chuỗi ngày
+            if (!d.isTrangThai() // Chưa thanh toán
+                    && d.getKhungGio().equals(khungGio)
+                    && d.getKhachHang() != null
+                    && d.getKhachHang().getMaKH().equals(kh.getMaKH())) {
+
+                // Cần check thêm cùng ngày (nếu bạn so sánh Date trong DAO thì dùng Calendar/LocalDate)
+                return d;
+            }
+        }
+        return null;
+    }
     public DonDatBan getDonDatBanByMa(String ma) {
         Connection con = ConnectDB.getConnection();
         try {

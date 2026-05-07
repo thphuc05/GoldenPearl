@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="d3daf0e8-bdd3-4bf1-ace1-a98ae2a7d6d3" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/gui/QuanLyDatBan_DB.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/gui/QuanLyDatBan_GM.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/gui/QuanLyHoaDon_CTHD.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/gui/QuanLyKhachHang_LSDB.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GoldenPearlDB.sql" beforeDir="false" afterPath="$PROJECT_DIR$/GoldenPearlDB.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/GoldenPearlDB.sql" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/GoldenPearlDB.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/dao/DonDatBan_DAO.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/dao/DonDatBan_DAO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/dao/TaiKhoan_DAO.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/dao/TaiKhoan_DAO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/Login$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/Login$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/Login$JGradientLabel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/Login$JGradientLabel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/Login$JPanelWithBackground.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/Login$JPanelWithBackground.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/Login.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/Login.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$AddDishDialog$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$AddDishDialog$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$AddDishDialog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$CartCallback.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$PreorderDishDialog$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$PreorderDishDialog$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$PreorderDishDialog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$RoundedPanel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$RoundedPanel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$WrapLayout.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan$WrapLayout.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyDatBan.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$DatePickerDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$DatePickerDialog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$InvoiceDialog$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon$InvoiceDialog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyHoaDon.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$6.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$7.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$DatePickerDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang$DatePickerDialog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/QuanLyKhachHang.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$DashboardPanel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$SimpleBarChart$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$SimpleBarChart$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$SimpleBarChart$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$SimpleBarChart$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$SimpleBarChart.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu$SimpleBarChart.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/GoldenPearl/gui/TrangChu.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dao/DonDatBan_DAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/dao/DonDatBan_DAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dao/TaiKhoan_DAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/dao/TaiKhoan_DAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui/Login.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui/Login.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui/QuanLyDatBan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui/QuanLyDatBan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui/QuanLyHoaDon.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui/QuanLyHoaDon.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui/QuanLyKhachHang.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui/QuanLyKhachHang.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui/TrangChu.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui/TrangChu.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="96" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="3CfWnudknv6kofVdyMCZH1RkepZ" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.Login.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TrangChu.executor&quot;: &quot;Run&quot;,
+    &quot;Database Script.GoldenPearlDB.sql.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Kentcode&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/LENOVO/Documents/HK6/PTUD/Code/PTUD_N2/GoldenPearl(hi)&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;sqlserver&quot;
+    ],
+    &quot;RunConfigurationTargetLRU&quot;: [
+      &quot;4a6ff0f6-13b9-4a55-bb77-9bc5f3bce45a&quot;
+    ]
+  }
+}</component>
+  <component name="RunManager" selected="Application.Login">
+    <configuration name="Login" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="gui.Login" />
+      <module name="GoldenPearl" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="gui.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="GoldenPearlDB.sql" type="DatabaseScript" editBeforeRun="true" nameIsGenerated="true">
+      <script-file value="$PROJECT_DIR$/GoldenPearlDB.sql" />
+      <script-mode>FILE</script-mode>
+      <data-source id="4a6ff0f6-13b9-4a55-bb77-9bc5f3bce45a" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="DatabaseScript">
+      <data-source id="4a6ff0f6-13b9-4a55-bb77-9bc5f3bce45a" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.Login" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d3daf0e8-bdd3-4bf1-ace1-a98ae2a7d6d3" name="Changes" comment="" />
+      <created>1776777278436</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1776777278436</updated>
+      <workItem from="1776777282604" duration="6443000" />
+      <workItem from="1776784979108" duration="4443000" />
+      <workItem from="1776789482156" duration="3715000" />
+      <workItem from="1776793339168" duration="7167000" />
+      <workItem from="1776824141465" duration="5716000" />
+      <workItem from="1776846239235" duration="7518000" />
+      <workItem from="1776911992206" duration="5318000" />
+      <workItem from="1776917599230" duration="1393000" />
+      <workItem from="1776919228515" duration="1519000" />
+      <workItem from="1776920975016" duration="604000" />
+      <workItem from="1776922016894" duration="290000" />
+      <workItem from="1777097230675" duration="13662000" />
+      <workItem from="1777126437351" duration="13594000" />
+      <workItem from="1777273241852" duration="88000" />
+      <workItem from="1777288071711" duration="732000" />
+      <workItem from="1777289365943" duration="1304000" />
+      <workItem from="1777293376552" duration="2143000" />
+      <workItem from="1777301126320" duration="1318000" />
+      <workItem from="1777349030699" duration="490000" />
+      <workItem from="1777349799407" duration="6088000" />
+      <workItem from="1777358954082" duration="8478000" />
+      <workItem from="1777367555987" duration="110000" />
+      <workItem from="1777367688271" duration="1290000" />
+      <workItem from="1777369017273" duration="544000" />
+      <workItem from="1777369611314" duration="485000" />
+      <workItem from="1777370227549" duration="1832000" />
+      <workItem from="1777373291345" duration="5000" />
+      <workItem from="1777381788826" duration="62000" />
+      <workItem from="1777388756350" duration="1191000" />
+      <workItem from="1777421118040" duration="3631000" />
+      <workItem from="1777430664427" duration="9000" />
+      <workItem from="1777446575636" duration="3415000" />
+      <workItem from="1777520778279" duration="6646000" />
+      <workItem from="1777574075045" duration="12198000" />
+      <workItem from="1777612646672" duration="5684000" />
+      <workItem from="1777634058249" duration="5277000" />
+      <workItem from="1777657804740" duration="4751000" />
+      <workItem from="1777689658283" duration="2329000" />
+      <workItem from="1777692725295" duration="1780000" />
+      <workItem from="1777723168648" duration="277000" />
+      <workItem from="1777725392613" duration="81000" />
+      <workItem from="1777734151188" duration="842000" />
+      <workItem from="1777787505688" duration="318000" />
+      <workItem from="1777788096265" duration="336000" />
+      <workItem from="1777891938064" duration="130000" />
+      <workItem from="1777914349411" duration="378000" />
+      <workItem from="1777915007225" duration="995000" />
+      <workItem from="1777947421098" duration="9044000" />
+      <workItem from="1777964260269" duration="652000" />
+      <workItem from="1777964944873" duration="568000" />
+      <workItem from="1777975128513" duration="1095000" />
+      <workItem from="1777976273930" duration="6429000" />
+      <workItem from="1777984153128" duration="1456000" />
+      <workItem from="1778026749106" duration="775000" />
+      <workItem from="1778027558332" duration="2624000" />
+      <workItem from="1778030305838" duration="307000" />
+      <workItem from="1778032622660" duration="5240000" />
+      <workItem from="1778044629349" duration="279000" />
+      <workItem from="1778085303340" duration="14302000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

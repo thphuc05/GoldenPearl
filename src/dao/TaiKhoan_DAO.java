@@ -57,28 +57,6 @@ public class TaiKhoan_DAO {
         return null;
     }
 
-    /*public boolean updateMatKhau(String tenTK, String matKhauMoi) {
-        Connection con = ConnectDB.getConnection();
-        PreparedStatement statement = null;
-        int n = 0;
-        try {
-            String sql = "UPDATE TaiKhoan SET matKhau = ? WHERE tenTK = ?";
-            statement = con.prepareStatement(sql);
-            statement.setString(1, matKhauMoi);
-            statement.setString(2, tenTK);
-            n = statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (statement != null) statement.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        return n > 0;
-    }*/
-
     public TaiKhoan checkQuenTK(String tenTK, String soDT) {
         String sql = "SELECT tk.* FROM TaiKhoan tk " +
                 "JOIN NhanVien nv ON tk.maTK = nv.maTK " +

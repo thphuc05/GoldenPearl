@@ -159,18 +159,33 @@ QuanLyThongKe extends JPanel {
         filterTitle.setBorder(new EmptyBorder(0, 0, 8, 0));
         card.add(filterTitle, BorderLayout.NORTH);
 
-        JPanel dateRow = new JPanel(new GridLayout(1, 4, 8, 0));
+        JPanel dateRow = new JPanel(new GridBagLayout()); // Đổi từ GridLayout sang GridBagLayout
         dateRow.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        // Thiết lập mặc định cho các thành phần
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 5, 0, 5); // Khoảng cách giữa các ô
 
         txtFromDate = createDateField();
         txtToDate   = createDateField();
 
-        dateRow.add(makeLabel("Từ ngày:"));
-        JPanel pFrom = makeDatePicker(txtFromDate);
-        dateRow.add(pFrom);
-        dateRow.add(makeLabel("Đến ngày:"));
-        JPanel pTo = makeDatePicker(txtToDate);
-        dateRow.add(pTo);
+        // 1. Label "Từ ngày"
+        gbc.weightx = 0.1; // Chiếm ít diện tích
+        dateRow.add(makeLabel("Từ ngày:"), gbc);
+
+        // 2. Ô chọn ngày "Từ ngày"
+        gbc.weightx = 0.4; // Chiếm nhiều diện tích hơn (Mở rộng tại đây)
+        dateRow.add(makeDatePicker(txtFromDate), gbc);
+
+        // 3. Label "Đến ngày"
+        gbc.weightx = 0.1;
+        dateRow.add(makeLabel("Đến ngày:"), gbc);
+
+        // 4. Ô chọn ngày "Đến ngày"
+        gbc.weightx = 0.4; // Chiếm nhiều diện tích hơn (Mở rộng tại đây)
+        dateRow.add(makeDatePicker(txtToDate), gbc);
+
         card.add(dateRow, BorderLayout.CENTER);
 
         JButton btnView = new JButton("XEM DOANH THU");

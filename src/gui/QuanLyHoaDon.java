@@ -24,6 +24,7 @@ public class QuanLyHoaDon extends JPanel {
     private JButton btnSearch, btnRefresh, btnPrint, btnViewDetail;
     private JTable tableHoaDon, tableChiTiet;
     private DefaultTableModel modelHoaDon, modelChiTiet;
+
     private JLabel lblMaHD, lblNgayLap, lblNhanVien, lblKhachHang, lblTongTien, lblTienCoc, lblTongCong, lblTrangThai;
 
     private final HoaDon_DAO hd_dao = new HoaDon_DAO();
@@ -40,6 +41,11 @@ public class QuanLyHoaDon extends JPanel {
     private final Color RED_STATUS   = Color.decode("#E74C3C");
     private final Color MAIN_BLUE    = Color.decode("#0B3D59");
     private final Color GOLD_COLOR   = Color.decode("#C5A059");
+    private final Color R_NAVY  = Color.decode("#0B3D59");
+    private final Color R_GOLD  = Color.decode("#C5A059");
+    private final Color R_LINE  = new Color(220, 220, 220);
+    private final Color R_GREEN = Color.decode("#27AE60");
+    private final Color R_BG    = Color.WHITE;
 
     private final SimpleDateFormat dateTimeSdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
     private final SimpleDateFormat dateSdf     = new SimpleDateFormat("dd/MM/yyyy");
@@ -62,6 +68,7 @@ public class QuanLyHoaDon extends JPanel {
         content.add(createFilterPanel(), BorderLayout.NORTH);
         content.add(createCenterPanel(), BorderLayout.CENTER);
         content.add(createBottomPanel(), BorderLayout.SOUTH);
+
         txtFromDate.setText(dateSdf.format(new Date()));
         txtToDate.setText(dateSdf.format(new Date()));
 
@@ -281,7 +288,7 @@ public class QuanLyHoaDon extends JPanel {
             HoaDon hd = hd_dao.getHoaDonByMa(maHD);
             if (hd != null) {
                 List<ChiTietHoaDon> dsCT = ct_dao.getChiTietByMaHD(maHD);
-                new InvoiceDialog(SwingUtilities.getWindowAncestor(this), hd, dsCT, true).setVisible(true);
+                new QuanLyHoaDon_CTHD(SwingUtilities.getWindowAncestor(this), hd, dsCT, true).setVisible(true);
             }
         });
 
@@ -297,7 +304,8 @@ public class QuanLyHoaDon extends JPanel {
                     JOptionPane.QUESTION_MESSAGE,
                     null, options, options[0]);
             if (choice == 0) {
-                JOptionPane.showMessageDialog(this, "In hóa đơn thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);}
+                JOptionPane.showMessageDialog(this, "In hóa đơn thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            }
         });
     }
 
@@ -407,24 +415,27 @@ public class QuanLyHoaDon extends JPanel {
         lblKhachHang.setText("Khách Hàng: " + (hd.getKhachHang() != null
                 ? hd.getKhachHang().getMaKH() : "Khách vãng lai"));
         lblTongTien.setText("Tổng Tiền: " + String.format("%,.0fđ", hd.getTongTien()));
-        double coc = hd.getTienCoc();
-        double tongCong = hd.getTongTien() - coc;
-        lblTienCoc.setText("Tiền Cọc: " + String.format("%,.0fđ", coc));
-        lblTongCong.setText("Tổng Cộng: " + String.format("%,.0fđ", tongCong));
-        lblTongCong.setForeground(tongCong < 0 ? Color.decode("#E74C3C") : TEXT_DARK);
-        boolean paid = hd.isTrangThai();
-        lblTrangThai.setText("Trạng Thái: " + (paid ? "Đã thanh toán" : "Chưa thanh toán"));
-        lblTrangThai.setForeground(paid ? GREEN_STATUS : Color.decode("#E67E22"));
-        if (dsCT == null || modelChiTiet == null) return;
-        int stt = 1;
-        for (ChiTietHoaDon ct : dsCT) {
-            modelChiTiet.addRow(new Object[]{
-                    stt++,
-                    ct.getMonAn() != null ? ct.getMonAn().getTenMon() : "",
-                    ct.getSoLuong(),
-                    String.format("%,.0fđ", ct.getDonGia()),
-                    String.format("%,.0fđ", ct.getThanhTien())
-            });
+        double tongTienMon = 0;
+        if (dsCT != null) {
+            for (ChiTietHoaDon ct : dsCT) {
+                tongTienMon += ct.getThanhTien();
+            }
+        }
+
+        double tienCoc = hd.getTienCoc();
+        double hieuSo = tongTienMon - tienCoc;
+
+        lblTongTien.setText("Tổng tiền món: " + String.format("%,.0fđ", tongTienMon));
+        lblTienCoc.setText("Tiền đã cọc: " + String.format("%,.0fđ", tienCoc));
+
+        if (hieuSo < 0) {
+            // Trường hợp khách dùng ít hơn tiền cọc
+            lblTongCong.setText("TIỀN HOÀN LẠI: " + String.format("%,.0fđ", Math.abs(hieuSo)));
+            lblTongCong.setForeground(new Color(46, 204, 113)); // Màu xanh lá (Positive)
+        } else {
+            // Trường hợp khách phải trả thêm
+            lblTongCong.setText("CẦN THANH TOÁN: " + String.format("%,.0fđ", hieuSo));
+            lblTongCong.setForeground(new Color(231, 76, 60)); // Màu đỏ (Cảnh báo)
         }
     }
 
@@ -550,6 +561,7 @@ public class QuanLyHoaDon extends JPanel {
         private static final Color S_TEXT_DARK = Color.decode("#333333");
         private static final java.text.SimpleDateFormat S_DATETIME_SDF =
                 new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
+
         private final Color R_NAVY  = Color.decode("#0B3D59");
         private final Color R_GOLD  = Color.decode("#C5A059");
         private final Color R_LINE  = new Color(220, 220, 220);
@@ -557,6 +569,7 @@ public class QuanLyHoaDon extends JPanel {
         private final Color R_BG    = Color.WHITE;
 
         private JPanel receiptPanel;
+
         public InvoiceDialog(java.awt.Window parent, HoaDon hd, List<ChiTietHoaDon> dsCT, boolean isDetail) {
             super(parent, isDetail ? "Chi Tiết Hóa Đơn" : "Phiếu Thanh Toán",
                     java.awt.Dialog.ModalityType.APPLICATION_MODAL);
