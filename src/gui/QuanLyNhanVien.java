@@ -14,7 +14,7 @@ import java.util.List;
 public class QuanLyNhanVien extends JPanel {
     private JTextField txtMaNV, txtTenNV, txtSoDT, txtSoCCCD, txtSearch;
     private JComboBox<String> cbChucVu, cbTrangThai;
-    private JButton btnAdd, btnUpdate, btnRemove, btnReset, btnClear, btnSearch;
+    private JButton btnAdd, btnUpdate, btnReset, btnClear, btnSearch;
     private JButton btnTabNhanVien, btnTabQuanLy;
     private JPanel listContainer;
     private NhanVien selectedNhanVien;
@@ -141,7 +141,7 @@ public class QuanLyNhanVien extends JPanel {
         styleCombo(cbChucVu);
         pFields.add(mkFieldGroup("Chức vụ:", cbChucVu));
 
-        cbTrangThai = new JComboBox<>(new String[]{"Đang làm việc"});
+        cbTrangThai = new JComboBox<>(new String[]{"Đang làm việc", "Nghỉ việc"});
         styleCombo(cbTrangThai);
         pFields.add(mkFieldGroup("Trạng thái:", cbTrangThai));
 
@@ -155,10 +155,10 @@ public class QuanLyNhanVien extends JPanel {
         pBtns.setBackground(Color.WHITE);
         btnAdd    = mkColorBtn("Thêm nhân viên", MAIN_BLUE, Color.WHITE);
         btnUpdate = mkColorBtn("Cập nhật", GOLD_COLOR, MAIN_BLUE);
-        btnRemove = mkColorBtn("Xóa nhân viên", Color.decode("#E74C3C"), Color.WHITE);
+        //btnRemove = mkColorBtn("Xóa nhân viên", Color.decode("#E74C3C"), Color.WHITE);
         btnReset  = mkColorBtn("Xóa trắng", Color.WHITE, TEXT_DARK);
         btnClear  = mkColorBtn("Làm mới", Color.WHITE, TEXT_DARK);
-        pBtns.add(btnAdd); pBtns.add(btnUpdate); pBtns.add(btnRemove);
+        pBtns.add(btnAdd); pBtns.add(btnUpdate);
         pBtns.add(btnReset); pBtns.add(btnClear);
         pBottom.add(pBtns, BorderLayout.NORTH);
 
@@ -295,7 +295,7 @@ public class QuanLyNhanVien extends JPanel {
         btnTabQuanLy.addActionListener(e -> { currentFilter = "QUAN_LY"; setActiveTab(btnTabQuanLy); clearInputs(); loadList(); });
         btnAdd.addActionListener(e -> addNhanVien());
         btnUpdate.addActionListener(e -> updateNhanVien());
-        btnRemove.addActionListener(e -> deleteNhanVien());
+        //btnRemove.addActionListener(e -> deleteNhanVien());
         btnReset.addActionListener(e -> clearInputs());
         btnClear.addActionListener(e -> { txtSearch.setText(""); clearInputs(); loadList(); });
         btnSearch.addActionListener(e -> searchNhanVien());
@@ -398,7 +398,7 @@ public class QuanLyNhanVien extends JPanel {
         txtSoDT.setText(nv.getSoDT() != null ? nv.getSoDT() : "");
         txtSoCCCD.setText(nv.getSoCCCD() != null ? nv.getSoCCCD() : "");
         cbChucVu.setSelectedItem(nv.getChucVu().getTenHienThi());
-        cbTrangThai.setSelectedIndex(0);
+        cbTrangThai.setSelectedItem(nv.getTrangThai());
     }
 
     private void clearInputs() {
@@ -424,7 +424,7 @@ public class QuanLyNhanVien extends JPanel {
         String ten  = formatName(txtTenNV.getText().trim());
         String sdt  = txtSoDT.getText().trim();
         String cccd = txtSoCCCD.getText().trim();
-        boolean tt  = "Đang làm việc".equals(cbTrangThai.getSelectedItem().toString());
+        String tt = cbTrangThai.getSelectedItem().toString();
         ChucVu cv = ChucVu.fromString(cbChucVu.getSelectedItem().toString());
         String prefix = cv == ChucVu.QUAN_LY ? "QL" : "NV";
         String maNV = nv_dao.getNextMaByPrefix(prefix);
@@ -448,7 +448,7 @@ public class QuanLyNhanVien extends JPanel {
         String ten  = formatName(txtTenNV.getText().trim());
         String sdt  = txtSoDT.getText().trim();
         String cccd = txtSoCCCD.getText().trim();
-        boolean tt  = "Đang làm việc".equals(cbTrangThai.getSelectedItem().toString());
+        String tt = cbTrangThai.getSelectedItem().toString();
         NhanVien nv = new NhanVien(ma, ten, sdt, cccd,
                 ChucVu.fromString(cbChucVu.getSelectedItem().toString()), tt, null);
         List<NhanVien> ds = nv_dao.getAllNhanVien();
@@ -461,6 +461,7 @@ public class QuanLyNhanVien extends JPanel {
         } else JOptionPane.showMessageDialog(this, "Lưu thất bại!");
     }
 
+    /*
     private void deleteNhanVien() {
         if (selectedNhanVien == null) { JOptionPane.showMessageDialog(this, "Chọn nhân viên cần xóa!"); return; }
         int c = JOptionPane.showConfirmDialog(this,
@@ -469,7 +470,7 @@ public class QuanLyNhanVien extends JPanel {
             JOptionPane.showMessageDialog(this, "Xóa thành công!");
             loadList(); clearInputs();
         }
-    }
+    }*/
 
     private void searchNhanVien() {
         String s = txtSearch.getText().trim();

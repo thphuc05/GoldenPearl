@@ -27,7 +27,7 @@ CREATE TABLE NhanVien (
     soDT VARCHAR(15),
     soCCCD VARCHAR(20),
     chucVu NVARCHAR(50),
-    trangThai BIT DEFAULT 1,
+    trangThai NVARCHAR(50) DEFAULT N'Đang Làm Việc',
     maTK VARCHAR(20),
     CONSTRAINT FK_NhanVien_TaiKhoan FOREIGN KEY (maTK) REFERENCES TaiKhoan(maTK)
 );
@@ -151,11 +151,11 @@ INSERT INTO TaiKhoan (maTK, tenTK, matKhau, vaiTro) VALUES ('TK004', 'thienphuc'
 INSERT INTO TaiKhoan (maTK, tenTK, matKhau, vaiTro) VALUES ('TK005', 'admin', '123456', 'QUAN_LY');
 
 -- Insert NhanVien
-INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('NV001', N'Nguyễn Văn Hòa', '0901234567', '123456789012', N'NHAN_VIEN', 1, 'TK001');
-INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('NV002', N'Trần Thiên Bảo', '0386314739', '987654321098', N'NHAN_VIEN', 1, 'TK002');
-INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('NV003', N'Nguyễn Công Bình', '0123456789', '987654321092', N'NHAN_VIEN', 1, 'TK003');
-INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('NV004', N'Trần Thiên Phúc', '0987654321', '987654321093', N'NHAN_VIEN', 1, 'TK004');
-INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('QL001', N'Nguyễn Thị Quản Lý', '0900000001', '000000000001', N'QUAN_LY', 1, 'TK005');
+INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('NV001', N'Nguyễn Văn Hòa', '0901234567', '123456789012', N'NHAN_VIEN', N'Đang Làm Việc', 'TK001');
+INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('NV002', N'Trần Thiên Bảo', '0386314739', '987654321098', N'NHAN_VIEN', N'Đang Làm Việc', 'TK002');
+INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('NV003', N'Nguyễn Công Bình', '0123456789', '987654321092', N'NHAN_VIEN', N'Đang Làm Việc', 'TK003');
+INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('NV004', N'Trần Thiên Phúc', '0987654321', '987654321093', N'NHAN_VIEN', N'Đang Làm Việc', 'TK004');
+INSERT INTO NhanVien (maNV, tenNV, soDT, soCCCD, chucVu, trangThai, maTK) VALUES ('QL001', N'Nguyễn Thị Quản Lý', '0900000001', '000000000001', N'QUAN_LY', N'Đang Làm Việc', 'TK005');
 
 -- Insert KhuVuc
 INSERT INTO KhuVuc (maKV, tenKV, moTa) VALUES ('KV001', N'Thường', N'Khu vực trong nhà');

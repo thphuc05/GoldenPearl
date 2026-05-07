@@ -56,7 +56,7 @@ public class NhanVien_DAO {
                     String soDT = rs.getString("soDT");
                     String soCCCD = rs.getString("soCCCD");
                     String chucVuStr = rs.getString("chucVu");
-                    boolean trangThai = rs.getBoolean("trangThai");
+                    String trangThai = rs.getString("trangThai");
                     String maTK = rs.getString("maTK");
 
                     ChucVu cv = ChucVu.fromString(chucVuStr);
@@ -105,7 +105,7 @@ public class NhanVien_DAO {
                 String soDT = rs.getString("soDT");
                 String soCCCD = rs.getString("soCCCD");
                 String chucVuStr = rs.getString("chucVu");
-                boolean trangThai = rs.getBoolean("trangThai");
+                String trangThai = rs.getString("trangThai");
                 String maTK = rs.getString("maTK");
                 ChucVu cv = ChucVu.fromString(chucVuStr);
                 TaiKhoan tk = (maTK != null) ? new TaiKhoan(maTK, null, null, null) : null;
@@ -138,7 +138,7 @@ public class NhanVien_DAO {
                 String soDT = rs.getString("soDT");
                 String soCCCD = rs.getString("soCCCD");
                 String chucVuStr = rs.getString("chucVu");
-                boolean trangThai = rs.getBoolean("trangThai");
+                String trangThai = rs.getString("trangThai");
                 ChucVu cv = ChucVu.fromString(chucVuStr);
                 TaiKhoan tk = new TaiKhoan();
                 tk.setMaTK(maTK);
@@ -168,7 +168,7 @@ public class NhanVien_DAO {
             statement.setString(3, nv.getSoDT());
             statement.setString(4, nv.getSoCCCD());
             statement.setString(5, nv.getChucVu().toDatabaseValue());
-            statement.setBoolean(6, nv.isTrangThai());
+            statement.setString(6, nv.getTrangThai());
             if (nv.getTaiKhoan() != null) {
                 statement.setString(7, nv.getTaiKhoan().getMaTK());
             } else {
@@ -198,7 +198,7 @@ public class NhanVien_DAO {
             statement.setString(2, nv.getSoDT());
             statement.setString(3, nv.getSoCCCD());
             statement.setString(4, nv.getChucVu().toDatabaseValue());
-            statement.setBoolean(5, nv.isTrangThai());
+            statement.setString(5, nv.getTrangThai());
             if (nv.getTaiKhoan() != null) {
                 statement.setString(6, nv.getTaiKhoan().getMaTK());
             } else {
