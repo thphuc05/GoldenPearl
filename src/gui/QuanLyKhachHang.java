@@ -27,6 +27,7 @@ public class QuanLyKhachHang extends JPanel {
     private JLabel lblTotal;
     private JTable table;
     private DefaultTableModel tableModel;
+    private DefaultTableModel invoiceModel;
     private KhachHang_DAO kh_dao;
     private HoaDon_DAO hd_dao;
     private ChiTietHoaDon_DAO ct_dao;

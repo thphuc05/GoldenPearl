@@ -19,10 +19,9 @@ public class ConnectDB {
         }
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            // Quay lại chuỗi kết nối cũ, chỉ đổi mật khẩu thành sapassword
-            String url = "jdbc:sqlserver://localhost:1433;databaseName=GoldenPearlDB;encrypt=false;trustServerCertificate=true;loginTimeout=30;";
+            String url = "jdbc:sqlserver://localhost:1433;databaseName=GoldenPearlDB;encrypt=true;trustServerCertificate=true;loginTimeout=30;";
             String user = "sa";
-            String password = "sapassword";
+            String password = "sa";
             con = DriverManager.getConnection(url, user, password);
             System.out.println("✅ Kết nối Database thành công!");
             runMigrations();

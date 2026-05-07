@@ -194,116 +194,44 @@ INSERT INTO Ban (maBan, soBan, sucChua, loaiBan, maKV, maTinhTrang) VALUES ('B02
 
 -- Insert KhachHang
 INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH001', N'Lê Văn C', '0888111222', 'levanc@gmail.com');
+
+-- Insert LoaiSanPham
+INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP01', N'Món chính', N'Các món chính của nhà hàng');
+INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP02', N'Đồ uống', N'Nước giải khát, rượu, bia');
+
+-- Insert SanPham
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP001', N'Bò Wagyu nướng', 500000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP002', N'Rượu Vang Đỏ', 1200000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP003', N'Súp Bào Ngư Vi Cá', 850000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP004', N'Tôm Hùm Bỏ Lò Phô Mai', 1250000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP005', N'Cua Hoàng Đế Hấp Thủy Nhiệt', 2500000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP006', N'Gan Ngỗng Pháp Áp Chảo', 650000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP007', N'Cơm Chiên Hải Sản Cung Đình', 350000, 1, 'LSP01');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP008', N'Rượu Vang Trắng Sauvignon', 1500000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP009', N'Nước Ép Trái Cây Nhiệt Đới', 85000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP010', N'Trà Hoa Cúc Mật Ong', 65000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP011', N'Cà Phê Muối Golden Pearl', 75000, 1, 'LSP02');
+INSERT INTO SanPham (maMon, tenMon, donGia, trangThai, maDanhMuc) VALUES ('SP012', N'Cocktail Signature Night', 185000, 1, 'LSP02');
+
+-- Insert KhuyenMai
+INSERT INTO KhuyenMai (maKM, tenKM, phanTramGiam, ngayBatDau, ngayKetThuc) VALUES ('KM001', N'Khai trương', 10, '2024-01-01', '2024-12-31');
+
+-- NEW SAMPLE DATA (5 Invoices)
+-- Extra Customers
 INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH002', N'Phạm Minh Hoàng', '0912345678', 'hoangpm@gmail.com');
 INSERT INTO KhachHang (maKH, tenKH, soDT, email) VALUES ('KH003', N'Nguyễn Thùy Linh', '0988777666', 'linhnt@gmail.com');
 
--- Insert LoaiSanPham
-INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP_KV',   N'Khai vị',      N'Món ăn khai vị');
-INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP_COM',  N'Cơm',          N'Các món cơm');
-INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP_MI',   N'Mì xào',       N'Các món mì xào');
-INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP_LAU',  N'Lẩu',          N'Các loại lẩu');
-INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP_TOM',  N'Tôm',          N'Các món tôm');
-INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP_CUA',  N'Cua',          N'Các món cua');
-INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP_BEER', N'Beer',         N'Bia các loại');
-INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP_NGOT', N'Ngọt có gas', N'Nước ngọt có gas');
-INSERT INTO LoaiSanPham (maDanhMuc, tenDanhMuc, moTa) VALUES ('LSP_SUOI', N'Suối',         N'Nước khoáng');
-
--- Insert SanPham
--- Khai vị
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_KV01', N'Ngô chiên bơ',     30000,  55000, 1, 'LSP_KV');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_KV02', N'Khoai lang chiên', 25000,  45000, 1, 'LSP_KV');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_KV03', N'Khoai tây chiên',  20000,  40000, 1, 'LSP_KV');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_KV04', N'Sụn gà chiên',     35000,  65000, 1, 'LSP_KV');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_KV05', N'Nem hải sản',      45000,  80000, 1, 'LSP_KV');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_KV06', N'Gỏi ngó sen tôm thịt', 55000, 95000, 1, 'LSP_KV');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_KV07', N'Salad rong biển', 40000, 75000, 1, 'LSP_KV');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_KV08', N'Chả giò tôm cua', 50000, 90000, 1, 'LSP_KV');
--- Cơm
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_COM01', N'Cơm chiên hải sản',    60000, 110000, 1, 'LSP_COM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_COM02', N'Cơm chiên Dương Châu', 50000,  90000, 1, 'LSP_COM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_COM03', N'Cơm bò hầm',           70000, 130000, 1, 'LSP_COM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_COM04', N'Cơm chiên cá mặn', 55000, 100000, 1, 'LSP_COM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_COM05', N'Cơm trắng niêu', 15000, 30000, 1, 'LSP_COM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_COM06', N'Cơm chiên tỏi', 35000, 65000, 1, 'LSP_COM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_COM07', N'Cơm cháy kho quẹt', 45000, 85000, 1, 'LSP_COM');
--- Mì xào
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_MI01', N'Mì xào hải sản',     65000, 120000, 1, 'LSP_MI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_MI02', N'Mì xào ốc móng tay', 70000, 130000, 1, 'LSP_MI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_MI03', N'Mì xào hoa quả',     55000, 100000, 1, 'LSP_MI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_MI04', N'Mì xào bò',           75000, 140000, 1, 'LSP_MI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_MI05', N'Mì xào giòn hải sản', 70000, 135000, 1, 'LSP_MI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_MI06', N'Mì Ý sốt bò băm', 65000, 125000, 1, 'LSP_MI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_MI07', N'Miến xào cua', 90000, 170000, 1, 'LSP_MI');
--- Lẩu
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_LAU01', N'Lẩu thái',     150000, 280000, 1, 'LSP_LAU');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_LAU02', N'Lẩu hải sản',  200000, 380000, 1, 'LSP_LAU');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_LAU03', N'Lẩu ếch',      180000, 340000, 1, 'LSP_LAU');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_LAU04', N'Lẩu tôm thái', 170000, 320000, 1, 'LSP_LAU');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_LAU05', N'Lẩu cá đuối',  220000, 420000, 1, 'LSP_LAU');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_LAU06', N'Lẩu nấm chim câu', 250000, 480000, 1, 'LSP_LAU');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_LAU07', N'Lẩu riêu cua bắp bò', 230000, 450000, 1, 'LSP_LAU');
--- Tôm
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_TOM01', N'Tôm sú',       120000, 220000, 1, 'LSP_TOM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_TOM02', N'Tôm hùm xanh', 350000, 650000, 1, 'LSP_TOM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_TOM03', N'Tôm mũ ni',    200000, 380000, 1, 'LSP_TOM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_TOM04', N'Tôm tít cháy tỏi', 250000, 480000, 1, 'LSP_TOM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_TOM05', N'Tôm nướng muối ớt', 130000, 240000, 1, 'LSP_TOM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_TOM06', N'Tôm hấp nước dừa', 125000, 230000, 1, 'LSP_TOM');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_TOM07', N'Tôm sốt hoàng kim', 140000, 260000, 1, 'LSP_TOM');
--- Cua
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_CUA01', N'Cua thịt',      250000, 450000, 1, 'LSP_CUA');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_CUA02', N'Cua gạch',      350000, 650000, 1, 'LSP_CUA');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_CUA03', N'Cua càng xanh', 300000, 550000, 1, 'LSP_CUA');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_CUA04', N'Cua hoàng đế (kg)', 1500000, 2800000, 1, 'LSP_CUA');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_CUA05', N'Cua rang me', 280000, 520000, 1, 'LSP_CUA');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_CUA06', N'Cua hấp bia', 270000, 500000, 1, 'LSP_CUA');
--- Beer
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_BEER01', N'Tiger',    20000, 40000, 1, 'LSP_BEER');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_BEER02', N'Saigon',   15000, 30000, 1, 'LSP_BEER');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_BEER03', N'Heineken', 22000, 45000, 1, 'LSP_BEER');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_BEER04', N'Budweiser', 25000, 50000, 1, 'LSP_BEER');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_BEER05', N'Sapporo', 24000, 48000, 1, 'LSP_BEER');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_BEER06', N'Beck''s', 21000, 42000, 1, 'LSP_BEER');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_BEER07', N'Strongbow', 23000, 45000, 1, 'LSP_BEER');
--- Ngọt có gas
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_NGOT01', N'7Up',       8000, 18000, 1, 'LSP_NGOT');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_NGOT02', N'Pepsi',     8000, 18000, 1, 'LSP_NGOT');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_NGOT03', N'Coca Cola', 8000, 18000, 1, 'LSP_NGOT');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_NGOT04', N'Sting',     9000, 20000, 1, 'LSP_NGOT');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_NGOT05', N'Mirinda Cam', 8000, 18000, 1, 'LSP_NGOT');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_NGOT06', N'Sprite', 8000, 18000, 1, 'LSP_NGOT');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_NGOT07', N'Fanta', 8000, 18000, 1, 'LSP_NGOT');
--- Suối
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_SUOI01', N'Aquafina',   6000, 12000, 1, 'LSP_SUOI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_SUOI02', N'LaVie',      6000, 12000, 1, 'LSP_SUOI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_SUOI03', N'Number One', 7000, 15000, 1, 'LSP_SUOI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_SUOI04', N'Dasani', 6000, 12000, 1, 'LSP_SUOI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_SUOI05', N'Evian', 25000, 45000, 1, 'LSP_SUOI');
-INSERT INTO SanPham (maMon, tenMon, giaGoc, giaBan, trangThai, maDanhMuc) VALUES ('SP_SUOI06', N'Vĩnh Hảo', 7000, 14000, 1, 'LSP_SUOI');
-
--- Insert KhuyenMai
-INSERT INTO KhuyenMai (maKM, tenKM, phanTramGiam, ngayBatDau, ngayKetThuc) VALUES ('KM001', N'Khai trương', 10, '2024-01-01', '2026-12-31');
-
--- ---------------------------------------------------------
--- HISTORICAL DATA (Last 7 days for Dashboard)
--- ---------------------------------------------------------
-
--- 2026-04-22
-INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maNV, maKH) VALUES ('HD001', '2026-04-22', '12:00:00', 1000000, 1, 'NV001', 'KH001');
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, thanhTien) VALUES ('HD001', 'SP_TOM01', 2, 500000, 1000000);
-
--- 2026-04-23
-INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maNV, maKH) VALUES ('HD002', '2026-04-23', '18:30:00', 1700000, 1, 'NV002', 'KH002');
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, thanhTien) VALUES ('HD002', 'SP_TOM01', 1, 500000, 500000);
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, thanhTien) VALUES ('HD002', 'SP_BEER03', 1, 1200000, 1200000);
-
--- 2026-04-24
-INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maNV, maKH) VALUES ('HD003', '2026-04-24', '19:00:00', 2500000, 1, 'NV001', 'KH003');
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, thanhTien) VALUES ('HD003', 'SP_CUA02', 1, 2500000, 2500000);
-
--- 2026-04-25
-INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maNV, maKH) VALUES ('HD004', '2026-04-25', '13:00:00', 850000, 1, 'NV001', 'KH002');
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, thanhTien) VALUES ('HD004', 'SP_LAU02', 1, 850000, 850000);
+-- Booking Orders
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan)
+VALUES ('DDB001', '2026-04-20 10:00:00', '2026-04-20 12:00:00', 4, 'KH001', 1, 'NV001', 'B001');
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan)
+VALUES ('DDB002', '2026-04-21 17:30:00', '2026-04-21 19:00:00', 2, 'KH002', 1, 'NV002', 'B002');
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan)
+VALUES ('DDB003', '2026-04-22 18:00:00', '2026-04-22 20:00:00', 6, 'KH003', 1, 'NV001', 'B005');
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan)
+VALUES ('DDB004', '2026-04-23 11:00:00', '2026-04-23 13:00:00', 3, 'KH001', 1, 'NV003', 'B004');
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan)
+VALUES ('DDB005', '2026-04-24 19:00:00', '2026-04-24 21:00:00', 2, 'KH002', 1, 'NV004', 'B009');
 
 -- 2026-04-26
 INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maNV, maKH) VALUES ('HD005', '2026-04-26', '20:00:00', 2450000, 1, 'NV002', 'KH001');
@@ -882,73 +810,4 @@ INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maDon, maNV, m
 
 -- [auto] 2026-05-06 09:24:45
 UPDATE Ban SET maTinhTrang = 'DAT_TRUOC' WHERE maBan = 'B002';
-
--- [auto] 2026-05-06 12:18:30
-UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B001';
-
--- [auto] 2026-05-06 12:18:35
-UPDATE HoaDon SET tongTien = 1776000 WHERE maHD = 'HD021';
-
--- [auto] 2026-05-06 12:18:35
-UPDATE HoaDon SET trangThai = 1 WHERE maHD = 'HD021';
-
--- [auto] 2026-05-06 12:18:35
-UPDATE DonDatBan SET thoiGianDat = '2026-05-06 07:58:43', thoiGianDen = '2026-05-06 00:00:00', soLuongKhach = 4, maKH = 'KH019', trangThai = 1, maNV = 'NV002', maBan = 'B001' WHERE maDon = 'DDB014';
-
--- [auto] 2026-05-06 12:18:35
-UPDATE Ban SET maTinhTrang = 'TRONG' WHERE maBan = 'B001';
-
--- [auto] 2026-05-06 23:47:10
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD022', 'SP_BEER03', 1, 45000, N'', 45000);
-
--- [auto] 2026-05-06 23:47:10
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD022', 'SP_BEER06', 3, 42000, N'', 126000);
-
--- [auto] 2026-05-06 23:47:10
-UPDATE HoaDon SET tongTien = 671000 WHERE maHD = 'HD022';
-
--- [auto] 2026-05-06 23:47:11
-UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
-
--- [auto] 2026-05-06 23:47:12
-UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
-
--- [auto] 2026-05-06 23:47:13
-UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
-
--- [auto] 2026-05-06 23:47:13
-UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
-
--- [auto] 2026-05-06 23:47:13
-UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
-
--- [auto] 2026-05-06 23:47:14
-UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
-
--- [auto] 2026-05-07 01:03:49
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_BEER02', 1, 30000, N'', 30000);
-
--- [auto] 2026-05-07 01:03:49
-UPDATE HoaDon SET tongTien = 8530000 WHERE maHD = 'HD012';
-
--- [auto] 2026-05-07 01:40:58
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_BEER05', 2, 48000, N'', 96000);
-
--- [auto] 2026-05-07 01:40:58
-UPDATE HoaDon SET tongTien = 8626000 WHERE maHD = 'HD012';
-
--- [auto] 2026-05-07 01:41:09
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_MI06', 1, 125000, N'', 125000);
-
--- [auto] 2026-05-07 01:41:09
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_MI03', 1, 100000, N'', 100000);
-
--- [auto] 2026-05-07 01:41:09
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_MI02', 1, 130000, N'', 130000);
-
--- [auto] 2026-05-07 01:41:09
-INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_MI01', 1, 120000, N'', 120000);
-
--- [auto] 2026-05-07 01:41:09
-UPDATE HoaDon SET tongTien = 9101000 WHERE maHD = 'HD012';
 

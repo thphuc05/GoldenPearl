@@ -5,6 +5,7 @@ import lib.FontLoader;
 import connectDB.ConnectDB;
 import dao.TaiKhoan_DAO;
 import entity.TaiKhoan;
+import themes.DefaultTheme;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -16,7 +17,7 @@ import java.util.Map;
 import java.util.Properties;
 
 public class Login {
-    // Cửa sổ chính
+    // Khung chinh
     private JFrame frame = new JFrame("Hệ thống quản lý nhà hàng Golden Pearl");
 
     // Khung đăng nhập - override để có khung bo tròn trong suốt
@@ -25,7 +26,6 @@ public class Login {
         protected void paintComponent(Graphics g) {
             Graphics2D g2d = (Graphics2D) g.create();
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            // Màu trắng với độ trong suốt 153 (~60%)
             g2d.setColor(new Color(255, 255, 255, 153));
             g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
             g2d.dispose();
@@ -54,40 +54,37 @@ public class Login {
     public Login() {
         initConfiguration();
         initUI();
+        SwingUtilities.updateComponentTreeUI(frame);
         initEvents();
     }
 
-    /**
-     * Cấu hình Font và Theme (FlatLaf)
-     */
     private void initConfiguration() {
         FontLoader.registerFont("data/fonts/InstrumentSerif-Regular.ttf");
         FontLoader.registerFont("data/fonts/Inter-Medium.otf");
         FontLoader.registerFont("data/fonts/Inter-Bold.otf");
 
         try {
+            UIManager.put("Label.foreground", Color.WHITE);
             Properties props = new Properties();
             File themeFile = new File("themes/DefaultTheme.properties");
             if (themeFile.exists()) {
                 try (FileInputStream fis = new FileInputStream(themeFile)) {
                     props.load(fis);
                 }
-                FlatLaf.registerCustomDefaultsSource(new File("themes/DefaultTheme.properties"));
-                com.formdev.flatlaf.FlatLaf.setGlobalExtraDefaults((Map) props);
+                FlatLaf.registerCustomDefaultsSource(themeFile);
+                FlatLaf.setGlobalExtraDefaults((Map) props);
             }
+            DefaultTheme.setup();
         } catch (Exception e) {
-            System.err.println("❌ Thất bại trong việc tải thuộc tính giao diện: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        // Khởi tạo FlatLaf
-        FlatLightLaf.setup();
     }
 
     /**
      * Thiết lập giao diện (Tự động tràn màn hình và căn giữa)
      */
     private void initUI() {
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH); // Tràn màn hình
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(true);
         frame.getContentPane().setLayout(new BorderLayout());
@@ -110,7 +107,6 @@ public class Login {
 
         // Tiêu đề
         screenTitle.setFont(new Font("Inter Bold", Font.BOLD, 35));
-        screenTitle.setForeground(Color.BLACK);
         screenTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         screenTitle.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -132,10 +128,8 @@ public class Login {
         // Labels bên trong panel
         userNameLabel.setBounds(50, 50, 250, 50);
         userNameLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
-        userNameLabel.setForeground(Color.BLACK);
         passwordLabel.setBounds(50, 130, 250, 50);
         passwordLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
-        passwordLabel.setForeground(Color.BLACK);
 
         // Input Fields
         txtUsername.setBounds(300, 50, 350, 50);
@@ -148,6 +142,8 @@ public class Login {
         btnForget.setForeground(Color.WHITE);
 
         btnLogin.setBounds(410, 220, 181, 50);
+        btnLogin.setBackground(Color.decode("#FF5F1F"));
+        btnLogin.setForeground(Color.WHITE);
 
         // Add components to panel
         panel.add(userNameLabel);
@@ -171,8 +167,7 @@ public class Login {
         // Add container vào background với ràng buộc căn giữa
         bg.add(centerContainer, new GridBagConstraints());
 
-        // Cập nhật UI và hiển thị
-        SwingUtilities.updateComponentTreeUI(frame);
+        bg.add(panel);
         frame.setVisible(true);
     }
 
@@ -254,23 +249,22 @@ public class Login {
 
         btnForget.addActionListener(e -> {
             frame.dispose();
-            new ForgotPassword().setVisible(true);
+            new ForgotPassword();
         });
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(Login::new);
+        new Login();
     }
 
-    // --- INNER CLASSES ---
-
+    // Custom classes
     public class JPanelWithBackground extends JPanel {
         private Image backgroundImage;
 
         public JPanelWithBackground(String fileName) throws IOException {
             backgroundImage = ImageIO.read(new File(fileName));
         }
-        
+
         public JPanelWithBackground() {} // Constructor dự phòng
 
         @Override

@@ -49,6 +49,7 @@ public class QuanLyNhanVien extends JPanel {
 
         initEvents();
         setActiveTab(btnTabNhanVien);
+
         clearInputs();
         loadList();
     }
@@ -298,6 +299,7 @@ public class QuanLyNhanVien extends JPanel {
         btnReset.addActionListener(e -> clearInputs());
         btnClear.addActionListener(e -> { txtSearch.setText(""); clearInputs(); loadList(); });
         btnSearch.addActionListener(e -> searchNhanVien());
+
         cbChucVu.addActionListener(e -> {
             if (cbChucVu.getSelectedItem() == null) return;
             if (selectedNhanVien != null) return;
