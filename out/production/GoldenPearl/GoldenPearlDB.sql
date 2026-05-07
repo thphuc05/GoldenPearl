@@ -853,3 +853,102 @@ INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maDon, maNV, m
 -- [auto] 2026-05-06 09:00:04
 UPDATE Ban SET maTinhTrang = 'DAT_TRUOC' WHERE maBan = 'B001';
 
+-- [auto] 2026-05-06 09:07:32
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD021', 'SP_BEER01', 2, 40000, N'', 80000);
+
+-- [auto] 2026-05-06 09:07:32
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD021', 'SP_BEER02', 2, 30000, N'', 60000);
+
+-- [auto] 2026-05-06 09:07:32
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD021', 'SP_BEER05', 2, 48000, N'', 96000);
+
+-- [auto] 2026-05-06 09:07:32
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD021', 'SP_CUA05', 2, 520000, N'', 1040000);
+
+-- [auto] 2026-05-06 09:07:32
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD021', 'SP_CUA06', 1, 500000, N'', 500000);
+
+-- [auto] 2026-05-06 09:07:32
+UPDATE HoaDon SET tongTien = 2276000 WHERE maHD = 'HD021';
+
+-- [auto] 2026-05-06 09:24:45
+INSERT INTO KhachHang (maKH, tenKH, soDT) VALUES ('KH020', N'hjm', '0000999988');
+
+-- [auto] 2026-05-06 09:24:45
+INSERT INTO DonDatBan (maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, maBan, khungGio) VALUES ('DDB015', '2026-05-06 09:24:45', '2026-05-06 00:00:00', 4, 'KH020', 0, 'NV001', 'B002', 'SANG');
+
+-- [auto] 2026-05-06 09:24:45
+INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maDon, maNV, maKH, maKM, tienCoc) VALUES ('HD022', '2026-05-06 09:24:45', '09:24:45', 500000, 0, 'DDB015', 'NV001', 'KH020', NULL, 500000);
+
+-- [auto] 2026-05-06 09:24:45
+UPDATE Ban SET maTinhTrang = 'DAT_TRUOC' WHERE maBan = 'B002';
+
+-- [auto] 2026-05-06 12:18:30
+UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B001';
+
+-- [auto] 2026-05-06 12:18:35
+UPDATE HoaDon SET tongTien = 1776000 WHERE maHD = 'HD021';
+
+-- [auto] 2026-05-06 12:18:35
+UPDATE HoaDon SET trangThai = 1 WHERE maHD = 'HD021';
+
+-- [auto] 2026-05-06 12:18:35
+UPDATE DonDatBan SET thoiGianDat = '2026-05-06 07:58:43', thoiGianDen = '2026-05-06 00:00:00', soLuongKhach = 4, maKH = 'KH019', trangThai = 1, maNV = 'NV002', maBan = 'B001' WHERE maDon = 'DDB014';
+
+-- [auto] 2026-05-06 12:18:35
+UPDATE Ban SET maTinhTrang = 'TRONG' WHERE maBan = 'B001';
+
+-- [auto] 2026-05-06 23:47:10
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD022', 'SP_BEER03', 1, 45000, N'', 45000);
+
+-- [auto] 2026-05-06 23:47:10
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD022', 'SP_BEER06', 3, 42000, N'', 126000);
+
+-- [auto] 2026-05-06 23:47:10
+UPDATE HoaDon SET tongTien = 671000 WHERE maHD = 'HD022';
+
+-- [auto] 2026-05-06 23:47:11
+UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
+
+-- [auto] 2026-05-06 23:47:12
+UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
+
+-- [auto] 2026-05-06 23:47:13
+UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
+
+-- [auto] 2026-05-06 23:47:13
+UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
+
+-- [auto] 2026-05-06 23:47:13
+UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
+
+-- [auto] 2026-05-06 23:47:14
+UPDATE Ban SET maTinhTrang = 'DANG_SD' WHERE maBan = 'B002';
+
+-- [auto] 2026-05-07 01:03:49
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_BEER02', 1, 30000, N'', 30000);
+
+-- [auto] 2026-05-07 01:03:49
+UPDATE HoaDon SET tongTien = 8530000 WHERE maHD = 'HD012';
+
+-- [auto] 2026-05-07 01:40:58
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_BEER05', 2, 48000, N'', 96000);
+
+-- [auto] 2026-05-07 01:40:58
+UPDATE HoaDon SET tongTien = 8626000 WHERE maHD = 'HD012';
+
+-- [auto] 2026-05-07 01:41:09
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_MI06', 1, 125000, N'', 125000);
+
+-- [auto] 2026-05-07 01:41:09
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_MI03', 1, 100000, N'', 100000);
+
+-- [auto] 2026-05-07 01:41:09
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_MI02', 1, 130000, N'', 130000);
+
+-- [auto] 2026-05-07 01:41:09
+INSERT INTO ChiTietHoaDon (maHD, maMon, soLuong, donGia, ghiChu, thanhTien) VALUES ('HD012', 'SP_MI01', 1, 120000, N'', 120000);
+
+-- [auto] 2026-05-07 01:41:09
+UPDATE HoaDon SET tongTien = 9101000 WHERE maHD = 'HD012';
+

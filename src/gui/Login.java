@@ -146,7 +146,7 @@ public class Login {
         btnForget.setBounds(100, 220, 236, 50);
         btnForget.setBackground(Color.BLACK);
         btnForget.setForeground(Color.WHITE);
-        
+
         btnLogin.setBounds(410, 220, 181, 50);
 
         // Add components to panel
@@ -221,9 +221,24 @@ public class Login {
                     try {
                         TaiKhoan tk = get();
                         if (tk != null) {
-                            JOptionPane.showMessageDialog(null, "Đăng nhập thành công!");
-                            frame.dispose();
-                            new TrangChu(tk).setVisible(true);
+                            String vaiTro = tk.getVaiTro();
+
+                            if (vaiTro.equalsIgnoreCase("QUAN_LY")) {
+                                JOptionPane.showMessageDialog(null, "Đăng nhập thành công với quyền Quản lý!");
+                                frame.dispose();
+                                new TrangChu(tk).setVisible(true);
+
+                            } else if (vaiTro.equalsIgnoreCase("NHAN_VIEN")) {
+                                // CHẶN LẠI HOẶC CHUYỂN HƯỚNG
+                                // Nếu bạn ĐÃ LÀM giao diện riêng cho Nhân viên thì bỏ comment 2 dòng dưới:
+                                // Nếu CHƯA LÀM thì hiện thông báo chặn:
+                                JOptionPane.showMessageDialog(null,
+                                        "Tài khoản của bạn là Nhân Viên!\nHệ thống Quản lý chỉ dành riêng cho cấp Quản lý.",
+                                        "Từ chối truy cập", JOptionPane.WARNING_MESSAGE);
+
+                            } else {
+                                JOptionPane.showMessageDialog(null, "Lỗi hệ thống: Vai trò không xác định!");
+                            }
                         } else {
                             JOptionPane.showMessageDialog(null, "Tên đăng nhập hoặc mật khẩu sai!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                         }
@@ -244,7 +259,6 @@ public class Login {
     }
 
     public static void main(String[] args) {
-        // Chạy giao diện trên Event Dispatch Thread (EDT)
         SwingUtilities.invokeLater(Login::new);
     }
 
