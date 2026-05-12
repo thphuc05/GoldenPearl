@@ -53,18 +53,11 @@ public class TrangChu extends JFrame {
     public TrangChu(TaiKhoan tk) {
         super("Hệ thống quản lý nhà hàng Golden Pearl");
         this.taiKhoan = tk;
+        if (tk != null) {
+            this.nhanVien = new NhanVien_DAO().getNhanVienByMaTK(tk.getMaTK());
+        }
         loadFonts();
         initUI();
-        if (tk != null) {
-            new SwingWorker<NhanVien, Void>() {
-                @Override protected NhanVien doInBackground() {
-                    return new NhanVien_DAO().getNhanVienByMaTK(tk.getMaTK());
-                }
-                @Override protected void done() {
-                    try { nhanVien = get(); } catch (Exception e) { e.printStackTrace(); }
-                }
-            }.execute();
-        }
     }
 
     public TrangChu() { this(null); }
@@ -188,7 +181,8 @@ public class TrangChu extends JFrame {
         JPanel outer = new JPanel(new BorderLayout());
         outer.setOpaque(false);
         outer.setAlignmentX(Component.LEFT_ALIGNMENT);
-        outer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 92));
+        // Tăng nhẹ chiều cao để chứa thêm 1 dòng chữ
+        outer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
         outer.setBorder(new EmptyBorder(10, 10, 6, 10));
 
         JPanel box = new JPanel(new BorderLayout(10, 0)) {
@@ -213,24 +207,34 @@ public class TrangChu extends JFrame {
         pInfo.setLayout(new BoxLayout(pInfo, BoxLayout.Y_AXIS));
         pInfo.setOpaque(false);
 
+        // Lấy dữ liệu (Dựa trên cấu trúc User Summary của bạn)
         String role = taiKhoan != null ? "Vai trò: " + taiKhoan.getVaiTro() : "Vai trò: Admin";
-        String name = taiKhoan != null ? taiKhoan.getTenTK() : "Admin";
+        String tkName = taiKhoan != null ? "TK: " + taiKhoan.getTenTK() : "TK: Admin";
+
+        // THÊM: Lấy tên nhân viên từ đối tượng NhanVien đã có trong class Admin/ThuNgan
+        String nvName = (nhanVien != null) ? nhanVien.getTenNV() : "Chưa xác định";
 
         JLabel lblRole = new JLabel(role);
         lblRole.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         lblRole.setForeground(new Color(180, 210, 235));
         lblRole.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel lblName = new JLabel(name);
-        lblName.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lblName.setForeground(Color.WHITE);
-        lblName.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel lblTkName = new JLabel(tkName);
+        lblTkName.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblTkName.setForeground(new Color(230, 230, 230));
+        lblTkName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        // THÊM: Label hiển thị Tên Nhân Viên (In đậm để nổi bật)
+        JLabel lblNvName = new JLabel(nvName);
+        lblNvName.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblNvName.setForeground(Color.WHITE);
+        lblNvName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         pInfo.add(lblRole);
         pInfo.add(Box.createVerticalStrut(2));
-        pInfo.add(lblName);
-        pInfo.add(Box.createVerticalStrut(4));
+        pInfo.add(lblTkName); // Hiển thị tên tài khoản nhỏ phía trên
+        pInfo.add(Box.createVerticalStrut(2));
+        pInfo.add(lblNvName); // Hiển thị tên nhân viên chính
 
         box.add(lblIcon, BorderLayout.WEST);
         box.add(pInfo, BorderLayout.CENTER);
@@ -578,7 +582,7 @@ public class TrangChu extends JFrame {
                     java.sql.Timestamp ts2 = new java.sql.Timestamp(end.getTime());
                     double profit = ct_dao.getProfitByDateRange(ts1, ts2);
                     Map<String, Double> profitMap = ct_dao.getProfitGroupedByMaHD(ts1, ts2);
-                    Map<String, Integer> top = ct_dao.getTop5SellingDishes();
+                    Map<String, Integer> top = ct_dao.getTop5SellingDishesByDateRange(ts1, ts2);
 
                     List<Object[]> rows = new ArrayList<>();
                     SimpleDateFormat dfmt = new SimpleDateFormat("dd/MM/yyyy");

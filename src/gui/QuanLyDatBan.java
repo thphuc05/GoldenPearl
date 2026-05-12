@@ -8,16 +8,27 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
+/**
+ * Lớp QuanLyDatBan: Quản lý sơ đồ bàn ăn, đặt bàn, check-in và thanh toán.
+ * <p>
+ * Chức năng chính:
+ * - Hiển thị sơ đồ bàn theo thời gian (Sáng/Chiều/Tối).
+ * - Theo dõi trạng thái bàn (Trống/Đã đặt/Đang dùng).
+ * - Tìm kiếm đơn đặt bàn nhanh qua số điện thoại.
+ * - Xử lý quy trình: Đặt món -> Check-in -> Thanh toán.
+ * </p>
+ *
+ * @author Le Van Hoa
+ * @version 1.0
+ */
 public class QuanLyDatBan extends JPanel {
 
-    // ── constants ────────────────────────────────────────────────────────
+    // --- CÁC HẰNG SỐ CẤU HÌNH GIAO DIỆN ---
     private static final double TIEN_COC    = 500_000.0;
     private static final Color  MAIN_BLUE   = Color.decode("#0B3D59");
     private static final Color  GOLD_COLOR  = Color.decode("#C5A059");
@@ -29,7 +40,7 @@ public class QuanLyDatBan extends JPanel {
     private static final Color  BORDER_CLR  = Color.decode("#DDE1E7");
     private static final DecimalFormat FMT  = new DecimalFormat("#,###");
 
-    // time-slot definitions
+    // --- ĐỊNH NGHĨA KHUNG GIỜ (SLOTS) ---
     private static final String[] SLOT_KEYS    = {"SANG",        "CHIEU",       "TOI"};
     private static final String[] SLOT_LABELS  = {"10:00–14:00", "15:00–19:00", "19:30–23:00"};
     private static final int[]    SLOT_START_H = {10, 15, 19};
@@ -37,7 +48,7 @@ public class QuanLyDatBan extends JPanel {
     private static final int[]    SLOT_END_H   = {14, 19, 23};
     private static final int[]    SLOT_END_M   = { 0,  0,  0};
 
-    // ── DAOs ─────────────────────────────────────────────────────────────
+    // --- CÁC ĐỐI TƯỢNG TRUY XUẤT DỮ LIỆU (DAO) ---
     private final Ban_DAO            banDAO  = new Ban_DAO();
     private final KhachHang_DAO      khDAO   = new KhachHang_DAO();
     private final DonDatBan_DAO      ddbDAO  = new DonDatBan_DAO();
@@ -45,37 +56,45 @@ public class QuanLyDatBan extends JPanel {
     private final ChiTietHoaDon_DAO  cthdDAO = new ChiTietHoaDon_DAO();
     private final SanPham_DAO        spDAO   = new SanPham_DAO();
 
-    // ── state ────────────────────────────────────────────────────────────
+    // --- BIẾN TRẠNG THÁI HỆ THỐNG ---
     private final NhanVien currentNV;
     private Ban    currentBan;
     private String currentFilter       = "SANG";
     private Date   selectedBookingDate;
     private final List<Date> bookingDates = new ArrayList<>();
 
-    // ── left panel ───────────────────────────────────────────────────────
+    private JTextField txtSearchBan;
+    private JComboBox<String> cbNgayDat;
+
+    // ── Chọn nhiều bàn ────────────────────────────────────────────────────
+    /** Toggle button: OFF = chọn 1 bàn như cũ / ON = chọn nhiều bàn */
+    private JButton btnMultiTableMode;
+    /** true khi đang ở chế độ chọn nhiều bàn */
+    private boolean multiTableMode = false;
+    /** Danh sách bàn đang được chọn trong chế độ multi-table */
+    private final List<Ban> selectedTables = new ArrayList<>();
+    /** Màu highlight bàn đang được chọn trong multi-table mode */
+    private static final Color SELECTED_MULTI = Color.decode("#3498DB");
+
+    // --- THÀNH PHẦN GIAO DIỆN (COMPONENTS) ---
     private JPanel      pThuongGrid, pVIPGrid;
     private JPanel      pThuongContent, pVIPContent;
     private JButton[]   filterBtns;
-
-    // ── right panel (CardLayout) ─────────────────────────────────────────
     private JPanel      rightPanel;
     private CardLayout  rightCard;
 
-    // booking widgets
-    private JLabel            lblBookingTitle, lblSlotDisplay;
-    private JTextField        txtTenKH, txtSdtKH, txtGhiChu;
-    private JLabel            lblCartSummary;
-    private Map<String,Integer> bookingCart = new LinkedHashMap<>();
-
-    // reserved widgets
+    // Widgets cho trạng thái "Đã đặt" (Reserved)
     private JLabel            lblResTitle, lblResKhach, lblResSdt, lblResGhiChu, lblResKhung, lblResTotal;
     private DefaultTableModel tmResDish;
 
-    // using widgets
+    // Widgets cho trạng thái "Đang dùng" (Using)
     private JLabel            lblUseTitle, lblUseKhach, lblUseTong, lblUseCoc, lblUseConLai;
     private DefaultTableModel tmUseDish;
 
-    // ─────────────────────────────────────────────────────────────────────
+    /**
+     * Khởi tạo giao diện Quản lý đặt bàn.
+     * @param nhanVien Nhân viên đang đăng nhập hệ thống.
+     */
     public QuanLyDatBan(NhanVien nhanVien) {
         this.currentNV = nhanVien;
         selectedBookingDate = truncateToDay(new Date());
@@ -104,12 +123,68 @@ public class QuanLyDatBan extends JPanel {
         bar.setPreferredSize(new Dimension(0, 60));
         bar.setBorder(new EmptyBorder(0, 18, 0, 12));
 
+        // --- BÊN TRÁI (WEST): Tiêu đề & Ô tìm kiếm ---
+        // Dùng GridBagLayout để tự động căn giữa dọc
+        JPanel pnlWest = new JPanel(new GridBagLayout());
+        pnlWest.setOpaque(false);
+
         JLabel title = new JLabel("QUẢN LÝ ĐẶT BÀN");
         title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(GOLD_COLOR);
-        bar.add(title, BorderLayout.WEST);
+        title.setBorder(new EmptyBorder(0, 0, 0, 20)); // Tạo khoảng cách 20px bên phải chữ để cách ô search ra
+        pnlWest.add(title);
 
-        // all info on the EAST panel → same row as each other
+        // Tạo ô tìm kiếm
+        txtSearchBan = new JTextField() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (getText().isEmpty()) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                    g2.setColor(new Color(160, 160, 160)); // Màu xám mờ
+                    g2.setFont(getFont().deriveFont(Font.ITALIC)); // Chữ in nghiêng
+
+                    // Canh tọa độ để vẽ chữ lọt thỏm vào giữa ô
+                    int baseline = getBaseline(getWidth(), getHeight());
+                    g2.drawString("Vui lòng nhập số điện thoại...", getInsets().left, baseline);
+                    g2.dispose();
+                }
+            }
+        };
+
+        // Giữ nguyên các thông số cũ để không bị vỡ giao diện
+        txtSearchBan.setPreferredSize(new Dimension(300, 30));
+        txtSearchBan.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtSearchBan.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_CLR, 1), new EmptyBorder(3, 8, 3, 8)));
+        txtSearchBan.setToolTipText("Nhập SĐT khách hàng và nhấn Enter...");
+
+        // SỰ KIỆN MỚI: Bấm Enter để tìm đơn đặt bàn theo SĐT
+        txtSearchBan.addActionListener(e -> {
+            String phone = txtSearchBan.getText().trim();
+            if (!phone.isEmpty()) {
+                searchBookingByPhone(phone); // Gọi hàm tìm kiếm mới
+            }
+        });
+
+        // Add JLabel (icon search nhỏ) và TextField vào panel
+        JPanel pnlSearch = new JPanel(new BorderLayout(6, 0));
+        pnlSearch.setOpaque(false);
+        JLabel lblIconSearch = new JLabel("🔍"); // Icon kính lúp
+        lblIconSearch.setForeground(Color.WHITE);
+        pnlSearch.add(lblIconSearch, BorderLayout.WEST);
+        pnlSearch.add(txtSearchBan, BorderLayout.CENTER);
+
+        pnlWest.add(pnlSearch);
+        bar.add(pnlWest, BorderLayout.WEST);
+
+        // --- BÊN PHẢI (EAST): Cụm thông tin Ngày tháng & Chú thích ---
+        // 1. Dùng GridBagLayout Wrapper để kéo mọi thứ xuống chính giữa theo chiều dọc
+        JPanel rightWrapper = new JPanel(new GridBagLayout());
+        rightWrapper.setOpaque(false);
+
+        // 2. Các phần tử bên trong vẫn xếp hàng ngang (FlowLayout)
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
 
@@ -130,12 +205,10 @@ public class QuanLyDatBan extends JPanel {
         dateCombo.setPreferredSize(new Dimension(185, 26));
         right.add(dateCombo);
 
-        right.add(vSep());
-        right.add(chip("● Trống",     GREEN_TRONG));
-        right.add(chip("● Đã đặt",    AMBER_DAT));
-        right.add(chip("● Đang dùng", RED_DANG));
+        // 3. Đưa vào bar
+        rightWrapper.add(right);
+        bar.add(rightWrapper, BorderLayout.EAST);
 
-        bar.add(right, BorderLayout.EAST);
         return bar;
     }
 
@@ -147,7 +220,8 @@ public class QuanLyDatBan extends JPanel {
 
     private JComboBox<String> buildDateCombo() {
         bookingDates.clear();
-        JComboBox<String> combo = new JComboBox<>();
+        cbNgayDat = new JComboBox<>(); // Dùng biến toàn cục
+        JComboBox<String> combo = cbNgayDat;
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy (EEE)", new Locale("vi", "VN"));
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -199,14 +273,19 @@ public class QuanLyDatBan extends JPanel {
         wrap.setBackground(BG_LIGHT);
         wrap.setBorder(new EmptyBorder(10, 10, 10, 6));
 
-        JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-        filterRow.setOpaque(false);
-        filterRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        // 1. Tạo container chính cho hàng filter bằng BorderLayout
+        JPanel filterContainer = new JPanel(new BorderLayout());
+        filterContainer.setOpaque(false);
+        filterContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+
+        // 2. Panel bên trái: Chứa Label và các nút (Dùng FlowLayout)
+        JPanel filterLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+        filterLeft.setOpaque(false);
 
         JLabel lblF = new JLabel("Khung giờ:");
         lblF.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblF.setForeground(TEXT_DARK);
-        filterRow.add(lblF);
+        filterLeft.add(lblF);
 
         filterBtns = new JButton[SLOT_KEYS.length];
         for (int i = 0; i < SLOT_KEYS.length; i++) {
@@ -222,10 +301,35 @@ public class QuanLyDatBan extends JPanel {
                 loadTableCards();
                 showEmpty();
             });
-            filterRow.add(b);
+            filterLeft.add(b);
         }
+        JPanel filtercen = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 2));
+        filtercen.setOpaque(false);
+        btnMultiTableMode = new JButton("Chọn nhiều bàn: TẮT");
+        btnMultiTableMode.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnMultiTableMode.setPreferredSize(new Dimension(180, 25));
+        btnMultiTableMode.setBackground(new Color(100, 100, 110));
+        btnMultiTableMode.setForeground(Color.WHITE);
+        btnMultiTableMode.setFocusPainted(false);
+        btnMultiTableMode.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnMultiTableMode.addActionListener(e -> toggleMultiTableMode());
+        filtercen.add(btnMultiTableMode);
+
+        // 3. Panel bên phải: Các chip trạng thái
+        JPanel filterCol = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 2));
+        filterCol.setOpaque(false);
+        filterCol.add(chip("● Trống",     GREEN_TRONG));
+        filterCol.add(chip("● Đã đặt",    AMBER_DAT));
+        filterCol.add(chip("● Đang dùng", RED_DANG));
+
+        // 4. Ráp hai phần vào container chính
+        filterContainer.add(filtercen,BorderLayout.CENTER);
+        filterContainer.add(filterLeft, BorderLayout.WEST); // Đẩy sang trái
+        filterContainer.add(filterCol, BorderLayout.EAST);   // Đẩy sang phải
+
         refreshFilterBtns();
-        wrap.add(filterRow);
+
+        wrap.add(filterContainer);
         wrap.add(Box.createVerticalStrut(8));
 
         pThuongContent = new JPanel();
@@ -263,9 +367,9 @@ public class QuanLyDatBan extends JPanel {
             boolean pastSlot = todaySelected && isSlotPastNow(i);
             filterBtns[i].setEnabled(!pastSlot);
             filterBtns[i].setBackground(pastSlot ? new Color(210, 210, 210)
-                                                  : (active ? MAIN_BLUE : Color.WHITE));
+                    : (active ? MAIN_BLUE : Color.WHITE));
             filterBtns[i].setForeground(pastSlot ? new Color(140, 140, 140)
-                                                  : (active ? Color.WHITE : TEXT_DARK));
+                    : (active ? Color.WHITE : TEXT_DARK));
             filterBtns[i].setBorder(active
                     ? new EmptyBorder(4, 12, 4, 12)
                     : new LineBorder(pastSlot ? new Color(210, 210, 210) : BORDER_CLR, 1));
@@ -299,7 +403,8 @@ public class QuanLyDatBan extends JPanel {
     void loadTableCards() {
         new SwingWorker<Object[], Void>() {
             @Override protected Object[] doInBackground() {
-                return new Object[]{ banDAO.getAllBan(), ddbDAO.getAllDonDatBan() };
+                // Cần dsBan đầy đủ để computeEffectiveStatus hoạt động đúng
+                return new Object[]{ banDAO.getAllBan(), ddbDAO.getAllDonDatBanWithBan() };
             }
             @SuppressWarnings("unchecked")
             @Override protected void done() {
@@ -324,9 +429,11 @@ public class QuanLyDatBan extends JPanel {
 
     private TrangThaiBan computeEffectiveStatus(Ban ban, List<DonDatBan> allDons) {
         for (DonDatBan d : allDons) {
+            // Kiểm tra xem bàn này có trong dsBan của đơn không
+            boolean hasBan = d.getDsBan().stream()
+                    .anyMatch(b -> b.getMaBan().equals(ban.getMaBan()));
             if (!d.isTrangThai()
-                    && d.getBan() != null
-                    && d.getBan().getMaBan().equals(ban.getMaBan())
+                    && hasBan
                     && isSameDay(d.getThoiGianDen(), selectedBookingDate)
                     && currentFilter.equals(d.getKhungGio())) {
                 int idx = getSlotIndex(currentFilter);
@@ -341,14 +448,15 @@ public class QuanLyDatBan extends JPanel {
     }
 
     private DonDatBan findActiveDon(String maBan) {
-        return findActiveDonFromList(maBan, ddbDAO.getAllDonDatBan());
+        return findActiveDonFromList(maBan, ddbDAO.getAllDonDatBanWithBan());
     }
 
     private DonDatBan findActiveDonFromList(String maBan, List<DonDatBan> allDons) {
         for (DonDatBan d : allDons) {
+            boolean hasBan = d.getDsBan().stream()
+                    .anyMatch(b -> b.getMaBan().equals(maBan));
             if (!d.isTrangThai()
-                    && d.getBan() != null
-                    && d.getBan().getMaBan().equals(maBan)
+                    && hasBan
                     && isSameDay(d.getThoiGianDen(), selectedBookingDate)
                     && currentFilter.equals(d.getKhungGio())) {
                 return d;
@@ -358,9 +466,13 @@ public class QuanLyDatBan extends JPanel {
     }
 
     private JPanel makeTableCard(Ban ban, TrangThaiBan trang) {
-        Color bg = trang == TrangThaiBan.DaDuocDat      ? AMBER_DAT
-                 : trang == TrangThaiBan.DangDuocSuDung ? RED_DANG
-                 : GREEN_TRONG;
+        // Màu: nếu bàn đang được chọn trong multi-table mode → màu xanh dương đặc
+        boolean isSelected = multiTableMode
+                && selectedTables.stream().anyMatch(b -> b.getMaBan().equals(ban.getMaBan()));
+        Color bg = isSelected ? SELECTED_MULTI
+                : trang == TrangThaiBan.DaDuocDat      ? AMBER_DAT
+                  : trang == TrangThaiBan.DangDuocSuDung ? RED_DANG
+                    : GREEN_TRONG;
         RoundedPanel card = new RoundedPanel(14, bg);
         card.setPreferredSize(new Dimension(110, 88));
         card.setLayout(new BorderLayout(0, 0));
@@ -371,17 +483,20 @@ public class QuanLyDatBan extends JPanel {
         numLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
         numLbl.setForeground(Color.WHITE);
         numLbl.setBorder(new EmptyBorder(10, 4, 0, 4));
+        // Hiển thị dấu ✓ nhỏ khi bàn đang được chọn
+        if (isSelected) {
+            numLbl.setText("<html><center>Bàn " + ban.getSoBan() + "<br><font size='3'>✓</font></center></html>");
+        }
         card.add(numLbl, BorderLayout.CENTER);
 
         JPanel bot = new JPanel(new GridLayout(2, 1, 0, 2));
         bot.setOpaque(false);
-        // capacity: prominent, white
         JLabel sucLbl = new JLabel(ban.getSucChua() + " người", SwingConstants.CENTER);
         sucLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         sucLbl.setForeground(Color.WHITE);
-        // status chip
-        String statusText = trang == TrangThaiBan.DaDuocDat ? "Đã đặt"
-                : trang == TrangThaiBan.DangDuocSuDung ? "Đang dùng" : "Trống";
+        String statusText = isSelected ? "Đã chọn"
+                : trang == TrangThaiBan.DaDuocDat ? "Đã đặt"
+                  : trang == TrangThaiBan.DangDuocSuDung ? "Đang dùng" : "Trống";
         JLabel statLbl = new JLabel(statusText, SwingConstants.CENTER);
         statLbl.setFont(new Font("Segoe UI", Font.BOLD, 9));
         statLbl.setForeground(new Color(255, 255, 255, 200));
@@ -398,12 +513,18 @@ public class QuanLyDatBan extends JPanel {
     }
 
     private void onCardClick(Ban ban) {
+        // ── Chế độ chọn nhiều bàn ────────────────────────────────────────
+        if (multiTableMode) {
+            onCardClickMultiMode(ban);
+            return;
+        }
+        // ── Chế độ chọn 1 bàn (logic cũ) ────────────────────────────────
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         new SwingWorker<Object[], Void>() {
             @Override protected Object[] doInBackground() {
                 Ban fresh = banDAO.getBanByMa(ban.getMaBan());
                 Ban b = (fresh != null) ? fresh : ban;
-                List<DonDatBan> allDons = ddbDAO.getAllDonDatBan();
+                List<DonDatBan> allDons = ddbDAO.getAllDonDatBanWithBan();
                 TrangThaiBan t = computeEffectiveStatus(b, allDons);
                 if (t == TrangThaiBan.DaDuocDat || t == TrangThaiBan.DangDuocSuDung) {
                     DonDatBan don = findActiveDonFromList(b.getMaBan(), allDons);
@@ -436,13 +557,190 @@ public class QuanLyDatBan extends JPanel {
         }.execute();
     }
 
+    /**
+     * Xử lý click bàn khi đang ở chế độ chọn nhiều bàn.
+     * Chỉ cho phép chọn bàn Trống; bàn đã đặt/đang dùng bị bỏ qua.
+     */
+    private void onCardClickMultiMode(Ban ban) {
+        // Kiểm tra bàn có trống không (phải load trạng thái thực)
+        Ban fresh = banDAO.getBanByMa(ban.getMaBan());
+        Ban b = (fresh != null) ? fresh : ban;
+        List<DonDatBan> allDons = ddbDAO.getAllDonDatBanWithBan();
+        TrangThaiBan t = computeEffectiveStatus(b, allDons);
+
+        if (t != TrangThaiBan.Trong) {
+            msg("Chỉ có thể chọn bàn đang trống trong chế độ đặt nhiều bàn.");
+            return;
+        }
+
+        boolean alreadySelected = selectedTables.stream()
+                .anyMatch(sel -> sel.getMaBan().equals(b.getMaBan()));
+        if (alreadySelected) {
+            // Bỏ chọn
+            selectedTables.removeIf(sel -> sel.getMaBan().equals(b.getMaBan()));
+        } else {
+            // Thêm vào danh sách
+            selectedTables.add(b);
+        }
+
+        // Cập nhật UI: nút đặt bàn + refresh màu card
+        refreshMultiTableStatus();
+        loadTableCards();
+    }
+
+    /** Bật / tắt chế độ chọn nhiều bàn */
+    private void toggleMultiTableMode() {
+        multiTableMode = !multiTableMode;
+        selectedTables.clear();
+        if (multiTableMode) {
+            btnMultiTableMode.setText("Chọn nhiều bàn: BẬT  ✓");
+            btnMultiTableMode.setBackground(SELECTED_MULTI);
+            showMultiTableBookingPrompt();
+        } else {
+            btnMultiTableMode.setText("Chọn nhiều bàn: TẮT");
+            btnMultiTableMode.setBackground(new Color(100, 100, 110));
+            showEmpty();
+        }
+        loadTableCards();
+    }
+
+    /** Hiển thị panel hướng dẫn + danh sách bàn đang chọn ở right panel */
+    private void showMultiTableBookingPrompt() {
+        // Tạo một panel đơn giản hướng dẫn người dùng chọn bàn
+        JPanel p = buildMultiTableInfoPanel();
+        Component[] comps = rightPanel.getComponents();
+        for (Component c : comps) {
+            if ("multiInfo".equals(c.getName())) rightPanel.remove(c);
+        }
+        p.setName("multiInfo");
+        rightPanel.add(p, "multiInfo");
+        rightCard.show(rightPanel, "multiInfo");
+    }
+
+    private JPanel buildMultiTableInfoPanel() {
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(Color.WHITE);
+
+        JPanel hdr = new JPanel(new BorderLayout());
+        hdr.setBackground(new Color(235, 245, 255));
+        hdr.setBorder(new CompoundBorder(
+                new MatteBorder(0, 0, 1, 0, BORDER_CLR),
+                new EmptyBorder(10, 14, 10, 14)));
+        JLabel title = new JLabel("ĐẶT NHIỀU BÀN");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        title.setForeground(SELECTED_MULTI);
+        hdr.add(title, BorderLayout.WEST);
+        root.add(hdr, BorderLayout.NORTH);
+
+        JPanel body = new JPanel();
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.setBorder(new EmptyBorder(14, 16, 14, 16));
+        body.setBackground(Color.WHITE);
+
+        JLabel hint = new JLabel("<html><b>Hướng dẫn:</b> Click vào các bàn trống để chọn.<br>"
+                + "Click lần nữa để bỏ chọn.</html>");
+        hint.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        hint.setAlignmentX(0f);
+        body.add(hint);
+        body.add(Box.createVerticalStrut(12));
+
+        // Nhãn cập nhật động hiển thị bàn đang chọn
+        JLabel lblSelected = new JLabel("Chưa chọn bàn nào");
+        lblSelected.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblSelected.setForeground(SELECTED_MULTI);
+        lblSelected.setName("lblMultiSelected");
+        lblSelected.setAlignmentX(0f);
+        body.add(lblSelected);
+        body.add(Box.createVerticalStrut(8));
+
+        JLabel lblCapacity = new JLabel("");
+        lblCapacity.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblCapacity.setForeground(new Color(80, 80, 80));
+        lblCapacity.setName("lblMultiCapacity");
+        lblCapacity.setAlignmentX(0f);
+        body.add(lblCapacity);
+        body.add(Box.createVerticalStrut(14));
+
+        JButton btnProceed = new JButton("XÁC NHẬN & ĐẶT BÀN");
+        btnProceed.setBackground(SELECTED_MULTI);
+        btnProceed.setForeground(Color.WHITE);
+        btnProceed.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnProceed.setFocusPainted(false);
+        btnProceed.setBorder(new EmptyBorder(10, 18, 10, 18));
+        btnProceed.setAlignmentX(0f);
+        btnProceed.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        btnProceed.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnProceed.addActionListener(e -> doShowMultiTableBookingForm());
+        body.add(btnProceed);
+
+        root.add(body, BorderLayout.CENTER);
+
+        // Timer để cập nhật label mỗi 200ms (phản ánh selectedTables live)
+        javax.swing.Timer refreshTimer = new javax.swing.Timer(200, e -> {
+            if (!multiTableMode) { ((javax.swing.Timer) e.getSource()).stop(); return; }
+            if (selectedTables.isEmpty()) {
+                lblSelected.setText("Chưa chọn bàn nào");
+                lblCapacity.setText("");
+            } else {
+                String names = selectedTables.stream()
+                        .map(b -> "Bàn " + b.getSoBan())
+                        .collect(java.util.stream.Collectors.joining(", "));
+                int total = selectedTables.stream().mapToInt(Ban::getSucChua).sum();
+                lblSelected.setText("Đã chọn: " + names);
+                lblCapacity.setText("Tổng sức chứa: " + total + " người");
+            }
+        });
+        refreshTimer.start();
+
+        return root;
+    }
+
+    /** Cập nhật nút / trạng thái sau mỗi lần click bàn multi-mode */
+    private void refreshMultiTableStatus() {
+        // Panel multiInfo sẽ tự cập nhật qua Timer; không cần làm gì thêm
+    }
+
+    /** Mở form đặt bàn khi đã chọn đủ bàn */
+    private void doShowMultiTableBookingForm() {
+        if (selectedTables.isEmpty()) {
+            msg("Vui lòng chọn ít nhất 1 bàn!");
+            return;
+        }
+        // Tạo QuanLyDatBan_DB với danh sách bàn đã chọn
+        QuanLyDatBan_DB bookingPanel = new QuanLyDatBan_DB(
+                currentNV,
+                new ArrayList<>(selectedTables),
+                selectedBookingDate,
+                currentFilter,
+                new QuanLyDatBan_DB.BookingListener() {
+                    @Override public void onBookingSuccess() {
+                        // Tắt multi-mode, reset, refresh
+                        multiTableMode = false;
+                        selectedTables.clear();
+                        btnMultiTableMode.setText("Chọn nhiều bàn: TẮT");
+                        btnMultiTableMode.setBackground(new Color(100, 100, 110));
+                        loadTableCards();
+                        showEmpty();
+                    }
+                    @Override public void onCancel() {
+                        showMultiTableBookingPrompt();
+                    }
+                }
+        );
+        Component[] comps = rightPanel.getComponents();
+        for (Component c : comps) {
+            if (c instanceof QuanLyDatBan_DB) rightPanel.remove(c);
+        }
+        rightPanel.add(bookingPanel, "booking");
+        rightCard.show(rightPanel, "booking");
+    }
+
     // ── RIGHT panel ──────────────────────────────────────────────────────
     private JPanel buildRightPanel() {
         rightCard  = new CardLayout();
         rightPanel = new JPanel(rightCard);
         rightPanel.setBackground(Color.WHITE);
         rightPanel.add(buildEmpty(),    "empty");
-        rightPanel.add(buildBooking(),  "booking");
         rightPanel.add(buildReserved(), "reserved");
         rightPanel.add(buildUsing(),    "using");
         rightCard.show(rightPanel, "empty");
@@ -458,133 +756,6 @@ public class QuanLyDatBan extends JPanel {
         l.setForeground(new Color(180, 180, 180));
         p.add(l);
         return p;
-    }
-
-    // ── booking card ─────────────────────────────────────────────────────
-    private JPanel buildBooking() {
-        JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(Color.WHITE);
-
-        JPanel hdr = new JPanel(new BorderLayout());
-        hdr.setBackground(new Color(245, 247, 250));
-        hdr.setBorder(new CompoundBorder(
-                new MatteBorder(0, 0, 1, 0, BORDER_CLR),
-                new EmptyBorder(10, 14, 10, 14)));
-        lblBookingTitle = new JLabel("Đặt bàn");
-        lblBookingTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblBookingTitle.setForeground(MAIN_BLUE);
-        hdr.add(lblBookingTitle, BorderLayout.WEST);
-        JLabel sub = new JLabel("Tiền cọc bắt buộc: " + FMT.format(TIEN_COC) + "đ");
-        sub.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        sub.setForeground(RED_DANG);
-        hdr.add(sub, BorderLayout.EAST);
-        root.add(hdr, BorderLayout.NORTH);
-
-        JPanel body = new JPanel();
-        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBackground(Color.WHITE);
-        body.setBorder(new EmptyBorder(10, 14, 10, 14));
-
-        // ── read-only slot/date display
-        body.add(sectionLabel("THÔNG TIN ĐẶT BÀN"));
-        lblSlotDisplay = new JLabel("—");
-        lblSlotDisplay.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lblSlotDisplay.setForeground(MAIN_BLUE);
-        lblSlotDisplay.setBorder(new CompoundBorder(
-                new LineBorder(new Color(180, 210, 240), 1),
-                new EmptyBorder(7, 12, 7, 12)));
-        lblSlotDisplay.setOpaque(true);
-        lblSlotDisplay.setBackground(new Color(236, 244, 255));
-        lblSlotDisplay.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        lblSlotDisplay.setAlignmentX(0f);
-        body.add(lblSlotDisplay);
-        body.add(Box.createVerticalStrut(8));
-        body.add(hsep());
-
-        // ── customer info
-        body.add(sectionLabel("THÔNG TIN KHÁCH HÀNG"));
-        body.add(fieldRow("Tên khách  *",     txtTenKH  = inputField()));
-        body.add(Box.createVerticalStrut(6));
-        body.add(fieldRow("Số điện thoại  *", txtSdtKH  = inputField()));
-        body.add(Box.createVerticalStrut(6));
-        body.add(fieldRow("Ghi chú",          txtGhiChu = inputField()));
-        body.add(Box.createVerticalStrut(4));
-        body.add(hsep());
-
-        txtSdtKH.addFocusListener(new FocusAdapter() {
-            @Override public void focusLost(FocusEvent e) {
-                String sdt = txtSdtKH.getText().trim();
-                if (!sdt.isEmpty() && txtTenKH.getText().trim().isEmpty()) {
-                    KhachHang kh = khDAO.getKhachHangBySdt(sdt);
-                    if (kh != null) txtTenKH.setText(kh.getTenKH());
-                }
-            }
-        });
-
-        // ── optional pre-order
-        JButton btnPreorder = new JButton("GỌI MÓN TRƯỚC  (Tùy chọn)");
-        btnPreorder.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnPreorder.setBackground(new Color(236, 244, 255));
-        btnPreorder.setForeground(MAIN_BLUE);
-        btnPreorder.setFocusPainted(false);
-        btnPreorder.setBorder(new EmptyBorder(7, 12, 7, 12));
-        btnPreorder.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        btnPreorder.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btnPreorder.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btnPreorder.addActionListener(e -> {
-            new PreorderDishDialog(
-                    (Frame) SwingUtilities.getWindowAncestor(this),
-                    spDAO, bookingCart, updatedCart -> {
-                        bookingCart.clear();
-                        bookingCart.putAll(updatedCart);
-                        refreshCartSummary();
-                    }).setVisible(true);
-        });
-        body.add(btnPreorder);
-
-        lblCartSummary = new JLabel("Chưa gọi món trước");
-        lblCartSummary.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        lblCartSummary.setForeground(new Color(130, 130, 130));
-        lblCartSummary.setAlignmentX(Component.LEFT_ALIGNMENT);
-        lblCartSummary.setBorder(new EmptyBorder(3, 4, 3, 4));
-        body.add(lblCartSummary);
-        body.add(hsep());
-
-        JScrollPane bodyScroll = new JScrollPane(body);
-        bodyScroll.setBorder(null);
-        bodyScroll.getVerticalScrollBar().setUnitIncrement(14);
-        root.add(bodyScroll, BorderLayout.CENTER);
-
-        JPanel btnRow = new JPanel(new GridLayout(1, 2, 10, 0));
-        btnRow.setBorder(new CompoundBorder(
-                new MatteBorder(1, 0, 0, 0, BORDER_CLR),
-                new EmptyBorder(10, 14, 10, 14)));
-        btnRow.setBackground(Color.WHITE);
-        JButton bHuy = actionBtn("HỦY",               Color.WHITE, TEXT_DARK,  true);
-        JButton bOk  = actionBtn("XÁC NHẬN ĐẶT BÀN",  MAIN_BLUE,  Color.WHITE, false);
-        bHuy.addActionListener(e -> showEmpty());
-        bOk.addActionListener(e  -> doConfirmBooking());
-        btnRow.add(bHuy); btnRow.add(bOk);
-        root.add(btnRow, BorderLayout.SOUTH);
-        return root;
-    }
-
-    private void refreshCartSummary() {
-        if (lblCartSummary == null) return;
-        if (bookingCart.isEmpty()) {
-            lblCartSummary.setText("Chưa gọi món trước");
-            return;
-        }
-        Map<String, SanPham> map = new HashMap<>();
-        for (SanPham sp : spDAO.getAllSanPham()) map.put(sp.getMaMon(), sp);
-        int totalQty = 0; double total = 0;
-        for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {
-            SanPham sp = map.get(e.getKey()); if (sp == null) continue;
-            totalQty += e.getValue();
-            total += sp.getGiaBan() * e.getValue();
-        }
-        lblCartSummary.setText("Đã gọi trước: " + totalQty + " món  |  Tổng: " + FMT.format(total) + "đ");
-        lblCartSummary.setForeground(RED_DANG);
     }
 
     // ── reserved card ────────────────────────────────────────────────────
@@ -623,17 +794,34 @@ public class QuanLyDatBan extends JPanel {
         body.add(hsep());
 
         body.add(sectionLabel("DANH SÁCH MÓN ĐÃ GỌI"));
-        tmResDish = new DefaultTableModel(new String[]{"STT", "Tên món", "SL", "Thành tiền"}, 0) {
+        // Cập nhật lại 5 cột cho chuẩn
+        tmResDish = new DefaultTableModel(new String[]{"STT", "Tên món", "SL", "Đơn giá", "Thành tiền"}, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable tRes = new JTable(tmResDish);
+
+        // Ghi đè để bảng tự dãn chiều cao
+        JTable tRes = new JTable(tmResDish) {
+            @Override
+            public Dimension getPreferredScrollableViewportSize() {
+                return getPreferredSize();
+            }
+        };
+
         styleTable(tRes);
         centerCol(tRes, 0); centerCol(tRes, 2);
         tRes.getColumnModel().getColumn(0).setMaxWidth(42);
         tRes.getColumnModel().getColumn(2).setMaxWidth(44);
-        JScrollPane sc = new JScrollPane(tRes);
+
+        // Ghi đè để JScrollPane không bị ép thu nhỏ, cho phép bung lụa
+        JScrollPane sc = new JScrollPane(tRes) {
+            @Override
+            public Dimension getMaximumSize() {
+                // Rộng tối đa, cao vừa đủ theo preferred size của nó
+                return new Dimension(Integer.MAX_VALUE, super.getPreferredSize().height);
+            }
+        };
         sc.setBorder(new LineBorder(BORDER_CLR));
-        sc.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+        // ĐÃ XÓA: sc.setMaximumSize(...) cũ đi
         body.add(sc);
 
         JPanel totalRow = new JPanel(new BorderLayout());
@@ -696,17 +884,30 @@ public class QuanLyDatBan extends JPanel {
         tmUseDish = new DefaultTableModel(new String[]{"STT", "Tên món", "SL", "Đơn giá", "Thành tiền"}, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable tUse = new JTable(tmUseDish);
+
+        // Ghi đè để bảng tự dãn chiều cao
+        JTable tUse = new JTable(tmUseDish) {
+            @Override
+            public Dimension getPreferredScrollableViewportSize() {
+                return getPreferredSize();
+            }
+        };
+
         styleTable(tUse);
         centerCol(tUse, 0); centerCol(tUse, 2);
         tUse.getColumnModel().getColumn(0).setMaxWidth(42);
         tUse.getColumnModel().getColumn(2).setMaxWidth(44);
-        JScrollPane sc = new JScrollPane(tUse);
+
+        // Ghi đè để JScrollPane không bị ép thu nhỏ
+        JScrollPane sc = new JScrollPane(tUse) {
+            @Override
+            public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, super.getPreferredSize().height);
+            }
+        };
         sc.setBorder(new LineBorder(BORDER_CLR));
-        sc.setMaximumSize(new Dimension(Integer.MAX_VALUE, 220));
+        // ĐÃ XÓA: sc.setMaximumSize(...) cũ đi
         body.add(sc);
-        body.add(Box.createVerticalStrut(10));
-        body.add(hsep());
 
         JPanel sumOuter = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         sumOuter.setOpaque(false);
@@ -746,14 +947,30 @@ public class QuanLyDatBan extends JPanel {
     }
 
     private void showBooking(Ban ban) {
-        String loai = ban.getLoaiBan() != null ? ban.getLoaiBan() : "Thường";
-        lblBookingTitle.setText("BÀN " + ban.getSoBan() + "  ·  " + loai + "  ·  " + ban.getSucChua() + " người");
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        lblSlotDisplay.setText("  Ngày:  " + sdf.format(selectedBookingDate)
-                + "     Khung giờ:  " + getSlotLabel(currentFilter));
-        bookingCart.clear();
-        refreshCartSummary();
-        txtTenKH.setText(""); txtSdtKH.setText(""); txtGhiChu.setText("");
+        QuanLyDatBan_DB bookingPanel = new QuanLyDatBan_DB(
+                currentNV,
+                java.util.Collections.singletonList(ban),   // 1 bàn → List<Ban>
+                selectedBookingDate,
+                currentFilter,
+                new QuanLyDatBan_DB.BookingListener() {
+                    @Override
+                    public void onBookingSuccess() {
+                        loadTableCards();
+                        showEmpty();
+                    }
+                    @Override
+                    public void onCancel() {
+                        showEmpty();
+                    }
+                }
+        );
+        Component[] comps = rightPanel.getComponents();
+        for (Component c : comps) {
+            if (c instanceof QuanLyDatBan_DB) {
+                rightPanel.remove(c);
+            }
+        }
+        rightPanel.add(bookingPanel, "booking");
         rightCard.show(rightPanel, "booking");
     }
 
@@ -770,10 +987,20 @@ public class QuanLyDatBan extends JPanel {
         tmResDish.setRowCount(0);
         double total = 0;
         int stt = 1;
+
         for (ChiTietHoaDon ct : cths) {
-            tmResDish.addRow(new Object[]{stt++, ct.getMonAn().getTenMon(),
-                    ct.getSoLuong(), FMT.format(ct.getThanhTien()) + "đ"});
-            total += ct.getThanhTien();
+            // ĐÂY LÀ CHỖ QUYẾT ĐỊNH: ÉP NHÂN SỐ LƯỢNG NGAY TẠI LÚC VẼ GIAO DIỆN
+            double donGia = ct.getDonGia();
+            double thanhTienDung = donGia * ct.getSoLuong();
+
+            tmResDish.addRow(new Object[]{
+                    stt++,
+                    ct.getMonAn().getTenMon(),
+                    ct.getSoLuong(),
+                    FMT.format(donGia) + "đ",          // In ra cột Đơn giá
+                    FMT.format(thanhTienDung) + "đ"    // In ra cột Thành tiền (Đã nhân)
+            });
+            total += thanhTienDung; // Cộng tổng bằng số tiền đã nhân
         }
         lblResTotal.setText("Tổng: " + FMT.format(total) + "đ");
         rightCard.show(rightPanel, "reserved");
@@ -787,12 +1014,22 @@ public class QuanLyDatBan extends JPanel {
         double total = 0;
         int stt = 1;
         for (ChiTietHoaDon ct : cths) {
-            tmUseDish.addRow(new Object[]{stt++, ct.getMonAn().getTenMon(), ct.getSoLuong(),
-                    FMT.format(ct.getDonGia()) + "đ", FMT.format(ct.getThanhTien()) + "đ"});
-            total += ct.getThanhTien();
+            // ÉP TÍNH LẠI THÀNH TIỀN: Đơn giá * Số lượng
+            double thanhTienDung = ct.getDonGia() * ct.getSoLuong();
+
+            tmUseDish.addRow(new Object[]{
+                    stt++,
+                    ct.getMonAn().getTenMon(),
+                    ct.getSoLuong(),
+                    FMT.format(ct.getDonGia()) + "đ",
+                    FMT.format(thanhTienDung) + "đ"
+            });
+            total += thanhTienDung; // Cộng tổng bằng số đã nhân
         }
+
         double coc    = (hd != null) ? hd.getTienCoc() : TIEN_COC;
         double conLai = total - coc;
+
         lblUseTong.setText(FMT.format(total) + "đ");
         lblUseCoc.setText("−" + FMT.format(coc) + "đ");
         lblUseConLai.setText(FMT.format(Math.max(0, conLai)) + "đ");
@@ -800,109 +1037,24 @@ public class QuanLyDatBan extends JPanel {
     }
 
     // ── business logic ───────────────────────────────────────────────────
-    private void doConfirmBooking() {
-        String ten = txtTenKH.getText().trim();
-        String sdt = txtSdtKH.getText().trim();
-        if (ten.isEmpty()) { msg("Vui lòng nhập tên khách hàng!"); return; }
-        if (!sdt.matches("0\\d{9}")) { msg("Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)!"); return; }
-
-        // slot must not be past for today's date
-        if (isToday(selectedBookingDate) && isSlotPastNow(getSlotIndex(currentFilter))) {
-            msg("Khung giờ " + getSlotLabel(currentFilter) + " hôm nay đã qua!\nVui lòng chọn khung giờ khác.");
-            return;
-        }
-
-        // no duplicate booking for same table + date + slot
-        if (findActiveDon(currentBan.getMaBan()) != null) {
-            msg("Bàn này đã được đặt trong khung giờ " + getSlotLabel(currentFilter)
-                    + "\nngày " + new SimpleDateFormat("dd/MM/yyyy").format(selectedBookingDate) + "!");
-            return;
-        }
-
-        // 1. khách hàng
-        KhachHang kh = khDAO.getKhachHangBySdt(sdt);
-        if (kh == null) {
-            kh = new KhachHang();
-            kh.setMaKH(khDAO.getNextMaKH());
-            kh.setTenKH(ten);
-            kh.setSoDT(sdt);
-            khDAO.addKhachHang(kh);
-        }
-
-        // 2. đơn đặt bàn
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        DonDatBan don = new DonDatBan();
-        don.setMaDon(ddbDAO.getNextMaDon());
-        don.setThoiGianDat(now);
-        don.setThoiGianDen(selectedBookingDate);
-        don.setSoLuongKhach(currentBan.getSucChua());
-        don.setKhachHang(kh);
-        don.setNhanVien(currentNV);
-        don.setBan(currentBan);
-        don.setTrangThai(false);
-        don.setKhungGio(currentFilter);
-        don.setGhiChu(txtGhiChu.getText().trim());
-        ddbDAO.addDonDatBan(don);
-
-        // 3. food total
-        List<SanPham> allSP = spDAO.getAllSanPham();
-        Map<String,SanPham> spMap = new HashMap<>();
-        for (SanPham sp : allSP) spMap.put(sp.getMaMon(), sp);
-        double foodTotal = 0;
-        for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {
-            SanPham sp = spMap.get(e.getKey());
-            if (sp != null) foodTotal += sp.getGiaBan() * e.getValue();
-        }
-
-        // 4. hóa đơn
-        HoaDon hd = new HoaDon();
-        hd.setMaHD(hdDAO.getNextMaHD());
-        hd.setNgayLap(now);
-        hd.setThoiGian(new Time(now.getTime()));
-        hd.setTongTien(TIEN_COC + foodTotal);
-        hd.setTrangThai(false);
-        hd.setDonDatBan(don);
-        hd.setNhanVien(currentNV);
-        hd.setKhachHang(kh);
-        hd.setTienCoc(TIEN_COC);
-        hdDAO.create(hd);
-
-        // 5. chi tiết món đặt trước
-        for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {
-            SanPham sp = spMap.get(e.getKey());
-            if (sp == null || e.getValue() <= 0) continue;
-            double tt = sp.getGiaBan() * e.getValue();
-            HoaDon ref = new HoaDon(); ref.setMaHD(hd.getMaHD());
-            cthdDAO.create(new ChiTietHoaDon(sp, ref, e.getValue(), sp.getGiaBan(), "", tt));
-        }
-
-        // 6. update ban status only if booking is for today
-        if (isToday(selectedBookingDate)) {
-            banDAO.updateTinhTrangBan(currentBan.getMaBan(), TrangThaiBan.DaDuocDat);
-        }
-
-        JOptionPane.showMessageDialog(this,
-            "Đặt bàn thành công!\nNgày: " + new SimpleDateFormat("dd/MM/yyyy").format(selectedBookingDate)
-            + "\nKhung giờ: " + getSlotLabel(currentFilter)
-            + "\nTiền cọc: " + FMT.format(TIEN_COC) + "đ",
-            "Thành công", JOptionPane.INFORMATION_MESSAGE);
-        loadTableCards();
-        showEmpty();
-    }
-
     private void doCancelBooking() {
         if (currentBan == null) return;
         int r = JOptionPane.showConfirmDialog(this,
-            "Xác nhận hủy đặt bàn số " + currentBan.getSoBan() + "?",
-            "Hủy đặt bàn", JOptionPane.YES_NO_OPTION);
+                "Xác nhận hủy đặt bàn số " + currentBan.getSoBan() + "?",
+                "Hủy đặt bàn", JOptionPane.YES_NO_OPTION);
         if (r != JOptionPane.YES_OPTION) return;
         DonDatBan don = findActiveDon(currentBan.getMaBan());
         if (don != null) {
             HoaDon hd = hdDAO.getHoaDonByMaDon(don.getMaDon());
             if (hd != null) { cthdDAO.deleteByMaHD(hd.getMaHD()); hdDAO.deleteHoaDon(hd.getMaHD()); }
             ddbDAO.deleteDonDatBan(don.getMaDon());
-        }
-        if (isToday(selectedBookingDate)) {
+            // Reset trạng thái tất cả bàn trong đơn
+            if (isToday(selectedBookingDate)) {
+                for (Ban b : don.getDsBan()) {
+                    banDAO.updateTinhTrangBan(b.getMaBan(), TrangThaiBan.Trong);
+                }
+            }
+        } else if (isToday(selectedBookingDate)) {
             banDAO.updateTinhTrangBan(currentBan.getMaBan(), TrangThaiBan.Trong);
         }
         loadTableCards(); showEmpty();
@@ -927,7 +1079,7 @@ public class QuanLyDatBan extends JPanel {
                     || (h == SLOT_START_H[idx] && m >= SLOT_START_M[idx]);
             if (!started) {
                 msg("Khung giờ " + getSlotLabel(currentFilter) + " chưa bắt đầu.\n"
-                    + "Check-in từ " + String.format("%02d:%02d", SLOT_START_H[idx], SLOT_START_M[idx]) + " trở đi.");
+                        + "Check-in từ " + String.format("%02d:%02d", SLOT_START_H[idx], SLOT_START_M[idx]) + " trở đi.");
                 return;
             }
         }
@@ -943,7 +1095,14 @@ public class QuanLyDatBan extends JPanel {
             return;
         }
 
-        banDAO.updateTinhTrangBan(currentBan.getMaBan(), TrangThaiBan.DangDuocSuDung);
+        // Update tất cả bàn trong đơn
+        for (Ban b : don.getDsBan()) {
+            banDAO.updateTinhTrangBan(b.getMaBan(), TrangThaiBan.DangDuocSuDung);
+        }
+        // fallback: nếu dsBan chưa load, cập nhật ít nhất bàn hiện tại
+        if (don.getDsBan().isEmpty()) {
+            banDAO.updateTinhTrangBan(currentBan.getMaBan(), TrangThaiBan.DangDuocSuDung);
+        }
         loadTableCards();
         onCardClick(currentBan);
     }
@@ -953,10 +1112,10 @@ public class QuanLyDatBan extends JPanel {
         DonDatBan don = findActiveDon(currentBan.getMaBan());
         HoaDon hd = (don != null) ? hdDAO.getHoaDonByMaDon(don.getMaDon()) : null;
         if (hd == null) { msg("Không tìm thấy hóa đơn!"); return; }
-        new AddDishDialog(
-            (Frame) SwingUtilities.getWindowAncestor(this),
-            hd, spDAO, cthdDAO, hdDAO,
-            () -> onCardClick(currentBan)
+        new QuanLyDatBan_GM(
+                (Frame) SwingUtilities.getWindowAncestor(this),
+                hd, spDAO, cthdDAO, hdDAO,
+                () -> onCardClick(currentBan)
         ).setVisible(true);
     }
 
@@ -973,15 +1132,22 @@ public class QuanLyDatBan extends JPanel {
         double conLai = Math.max(0, tongMon - coc);
 
         int r = JOptionPane.showConfirmDialog(this,
-            String.format("Tổng tiền món: %sđ%nĐã cọc trước: %sđ%nKhách trả thêm: %sđ%n%nXác nhận thanh toán?",
-                FMT.format(tongMon), FMT.format(coc), FMT.format(conLai)),
-            "Thanh toán", JOptionPane.YES_NO_OPTION);
+                String.format("Tổng tiền món: %sđ%nĐã cọc trước: %sđ%nKhách trả thêm: %sđ%n%nXác nhận thanh toán?",
+                        FMT.format(tongMon), FMT.format(coc), FMT.format(conLai)),
+                "Thanh toán", JOptionPane.YES_NO_OPTION);
         if (r != JOptionPane.YES_OPTION) return;
 
         hdDAO.updateTongTien(hd.getMaHD(), tongMon);
         hdDAO.updateStatus(hd.getMaHD(), true);
         if (don != null) { don.setTrangThai(true); ddbDAO.updateDonDatBan(don); }
-        banDAO.updateTinhTrangBan(currentBan.getMaBan(), TrangThaiBan.Trong);
+        // Reset tất cả bàn trong đơn
+        if (don != null && !don.getDsBan().isEmpty()) {
+            for (Ban b : don.getDsBan()) {
+                banDAO.updateTinhTrangBan(b.getMaBan(), TrangThaiBan.Trong);
+            }
+        } else {
+            banDAO.updateTinhTrangBan(currentBan.getMaBan(), TrangThaiBan.Trong);
+        }
         JOptionPane.showMessageDialog(this, "Thanh toán thành công!", "Hoàn tất", JOptionPane.INFORMATION_MESSAGE);
         loadTableCards(); showEmpty();
     }
@@ -992,7 +1158,7 @@ public class QuanLyDatBan extends JPanel {
         Calendar c1 = Calendar.getInstance(); c1.setTime(d1);
         Calendar c2 = Calendar.getInstance(); c2.setTime(d2);
         return c1.get(Calendar.YEAR)        == c2.get(Calendar.YEAR)
-            && c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR);
+                && c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR);
     }
 
     private static boolean isToday(Date d) { return isSameDay(d, new Date()); }
@@ -1028,426 +1194,6 @@ public class QuanLyDatBan extends JPanel {
     }
 
     private String getSlotLabel(String key) { return SLOT_LABELS[getSlotIndex(key)]; }
-
-    // ── PreorderDishDialog ────────────────────────────────────────────────
-    interface CartCallback { void onConfirm(Map<String,Integer> cart); }
-
-    private static class PreorderDishDialog extends JDialog {
-        private final SanPham_DAO spDAO;
-        private final Map<String,Integer> initialCart;
-        private final CartCallback callback;
-        private final Map<String,Integer> cart = new LinkedHashMap<>();
-        private DefaultTableModel tmCart;
-        private JLabel lblTotal;
-
-        PreorderDishDialog(Frame owner, SanPham_DAO spDAO, Map<String,Integer> initialCart, CartCallback callback) {
-            super(owner, "Gọi món trước", true);
-            this.spDAO = spDAO; this.initialCart = initialCart; this.callback = callback;
-            cart.putAll(initialCart);
-            setSize(880, 580);
-            setLocationRelativeTo(owner);
-            setLayout(new BorderLayout());
-            build();
-        }
-
-        private void build() {
-            List<SanPham> allSP = spDAO.getAllSanPham();
-            Map<String, List<SanPham>> byLoai = new LinkedHashMap<>();
-            for (SanPham sp : allSP) {
-                if (!sp.isTrangThai()) continue; // skip hết món
-                String loai = (sp.getLoaiSanPham() != null) ? sp.getLoaiSanPham().getTenLoai() : "Khác";
-                byLoai.computeIfAbsent(loai, k -> new ArrayList<>()).add(sp);
-            }
-
-            JPanel catPanel = new JPanel(new BorderLayout(0, 6));
-            catPanel.setPreferredSize(new Dimension(190, 0));
-            catPanel.setBackground(BG_LIGHT);
-            catPanel.setBorder(new EmptyBorder(8, 8, 8, 4));
-            JLabel catTitle = new JLabel("Danh mục");
-            catTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            catPanel.add(catTitle, BorderLayout.NORTH);
-
-            JPanel dishGrid = new JPanel(new GridLayout(0, 3, 8, 8));
-            dishGrid.setBackground(Color.WHITE);
-            dishGrid.setBorder(new EmptyBorder(6, 6, 6, 6));
-
-            JPanel catList = new JPanel(new GridLayout(0, 1, 0, 4));
-            catList.setOpaque(false);
-            ButtonGroup bg = new ButtonGroup();
-            String[] first = {byLoai.keySet().stream().findFirst().orElse(null)};
-            for (String cat : byLoai.keySet()) {
-                JToggleButton tb = new JToggleButton(cat) {
-                    @Override protected void paintComponent(Graphics g) {
-                        Graphics2D g2 = (Graphics2D) g.create();
-                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                        g2.setColor(isSelected() ? MAIN_BLUE : new Color(210, 234, 255));
-                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                        g2.dispose();
-                        setForeground(isSelected() ? Color.WHITE : TEXT_DARK);
-                        super.paintComponent(g);
-                    }
-                };
-                tb.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                tb.setFocusPainted(false); tb.setContentAreaFilled(false);
-                tb.setOpaque(false); tb.setBorderPainted(false);
-                tb.setBorder(new EmptyBorder(6, 10, 6, 10));
-                if (cat.equals(first[0])) tb.setSelected(true);
-                bg.add(tb); catList.add(tb);
-                tb.addActionListener(e -> {
-                    dishGrid.removeAll();
-                    for (SanPham sp : byLoai.getOrDefault(cat, new ArrayList<>()))
-                        dishGrid.add(buildDishCard(sp, allSP));
-                    dishGrid.revalidate(); dishGrid.repaint();
-                });
-            }
-            catPanel.add(new JScrollPane(catList), BorderLayout.CENTER);
-            if (first[0] != null)
-                for (SanPham sp : byLoai.getOrDefault(first[0], new ArrayList<>()))
-                    dishGrid.add(buildDishCard(sp, allSP));
-
-            JScrollPane dishScroll = new JScrollPane(dishGrid);
-
-            tmCart = new DefaultTableModel(new String[]{"Tên món", "SL", "Thành tiền"}, 0) {
-                @Override public boolean isCellEditable(int r, int c) { return false; }
-            };
-            JTable tCart = new JTable(tmCart);
-            styleTableStatic(tCart);
-            tCart.setPreferredScrollableViewportSize(new Dimension(0, 100));
-
-            lblTotal = new JLabel("Tổng gọi món: 0đ");
-            lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            lblTotal.setForeground(RED_DANG);
-
-            JButton bCancel = btnStatic("Hủy",     Color.WHITE, TEXT_DARK, true);
-            JButton bOk     = btnStatic("XÁC NHẬN", MAIN_BLUE,  Color.WHITE, false);
-            bCancel.addActionListener(e -> dispose());
-            bOk.addActionListener(e -> { callback.onConfirm(new LinkedHashMap<>(cart)); dispose(); });
-
-            JPanel southBottom = new JPanel(new BorderLayout(8, 0));
-            southBottom.setOpaque(false);
-            southBottom.add(lblTotal, BorderLayout.WEST);
-            JPanel bRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-            bRow.setOpaque(false); bRow.add(bCancel); bRow.add(bOk);
-            southBottom.add(bRow, BorderLayout.EAST);
-
-            JPanel south = new JPanel(new BorderLayout(0, 6));
-            south.setBorder(new EmptyBorder(6, 8, 8, 8));
-            south.setBackground(Color.WHITE);
-            south.add(new JScrollPane(tCart), BorderLayout.CENTER);
-            south.add(southBottom, BorderLayout.SOUTH);
-
-            JSplitPane topSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, catPanel, dishScroll);
-            topSplit.setDividerLocation(190); topSplit.setDividerSize(4); topSplit.setBorder(null);
-            JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topSplit, south);
-            mainSplit.setDividerLocation(330); mainSplit.setDividerSize(4); mainSplit.setBorder(null);
-            add(mainSplit, BorderLayout.CENTER);
-
-            refreshCart(allSP);
-        }
-
-        private JPanel buildDishCard(SanPham sp, List<SanPham> allSP) {
-            RoundedPanel card = new RoundedPanel(10, Color.WHITE);
-            card.setLayout(new BorderLayout(4, 4));
-            card.setBorder(new CompoundBorder(new LineBorder(BORDER_CLR, 1), new EmptyBorder(7, 8, 7, 8)));
-            JLabel name = new JLabel("<html><b>" + sp.getTenMon() + "</b><br>"
-                    + "<font color='#E74C3C'>" + FMT.format(sp.getGiaBan()) + "đ</font></html>");
-            name.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            card.add(name, BorderLayout.CENTER);
-
-            JPanel qr = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 0));
-            qr.setOpaque(false);
-            JButton minus = qtyBtnS("−");
-            JLabel cnt = new JLabel(String.valueOf(cart.getOrDefault(sp.getMaMon(), 0)));
-            cnt.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            cnt.setPreferredSize(new Dimension(24, 22));
-            cnt.setHorizontalAlignment(SwingConstants.CENTER);
-            JButton plus = qtyBtnS("+");
-            plus.addActionListener(e -> {
-                int q = cart.getOrDefault(sp.getMaMon(), 0) + 1;
-                cart.put(sp.getMaMon(), q); cnt.setText(String.valueOf(q)); refreshCart(allSP);
-            });
-            minus.addActionListener(e -> {
-                int q = cart.getOrDefault(sp.getMaMon(), 0);
-                if (q > 0) {
-                    if (--q == 0) cart.remove(sp.getMaMon()); else cart.put(sp.getMaMon(), q);
-                    cnt.setText(String.valueOf(q)); refreshCart(allSP);
-                }
-            });
-            qr.add(minus); qr.add(cnt); qr.add(plus);
-            card.add(qr, BorderLayout.SOUTH);
-            return card;
-        }
-
-        private void refreshCart(List<SanPham> allSP) {
-            if (tmCart == null) return;
-            tmCart.setRowCount(0);
-            double total = 0;
-            Map<String,SanPham> map = new HashMap<>();
-            for (SanPham sp : allSP) map.put(sp.getMaMon(), sp);
-            for (Map.Entry<String,Integer> e : cart.entrySet()) {
-                SanPham sp = map.get(e.getKey()); if (sp == null) continue;
-                double tt = sp.getGiaBan() * e.getValue();
-                tmCart.addRow(new Object[]{sp.getTenMon(), e.getValue(), FMT.format(tt) + "đ"});
-                total += tt;
-            }
-            if (lblTotal != null) lblTotal.setText("Tổng gọi món: " + FMT.format(total) + "đ");
-        }
-
-        private static void styleTableStatic(JTable t) {
-            t.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            t.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-            t.setRowHeight(24); t.setShowGrid(false);
-            t.setIntercellSpacing(new Dimension(0, 0));
-            t.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-        }
-
-        private static JButton btnStatic(String text, Color bg, Color fg, boolean outlined) {
-            JButton b = new JButton(text);
-            b.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            b.setBackground(bg); b.setForeground(fg); b.setFocusPainted(false);
-            b.setPreferredSize(new Dimension(160, 36));
-            b.setBorder(outlined
-                ? new CompoundBorder(new LineBorder(BORDER_CLR), new EmptyBorder(7, 24, 7, 24))
-                : new EmptyBorder(7, 24, 7, 24));
-            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            return b;
-        }
-
-        private static JButton qtyBtnS(String t) {
-            JButton b = new JButton(t);
-            b.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            b.setPreferredSize(new Dimension(26, 26));
-            b.setMargin(new Insets(0, 0, 0, 0)); b.setFocusPainted(false);
-            b.setBackground(BG_LIGHT);
-            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            return b;
-        }
-    }
-
-    // ── AddDishDialog ────────────────────────────────────────────────────
-    private static class AddDishDialog extends JDialog {
-        private final HoaDon hd;
-        private final SanPham_DAO spDAO;
-        private final ChiTietHoaDon_DAO cthdDAO;
-        private final HoaDon_DAO hdDAO;
-        private final Runnable onDone;
-        private final Map<String,Integer> cart = new LinkedHashMap<>();
-        private DefaultTableModel tmCart;
-        private JLabel lblTotal;
-
-        AddDishDialog(Frame owner, HoaDon hd, SanPham_DAO spDAO,
-                      ChiTietHoaDon_DAO cthdDAO, HoaDon_DAO hdDAO, Runnable onDone) {
-            super(owner, "Thêm món vào hóa đơn", true);
-            this.hd = hd; this.spDAO = spDAO; this.cthdDAO = cthdDAO;
-            this.hdDAO = hdDAO; this.onDone = onDone;
-            setSize(880, 580);
-            setLocationRelativeTo(owner);
-            setLayout(new BorderLayout());
-            build();
-        }
-
-        private void build() {
-            List<SanPham> allSP = spDAO.getAllSanPham();
-            Map<String, List<SanPham>> byLoai = new LinkedHashMap<>();
-            for (SanPham sp : allSP) {
-                if (!sp.isTrangThai()) continue; // skip hết món
-                String loai = (sp.getLoaiSanPham() != null) ? sp.getLoaiSanPham().getTenLoai() : "Khác";
-                byLoai.computeIfAbsent(loai, k -> new ArrayList<>()).add(sp);
-            }
-
-            JPanel catPanel = new JPanel(new BorderLayout(0, 6));
-            catPanel.setPreferredSize(new Dimension(190, 0));
-            catPanel.setBackground(BG_LIGHT);
-            catPanel.setBorder(new EmptyBorder(8, 8, 8, 4));
-            JLabel catTitle = new JLabel("Danh mục");
-            catTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            catPanel.add(catTitle, BorderLayout.NORTH);
-
-            JPanel dishGrid = new JPanel(new GridLayout(0, 3, 8, 8));
-            dishGrid.setBackground(Color.WHITE);
-            dishGrid.setBorder(new EmptyBorder(6, 6, 6, 6));
-
-            JPanel catList = new JPanel(new GridLayout(0, 1, 0, 4));
-            catList.setOpaque(false);
-            ButtonGroup bg = new ButtonGroup();
-            String[] first = {byLoai.keySet().stream().findFirst().orElse(null)};
-            for (String cat : byLoai.keySet()) {
-                JToggleButton tb = new JToggleButton(cat) {
-                    @Override protected void paintComponent(Graphics g) {
-                        Graphics2D g2 = (Graphics2D) g.create();
-                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                        g2.setColor(isSelected() ? MAIN_BLUE : new Color(210, 234, 255));
-                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                        g2.dispose();
-                        setForeground(isSelected() ? Color.WHITE : TEXT_DARK);
-                        super.paintComponent(g);
-                    }
-                };
-                tb.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                tb.setFocusPainted(false);
-                tb.setContentAreaFilled(false);
-                tb.setOpaque(false);
-                tb.setBorderPainted(false);
-                tb.setBorder(new EmptyBorder(6, 10, 6, 10));
-                if (cat.equals(first[0])) tb.setSelected(true);
-                bg.add(tb); catList.add(tb);
-                tb.addActionListener(e -> {
-                    dishGrid.removeAll();
-                    for (SanPham sp : byLoai.getOrDefault(cat, new ArrayList<>()))
-                        dishGrid.add(buildDishCard(sp, allSP));
-                    dishGrid.revalidate(); dishGrid.repaint();
-                });
-            }
-            catPanel.add(new JScrollPane(catList), BorderLayout.CENTER);
-            if (first[0] != null)
-                for (SanPham sp : byLoai.getOrDefault(first[0], new ArrayList<>()))
-                    dishGrid.add(buildDishCard(sp, allSP));
-
-            JScrollPane dishScroll = new JScrollPane(dishGrid);
-
-            tmCart = new DefaultTableModel(new String[]{"Tên món", "SL", "Thành tiền"}, 0) {
-                @Override public boolean isCellEditable(int r, int c) { return false; }
-            };
-            JTable tCart = new JTable(tmCart);
-            styleTableStatic(tCart);        
-            tCart.setPreferredScrollableViewportSize(new Dimension(0, 100));
-
-            lblTotal = new JLabel("Tổng thêm: 0đ");
-            lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            lblTotal.setForeground(RED_DANG);
-
-            JButton bCancel = btnStatic("Hủy",               Color.WHITE, TEXT_DARK,  true);
-            JButton bOk     = btnStatic("Thêm món", MAIN_BLUE,   Color.WHITE, false);
-            bCancel.addActionListener(e -> dispose());
-            bOk.addActionListener(e     -> commit(allSP));
-
-            JPanel southBottom = new JPanel(new BorderLayout(8, 0));
-            southBottom.setOpaque(false);
-            southBottom.add(lblTotal, BorderLayout.WEST);
-            JPanel bRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-            bRow.setOpaque(false);
-            bRow.add(bCancel); bRow.add(bOk);
-            southBottom.add(bRow, BorderLayout.EAST);
-
-            JPanel south = new JPanel(new BorderLayout(0, 6));
-            south.setBorder(new EmptyBorder(6, 8, 8, 8));
-            south.setBackground(Color.WHITE);
-            south.add(new JScrollPane(tCart), BorderLayout.CENTER);
-            south.add(southBottom, BorderLayout.SOUTH);
-
-            JSplitPane topSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, catPanel, dishScroll);
-            topSplit.setDividerLocation(190); topSplit.setDividerSize(4); topSplit.setBorder(null);
-            JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topSplit, south);
-            mainSplit.setDividerLocation(330); mainSplit.setDividerSize(4); mainSplit.setBorder(null);
-            add(mainSplit, BorderLayout.CENTER);
-        }
-
-        private JPanel buildDishCard(SanPham sp, List<SanPham> allSP) {
-            RoundedPanel card = new RoundedPanel(10, Color.WHITE);
-            card.setLayout(new BorderLayout(4, 4));
-            card.setBorder(new CompoundBorder(new LineBorder(BORDER_CLR, 1), new EmptyBorder(7, 8, 7, 8)));
-            JLabel name = new JLabel("<html><b>" + sp.getTenMon() + "</b><br>"
-                    + "<font color='#E74C3C'>" + FMT.format(sp.getGiaBan()) + "đ</font></html>");
-            name.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            card.add(name, BorderLayout.CENTER);
-
-            JPanel qr = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 0));
-            qr.setOpaque(false);
-            JButton minus = qtyBtnS("−");
-            JLabel cnt = new JLabel(String.valueOf(cart.getOrDefault(sp.getMaMon(), 0)));
-            cnt.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            cnt.setPreferredSize(new Dimension(24, 22));
-            cnt.setHorizontalAlignment(SwingConstants.CENTER);
-            JButton plus = qtyBtnS("+");
-            plus.addActionListener(e -> {
-                int q = cart.getOrDefault(sp.getMaMon(), 0) + 1;
-                cart.put(sp.getMaMon(), q); cnt.setText(String.valueOf(q)); refreshCart(allSP);
-            });
-            minus.addActionListener(e -> {
-                int q = cart.getOrDefault(sp.getMaMon(), 0);
-                if (q > 0) {
-                    if (--q == 0) cart.remove(sp.getMaMon()); else cart.put(sp.getMaMon(), q);
-                    cnt.setText(String.valueOf(q)); refreshCart(allSP);
-                }
-            });
-            qr.add(minus); qr.add(cnt); qr.add(plus);
-            card.add(qr, BorderLayout.SOUTH);
-            return card;
-        }
-
-        private void refreshCart(List<SanPham> allSP) {
-            tmCart.setRowCount(0);
-            double total = 0;
-            Map<String,SanPham> map = new HashMap<>();
-            for (SanPham sp : allSP) map.put(sp.getMaMon(), sp);
-            for (Map.Entry<String,Integer> e : cart.entrySet()) {
-                SanPham sp = map.get(e.getKey()); if (sp == null) continue;
-                double tt = sp.getGiaBan() * e.getValue();
-                tmCart.addRow(new Object[]{sp.getTenMon(), e.getValue(), FMT.format(tt) + "đ"});
-                total += tt;
-            }
-            lblTotal.setText("Tổng thêm: " + FMT.format(total) + "đ");
-        }
-
-        private void commit(List<SanPham> allSP) {
-            if (cart.isEmpty()) { dispose(); return; }
-            Map<String,SanPham> map = new HashMap<>();
-            for (SanPham sp : allSP) map.put(sp.getMaMon(), sp);
-            double added = 0;
-            for (Map.Entry<String,Integer> e : cart.entrySet()) {
-                SanPham sp = map.get(e.getKey());
-                if (sp == null || e.getValue() <= 0) continue;
-                double tt = sp.getGiaBan() * e.getValue();
-                if (cthdDAO.existsChiTiet(hd.getMaHD(), sp.getMaMon())) {
-                    int oldQty = 0; double oldTt = 0;
-                    for (ChiTietHoaDon ct : cthdDAO.getChiTietByMaHD(hd.getMaHD()))
-                        if (ct.getMonAn().getMaMon().equals(sp.getMaMon())) {
-                            oldQty = ct.getSoLuong(); oldTt = ct.getThanhTien(); break;
-                        }
-                    int nq = oldQty + e.getValue();
-                    double ntt = sp.getGiaBan() * nq;
-                    cthdDAO.updateSoLuong(hd.getMaHD(), sp.getMaMon(), nq, ntt);
-                    added += (ntt - oldTt);
-                } else {
-                    HoaDon ref = new HoaDon(); ref.setMaHD(hd.getMaHD());
-                    cthdDAO.create(new ChiTietHoaDon(sp, ref, e.getValue(), sp.getGiaBan(), "", tt));
-                    added += tt;
-                }
-            }
-            hdDAO.updateTongTien(hd.getMaHD(), hd.getTongTien() + added);
-            dispose(); onDone.run();
-        }
-
-        private static void styleTableStatic(JTable t) {
-            t.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            t.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-            t.setRowHeight(24); t.setShowGrid(false);
-            t.setIntercellSpacing(new Dimension(0, 0));
-            t.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-        }
-
-        private static JButton btnStatic(String text, Color bg, Color fg, boolean outlined) {
-            JButton b = new JButton(text);
-            b.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            b.setBackground(bg); b.setForeground(fg); b.setFocusPainted(false);
-            b.setPreferredSize(new Dimension(160, 36));
-            b.setBorder(outlined
-                ? new CompoundBorder(new LineBorder(BORDER_CLR), new EmptyBorder(7, 24, 7, 24))
-                : new EmptyBorder(7, 24, 7, 24));
-            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            return b;
-        }
-
-        private static JButton qtyBtnS(String t) {
-            JButton b = new JButton(t);
-            b.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            b.setPreferredSize(new Dimension(26, 26));
-            b.setMargin(new Insets(0, 0, 0, 0)); b.setFocusPainted(false);
-            b.setBackground(BG_LIGHT);
-            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            return b;
-        }
-    }
 
     // ── UI helpers ───────────────────────────────────────────────────────
     private JButton qtyBtn(String t) {
@@ -1578,6 +1324,92 @@ public class QuanLyDatBan extends JPanel {
         }
     }
 
+    private void searchBookingByPhone(String phone) {
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        new SwingWorker<DonDatBan, Void>() {
+            @Override
+            protected DonDatBan doInBackground() throws Exception {
+                KhachHang kh = khDAO.getKhachHangBySdt(phone);
+                if (kh == null) return null;
+
+                List<DonDatBan> allDons = ddbDAO.getAllDonDatBan();
+                Date today = truncateToDay(new Date());
+
+                // Quét toàn bộ đơn đặt bàn của khách này
+                for (DonDatBan d : allDons) {
+                    if (!d.isTrangThai()
+                            && d.getKhachHang() != null
+                            && d.getKhachHang().getMaKH().equals(kh.getMaKH())) {
+
+                        // Nếu ngày đến >= ngày hôm nay (nghĩa là đơn sắp tới) thì lụm luôn!
+                        Date ngayDen = truncateToDay(d.getThoiGianDen());
+                        if (!ngayDen.before(today)) {
+                            return d;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                setCursor(Cursor.getDefaultCursor());
+                try {
+                    DonDatBan foundDon = get();
+
+                    if (foundDon != null) {
+                        // 1. Lấy thông tin ngày và khung giờ của cái đơn vừa tìm được
+                        Date ngayKhachDat = foundDon.getThoiGianDen();
+                        String khungGioKhachDat = foundDon.getKhungGio();
+
+                        // 2. DỊCH CHUYỂN GIAO DIỆN: Cập nhật biến ngày và đổi ComboBox
+                        selectedBookingDate = ngayKhachDat;
+                        if (cbNgayDat != null) {
+                            for (int i = 0; i < bookingDates.size(); i++) {
+                                if (isSameDay(bookingDates.get(i), ngayKhachDat)) {
+                                    // Tạm thời tắt sự kiện để combo box không load lại trang gây loạn
+                                    ActionListener[] listeners = cbNgayDat.getActionListeners();
+                                    for (ActionListener al : listeners) cbNgayDat.removeActionListener(al);
+
+                                    cbNgayDat.setSelectedIndex(i); // Nhảy ngày
+
+                                    for (ActionListener al : listeners) cbNgayDat.addActionListener(al);
+                                    break;
+                                }
+                            }
+                        }
+
+                        // 3. DỊCH CHUYỂN GIAO DIỆN: Đổi màu nút Khung giờ SÁNG/CHIỀU/TỐI
+                        currentFilter = khungGioKhachDat;
+                        refreshFilterBtns();
+
+                        // 4. Load lại sơ đồ bàn của đúng cái ca đó, và tự động bật thông tin bàn
+                        loadTableCards();
+                        // Dùng bàn đầu tiên của đơn để navigate
+                        Ban firstBan = foundDon.getDsBan().isEmpty()
+                                ? foundDon.getBan()
+                                : foundDon.getDsBan().get(0);
+                        if (firstBan != null) onCardClick(firstBan);
+                        txtSearchBan.setText(""); // Xóa ô search
+
+                        // Báo cho Lễ tân biết đã nhảy đến ca nào
+                        JOptionPane.showMessageDialog(QuanLyDatBan.this,
+                                "Khách có đơn đặt bàn vào lúc: " + getSlotLabel(khungGioKhachDat)
+                                        + "\nNgày: " + new SimpleDateFormat("dd/MM/yyyy").format(ngayKhachDat),
+                                "Đã tự động chuyển đến ca đặt", JOptionPane.INFORMATION_MESSAGE);
+
+                    } else {
+                        JOptionPane.showMessageDialog(QuanLyDatBan.this,
+                                "Số điện thoại " + phone + " không có đơn đặt bàn nào sắp tới!",
+                                "Thông báo", JOptionPane.WARNING_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }.execute();
+    }
     // ── RoundedPanel ─────────────────────────────────────────────────────
     private static class RoundedPanel extends JPanel {
         private final int   radius;

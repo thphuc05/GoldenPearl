@@ -115,24 +115,6 @@ public class ChiTietHoaDon_DAO {
         return n > 0;
     }
 
-    public Map<String, Integer> getTop5SellingDishes() {
-        Map<String, Integer> topDishes = new HashMap<>();
-        Connection con = ConnectDB.getConnection();
-        try {
-            String sql = "SELECT TOP 5 sp.tenMon, SUM(ct.soLuong) as totalQty " +
-                         "FROM ChiTietHoaDon ct JOIN SanPham sp ON ct.maMon = sp.maMon " +
-                         "GROUP BY sp.tenMon ORDER BY totalQty DESC";
-            Statement statement = con.createStatement();
-            ResultSet rs = statement.executeQuery(sql);
-            while (rs.next()) {
-                topDishes.put(rs.getString(1), rs.getInt(2));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return topDishes;
-    }
-
     public double getProfitByDateRange(Timestamp start, Timestamp end) {
         double profit = 0;
         Connection con = ConnectDB.getConnection();
@@ -196,5 +178,27 @@ public class ChiTietHoaDon_DAO {
             e.printStackTrace();
         }
         return result;
+    }
+    public Map<String, Integer> getTop5SellingDishesByDateRange(Timestamp start, Timestamp end) {
+        Map<String, Integer> topDishes = new LinkedHashMap<>();
+        Connection con = ConnectDB.getConnection();
+        try {
+            String sql = "SELECT TOP 5 sp.tenMon, SUM(ct.soLuong) as totalQty " +
+                    "FROM ChiTietHoaDon ct " +
+                    "JOIN SanPham sp ON ct.maMon = sp.maMon " +
+                    "JOIN HoaDon hd ON ct.maHD = hd.maHD " +
+                    "WHERE hd.ngayLap BETWEEN ? AND ? AND hd.trangThai = 1 " +
+                    "GROUP BY sp.tenMon ORDER BY totalQty DESC";
+            PreparedStatement stmt = con.prepareStatement(sql);
+            stmt.setTimestamp(1, start);
+            stmt.setTimestamp(2, end);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                topDishes.put(rs.getString(1), rs.getInt(2));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return topDishes;
     }
 }

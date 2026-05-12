@@ -14,7 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class QLKH_Lskh extends JDialog {
+public class QuanLyKhachHang_LSDB extends JDialog {
 
     private final Color MAIN_BLUE    = Color.decode("#0B3D59");
     private final Color GOLD_COLOR   = Color.decode("#C5A059");
@@ -31,7 +31,7 @@ public class QLKH_Lskh extends JDialog {
     private final String maKH;
     private final String tenKH;
 
-    public QLKH_Lskh(Window parent, String maKH, String tenKH, HoaDon_DAO hd_dao, ChiTietHoaDon_DAO ct_dao) {
+    public QuanLyKhachHang_LSDB(Window parent, String maKH, String tenKH, HoaDon_DAO hd_dao, ChiTietHoaDon_DAO ct_dao) {
         super(parent, "Lịch sử hóa đơn — " + tenKH, ModalityType.APPLICATION_MODAL);
         this.maKH = maKH;
         this.tenKH = tenKH;
@@ -200,7 +200,7 @@ public class QLKH_Lskh extends JDialog {
             if (hd != null) {
                 List<ChiTietHoaDon> dsCT = ct_dao.getChiTietByMaHD(hdId);
                 // Gọi class InvoiceDialog hiện có của bạn
-                new QLDB_GoiMon(this, hd, dsCT, true).setVisible(true);
+                new QuanLyHoaDon_CTHD(this, hd, dsCT, true).setVisible(true);
             }
         });
 
