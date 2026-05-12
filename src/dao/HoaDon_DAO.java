@@ -95,12 +95,12 @@ public class HoaDon_DAO {
                 String maNV  = hd.getNhanVien()  != null ? SQLLogger.str(hd.getNhanVien().getMaNV())   : "NULL";
                 String maKM  = hd.getKhuyenMai() != null ? SQLLogger.str(hd.getKhuyenMai().getMaKM())  : "NULL";
                 SQLLogger.log(
-                    "INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maDon, maNV, maKH, maKM, tienCoc) VALUES (" +
-                    SQLLogger.str(hd.getMaHD()) + ", " + SQLLogger.ts(hd.getNgayLap()) + ", " +
-                    (hd.getThoiGian() != null ? SQLLogger.str(hd.getThoiGian().toString()) : SQLLogger.ts(hd.getNgayLap())) + ", " +
-                    SQLLogger.num(hd.getTongTien()) + ", " + SQLLogger.bit(hd.isTrangThai()) + ", " +
-                    maDon + ", " + maNV + ", " + SQLLogger.str(hd.getKhachHang().getMaKH()) + ", " +
-                    maKM + ", " + SQLLogger.num(hd.getTienCoc()) + ");");
+                        "INSERT INTO HoaDon (maHD, ngayLap, thoiGian, tongTien, trangThai, maDon, maNV, maKH, maKM, tienCoc) VALUES (" +
+                                SQLLogger.str(hd.getMaHD()) + ", " + SQLLogger.ts(hd.getNgayLap()) + ", " +
+                                (hd.getThoiGian() != null ? SQLLogger.str(hd.getThoiGian().toString()) : SQLLogger.ts(hd.getNgayLap())) + ", " +
+                                SQLLogger.num(hd.getTongTien()) + ", " + SQLLogger.bit(hd.isTrangThai()) + ", " +
+                                maDon + ", " + maNV + ", " + SQLLogger.str(hd.getKhachHang().getMaKH()) + ", " +
+                                maKM + ", " + SQLLogger.num(hd.getTienCoc()) + ");");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -144,8 +144,8 @@ public class HoaDon_DAO {
             stmt.setString(2, maHD);
             n = stmt.executeUpdate();
             if (n > 0) SQLLogger.log(
-                "UPDATE HoaDon SET trangThai = " + SQLLogger.bit(status) +
-                " WHERE maHD = " + SQLLogger.str(maHD) + ";");
+                    "UPDATE HoaDon SET trangThai = " + SQLLogger.bit(status) +
+                            " WHERE maHD = " + SQLLogger.str(maHD) + ";");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -161,8 +161,8 @@ public class HoaDon_DAO {
             stmt.setString(2, maHD);
             n = stmt.executeUpdate();
             if (n > 0) SQLLogger.log(
-                "UPDATE HoaDon SET tongTien = " + SQLLogger.num(total) +
-                " WHERE maHD = " + SQLLogger.str(maHD) + ";");
+                    "UPDATE HoaDon SET tongTien = " + SQLLogger.num(total) +
+                            " WHERE maHD = " + SQLLogger.str(maHD) + ";");
         } catch (SQLException e) { e.printStackTrace(); }
         return n > 0;
     }
@@ -183,10 +183,10 @@ public class HoaDon_DAO {
         Connection con = ConnectDB.getConnection();
         try {
             String sql = "SELECT hd.*, nv.tenNV, kh.tenKH " +
-                         "FROM HoaDon hd " +
-                         "LEFT JOIN NhanVien nv ON hd.maNV = nv.maNV " +
-                         "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH " +
-                         "WHERE hd.maHD = ?";
+                    "FROM HoaDon hd " +
+                    "LEFT JOIN NhanVien nv ON hd.maNV = nv.maNV " +
+                    "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH " +
+                    "WHERE hd.maHD = ?";
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, maHD);
             ResultSet rs = statement.executeQuery();
@@ -201,10 +201,10 @@ public class HoaDon_DAO {
         Connection con = ConnectDB.getConnection();
         try {
             String sql = "SELECT hd.*, nv.tenNV, kh.tenKH " +
-                         "FROM HoaDon hd " +
-                         "LEFT JOIN NhanVien nv ON hd.maNV = nv.maNV " +
-                         "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH " +
-                         "WHERE hd.maDon = ?";
+                    "FROM HoaDon hd " +
+                    "LEFT JOIN NhanVien nv ON hd.maNV = nv.maNV " +
+                    "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH " +
+                    "WHERE hd.maDon = ?";
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setString(1, maDon);
             ResultSet rs = statement.executeQuery();
@@ -249,10 +249,10 @@ public class HoaDon_DAO {
         Connection con = ConnectDB.getConnection();
         try {
             String sql = "SELECT hd.*, nv.tenNV, kh.tenKH " +
-                         "FROM HoaDon hd " +
-                         "JOIN NhanVien nv ON hd.maNV = nv.maNV " +
-                         "JOIN KhachHang kh ON hd.maKH = kh.maKH " +
-                         "WHERE hd.ngayLap BETWEEN ? AND ?";
+                    "FROM HoaDon hd " +
+                    "JOIN NhanVien nv ON hd.maNV = nv.maNV " +
+                    "JOIN KhachHang kh ON hd.maKH = kh.maKH " +
+                    "WHERE hd.ngayLap BETWEEN ? AND ?";
             PreparedStatement statement = con.prepareStatement(sql);
             statement.setTimestamp(1, new Timestamp(fromDate.getTime()));
             statement.setTimestamp(2, new Timestamp(toDate.getTime()));
@@ -266,19 +266,76 @@ public class HoaDon_DAO {
         return dsHD;
     }
 
+    /**
+     * [ĐÃ FIX] Lấy map maHD -> tenKV cho tất cả hóa đơn.
+     *
+     * LỖI CŨ: JOIN DonDatBan ddb ON hd.maDon = ddb.maDon
+     *          JOIN Ban b ON ddb.maBan = b.maBan   ← sai vì DonDatBan không còn cột maBan
+     *
+     * FIX MỚI: JOIN qua bảng trung gian ChiTietDatBan để lấy maBan.
+     * Dùng DISTINCT để tránh duplicate khi 1 đơn có nhiều bàn.
+     * Nếu 1 đơn có nhiều bàn ở nhiều khu vực khác nhau, lấy khu vực của bàn đầu tiên (TOP 1 / MIN).
+     */
     public Map<String, String> getKhuVucMapForAllHoaDon() {
         Map<String, String> map = new HashMap<>();
         Connection con = ConnectDB.getConnection();
         try {
-            String sql = "SELECT hd.maHD, kv.tenKV " +
-                         "FROM HoaDon hd " +
-                         "JOIN DonDatBan ddb ON hd.maDon = ddb.maDon " +
-                         "JOIN Ban b ON ddb.maBan = b.maBan " +
-                         "JOIN KhuVuc kv ON b.maKV = kv.maKV";
+            // FIX: Dùng ChiTietDatBan thay vì JOIN trực tiếp DonDatBan.maBan
+            // GROUP BY + MIN(kv.tenKV) để mỗi maHD chỉ có 1 khu vực đại diện
+            String sql = "SELECT hd.maHD, MIN(kv.tenKV) AS tenKV " +
+                    "FROM HoaDon hd " +
+                    "JOIN DonDatBan ddb ON hd.maDon = ddb.maDon " +
+                    "JOIN ChiTietDatBan ct ON ddb.maDon = ct.maDonDatBan " +
+                    "JOIN Ban b ON ct.maBan = b.maBan " +
+                    "JOIN KhuVuc kv ON b.maKV = kv.maKV " +
+                    "GROUP BY hd.maHD";
             Statement st = con.createStatement();
             ResultSet rs = st.executeQuery(sql);
             while (rs.next()) map.put(rs.getString("maHD"), rs.getString("tenKV"));
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    /**
+     * [MỚI] Lấy map maHD -> chuỗi tên bàn (ví dụ: "Bàn 1, Bàn 3") cho tất cả hóa đơn.
+     *
+     * Dùng cho cột "Bàn" trong bảng Quản lý Hóa đơn.
+     * Hỗ trợ cả hóa đơn 1 bàn (cũ) và nhiều bàn (mới).
+     */
+    public Map<String, String> getDsBanDisplayForAllHoaDon() {
+        Map<String, String> map = new HashMap<>();
+        Connection con = ConnectDB.getConnection();
+        try {
+            // Lấy tất cả cặp (maHD, soBan) sắp xếp theo soBan
+            String sql = "SELECT hd.maHD, b.soBan " +
+                    "FROM HoaDon hd " +
+                    "JOIN DonDatBan ddb ON hd.maDon = ddb.maDon " +
+                    "JOIN ChiTietDatBan ct ON ddb.maDon = ct.maDonDatBan " +
+                    "JOIN Ban b ON ct.maBan = b.maBan " +
+                    "ORDER BY hd.maHD, b.soBan";
+            Statement st = con.createStatement();
+            ResultSet rs = st.executeQuery(sql);
+            // Gom nhóm: maHD -> danh sách soBan
+            Map<String, List<Integer>> temp = new HashMap<>();
+            while (rs.next()) {
+                String maHD = rs.getString("maHD");
+                int soBan   = rs.getInt("soBan");
+                temp.computeIfAbsent(maHD, k -> new ArrayList<>()).add(soBan);
+            }
+            // Chuyển sang chuỗi hiển thị
+            for (Map.Entry<String, List<Integer>> entry : temp.entrySet()) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < entry.getValue().size(); i++) {
+                    if (i > 0) sb.append(", ");
+                    sb.append("Bàn ").append(entry.getValue().get(i));
+                }
+                map.put(entry.getKey(), sb.toString());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return map;
     }
 

@@ -92,6 +92,7 @@ public class QuanLyHoaDon extends JPanel {
     private JLabel lblNgayLap;
     private JLabel lblNhanVien;
     private JLabel lblKhachHang;
+    private JLabel lblBan;        // [MỚI] hiển thị số bàn trong chi tiết
     private JLabel lblTongTien;
     private JLabel lblTienCoc;
     private JLabel lblTongCong;
@@ -119,6 +120,12 @@ public class QuanLyHoaDon extends JPanel {
      * Dùng để lọc theo khu vực mà không cần query lại DB.
      */
     private Map<String, String> maHDToKhuVuc = new HashMap<>();
+
+    /**
+     * [MỚI] Map ánh xạ mã hóa đơn sang chuỗi tên bàn (vd: "Bàn 1, Bàn 3").
+     * Hỗ trợ cả hóa đơn 1 bàn cũ và nhiều bàn mới.
+     */
+    private Map<String, String> maHDToBan = new HashMap<>();
 
     /**
      * Danh sách hóa đơn đã được tải về từ DB (hoặc kết quả tìm kiếm gần nhất).
@@ -291,7 +298,7 @@ public class QuanLyHoaDon extends JPanel {
         lb.setTitleColor(TEXT_DARK);
         left.setBorder(lb);
 
-        String[] cols = {"Mã HĐ", "Ngày Lập", "Nhân Viên", "Khách Hàng", "Trạng Thái"};
+        String[] cols = {"Mã HĐ", "Ngày Lập", "Nhân Viên", "Khách Hàng", "Bàn", "Trạng Thái"};
         modelHoaDon = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int col) { return false; }
@@ -303,8 +310,9 @@ public class QuanLyHoaDon extends JPanel {
         tableHoaDon.getColumnModel().getColumn(1).setPreferredWidth(130);
         tableHoaDon.getColumnModel().getColumn(2).setPreferredWidth(90);
         tableHoaDon.getColumnModel().getColumn(3).setPreferredWidth(100);
-        tableHoaDon.getColumnModel().getColumn(4).setPreferredWidth(110);
-        tableHoaDon.getColumnModel().getColumn(4).setCellRenderer(new StatusCellRenderer());
+        tableHoaDon.getColumnModel().getColumn(4).setPreferredWidth(120); // [MỚI] cột Bàn
+        tableHoaDon.getColumnModel().getColumn(5).setPreferredWidth(110);
+        tableHoaDon.getColumnModel().getColumn(5).setCellRenderer(new StatusCellRenderer()); // [FIX] Trạng Thái đã đổi sang cột 5
 
         left.add(new JScrollPane(tableHoaDon), BorderLayout.CENTER);
         return left;
@@ -363,6 +371,7 @@ public class QuanLyHoaDon extends JPanel {
         lblNgayLap   = mkInfoLabel();
         lblNhanVien  = mkInfoLabel();
         lblKhachHang = mkInfoLabel();
+        lblBan       = mkInfoLabel(); // [MỚI]
         lblTongTien  = mkInfoLabel();
         lblTienCoc   = mkInfoLabel();
         lblTongCong  = mkInfoLabel();
@@ -372,6 +381,7 @@ public class QuanLyHoaDon extends JPanel {
         info.add(lblNgayLap);
         info.add(lblNhanVien);
         info.add(lblKhachHang);
+        info.add(lblBan);       // [MỚI]
         info.add(lblTongTien);
         info.add(lblTienCoc);
         info.add(lblTongCong);
@@ -488,8 +498,9 @@ public class QuanLyHoaDon extends JPanel {
             @Override
             protected Object[] doInBackground() {
                 Map<String, String> kvMap = hdDao.getKhuVucMapForAllHoaDon();
+                Map<String, String> banMap = hdDao.getDsBanDisplayForAllHoaDon(); // [MỚI]
                 List<HoaDon> ds = hdDao.getAllHoaDon();
-                return new Object[]{kvMap, ds};
+                return new Object[]{kvMap, banMap, ds};
             }
 
             @Override
@@ -498,7 +509,8 @@ public class QuanLyHoaDon extends JPanel {
                 try {
                     Object[] result = get();
                     maHDToKhuVuc = (Map<String, String>) result[0];
-                    List<HoaDon> ds = (List<HoaDon>) result[1];
+                    maHDToBan    = (Map<String, String>) result[1]; // [MỚI]
+                    List<HoaDon> ds = (List<HoaDon>) result[2];
                     cachedHoaDon = ds != null ? ds : new ArrayList<>();
                     applyCurrentFilters();
                 } catch (Exception e) {
@@ -652,6 +664,7 @@ public class QuanLyHoaDon extends JPanel {
             lblNgayLap.setText("Ngày Lập: ");
             lblNhanVien.setText("Nhân Viên: ");
             lblKhachHang.setText("Khách Hàng: ");
+            lblBan.setText("Bàn: ");            // [MỚI]
             lblTongTien.setText("Tổng Tiền: ");
             lblTienCoc.setText("Tiền Cọc: ");
             lblTongCong.setText("Tổng Cộng: ");
@@ -671,7 +684,16 @@ public class QuanLyHoaDon extends JPanel {
                 ? hd.getNhanVien().getMaNV() + " - " + hd.getNhanVien().getTenNV() : ""));
 
         lblKhachHang.setText("Khách Hàng: " + (hd.getKhachHang() != null
-                ? hd.getKhachHang().getMaKH() : "Khách vãng lai"));
+                ? hd.getKhachHang().getMaKH()
+                  + (hd.getKhachHang().getTenKH() != null && !hd.getKhachHang().getTenKH().isEmpty()
+                     ? " – " + hd.getKhachHang().getTenKH() : "")
+                : "Khách vãng lai"));
+
+        // [MỚI] Hiển thị số bàn từ map đã load sẵn
+        String tenBanDetail = hd.getDonDatBan() != null
+                ? maHDToBan.getOrDefault(hd.getMaHD(), "")
+                : "";
+        lblBan.setText("Bàn: " + tenBanDetail);
 
         // Tính tổng tiền món
         double tongTienMon = 0;
@@ -735,7 +757,8 @@ public class QuanLyHoaDon extends JPanel {
         HoaDon hd = hdDao.getHoaDonByMa(maHD);
         if (hd != null) {
             List<ChiTietHoaDon> dsCT = ctDao.getChiTietByMaHD(maHD);
-            new QuanLyHoaDon_CTHD(SwingUtilities.getWindowAncestor(this), hd, dsCT, true)
+            String tenBanCTHD = maHDToBan.getOrDefault(maHD, ""); // [MỚI] truyền tên bàn
+            new QuanLyHoaDon_CTHD(SwingUtilities.getWindowAncestor(this), hd, dsCT, true, tenBanCTHD)
                     .setVisible(true);
         }
     }
@@ -786,12 +809,19 @@ public class QuanLyHoaDon extends JPanel {
             ngayGio = ngay + " " + gio;
         }
 
+        // [MỚI] Lấy chuỗi tên bàn từ map; fallback nếu không có trong map
+        String tenBan = maHDToBan.getOrDefault(hd.getMaHD(), "");
         modelHoaDon.addRow(new Object[]{
                 hd.getMaHD(),
                 ngayGio,
                 hd.getNhanVien()  != null ? hd.getNhanVien().getMaNV()  : "",
-                hd.getKhachHang() != null ? hd.getKhachHang().getMaKH() : "Khách vãng lai",
-                hd.isTrangThai()  ? "Đã thanh toán" : "Chưa thanh toán"
+                hd.getKhachHang() != null
+                        ? hd.getKhachHang().getMaKH()
+                          + (hd.getKhachHang().getTenKH() != null && !hd.getKhachHang().getTenKH().isEmpty()
+                             ? " – " + hd.getKhachHang().getTenKH() : "")
+                        : "Khách vãng lai",
+                tenBan,          // [MỚI] cột Bàn
+                hd.isTrangThai() ? "Đã thanh toán" : "Chưa thanh toán"
         });
     }
 

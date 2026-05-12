@@ -10,7 +10,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
 
-public class QLDB_DatBan extends JDialog {
+public class QuanLyDatBan_GM extends JDialog {
     // ── Constants được mang qua ──────────────────────────────────────────
     private static final Color MAIN_BLUE  = Color.decode("#0B3D59");
     private static final Color RED_DANG   = Color.decode("#E74C3C");
@@ -28,8 +28,8 @@ public class QLDB_DatBan extends JDialog {
     private DefaultTableModel tmCart;
     private JLabel lblTotal;
 
-    public QLDB_DatBan(Frame owner, HoaDon hd, SanPham_DAO spDAO,
-                       ChiTietHoaDon_DAO cthdDAO, HoaDon_DAO hdDAO, Runnable onDone) {
+    public QuanLyDatBan_GM(Frame owner, HoaDon hd, SanPham_DAO spDAO,
+                           ChiTietHoaDon_DAO cthdDAO, HoaDon_DAO hdDAO, Runnable onDone) {
         super(owner, "Thêm món vào hóa đơn", true);
         this.hd = hd;
         this.spDAO = spDAO;
