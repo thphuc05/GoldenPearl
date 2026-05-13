@@ -34,7 +34,7 @@ public class QuanLyKhachHang extends JPanel {
 
     private List<KhachHang> allData = new ArrayList<>();
     private int currentPage = 1;
-    private int pageSize = 10;
+    private int pageSize = 22;
 
     private final Color MAIN_BLUE    = Color.decode("#0B3D59");
     private final Color GOLD_COLOR   = Color.decode("#C5A059");

@@ -582,7 +582,7 @@ public class TrangChu extends JFrame {
                     java.sql.Timestamp ts2 = new java.sql.Timestamp(end.getTime());
                     double profit = ct_dao.getProfitByDateRange(ts1, ts2);
                     Map<String, Double> profitMap = ct_dao.getProfitGroupedByMaHD(ts1, ts2);
-                    Map<String, Integer> top = ct_dao.getTop5SellingDishes();
+                    Map<String, Integer> top = ct_dao.getTop5SellingDishesByDateRange(ts1, ts2);
 
                     List<Object[]> rows = new ArrayList<>();
                     SimpleDateFormat dfmt = new SimpleDateFormat("dd/MM/yyyy");
