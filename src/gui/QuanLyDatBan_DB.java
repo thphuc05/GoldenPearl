@@ -39,10 +39,12 @@ public class QuanLyDatBan_DB extends JPanel {
     private final HoaDon_DAO         hdDAO   = new HoaDon_DAO();
     private final ChiTietHoaDon_DAO  cthdDAO = new ChiTietHoaDon_DAO();
     private final SanPham_DAO        spDAO   = new SanPham_DAO();
+    private final ChiTietDatBan_DAO  ctdbDAO = new ChiTietDatBan_DAO();
 
     // ── state ────────────────────────────────────────────────────────────
     private final NhanVien currentNV;
-    private final Ban currentBan;
+    /** Danh sách bàn được chọn cho đơn đặt này (1 hoặc nhiều bàn). */
+    private final List<Ban> selectedBans;
     private final String currentFilter;
     private final Date selectedBookingDate;
     private final BookingListener listener;
@@ -59,9 +61,9 @@ public class QuanLyDatBan_DB extends JPanel {
         void onCancel();
     }
 
-    public QuanLyDatBan_DB(NhanVien nhanVien, Ban ban, Date bookingDate, String filter, BookingListener listener) {
+    public QuanLyDatBan_DB(NhanVien nhanVien, List<Ban> bans, Date bookingDate, String filter, BookingListener listener) {
         this.currentNV = nhanVien;
-        this.currentBan = ban;
+        this.selectedBans = bans != null ? bans : new ArrayList<>();
         this.selectedBookingDate = bookingDate;
         this.currentFilter = filter;
         this.listener = listener;
@@ -78,8 +80,15 @@ public class QuanLyDatBan_DB extends JPanel {
                 new MatteBorder(0, 0, 1, 0, BORDER_CLR),
                 new EmptyBorder(10, 14, 10, 14)));
 
-        String loai = currentBan.getLoaiBan() != null ? currentBan.getLoaiBan() : "Thường";
-        lblBookingTitle = new JLabel("BÀN " + currentBan.getSoBan() + "  ·  " + loai + "  ·  " + currentBan.getSucChua() + " người");
+        // Tên bàn: "Bàn 1" hoặc "Bàn 1, Bàn 3, Bàn 5"
+        String tenBan = selectedBans.stream()
+                .map(b -> "Bàn " + b.getSoBan())
+                .collect(java.util.stream.Collectors.joining(", "));
+        int tongSucChua = selectedBans.stream().mapToInt(Ban::getSucChua).sum();
+        String loai = selectedBans.size() == 1 && selectedBans.get(0).getLoaiBan() != null
+                ? selectedBans.get(0).getLoaiBan() : (selectedBans.size() > 1 ? "Nhiều bàn" : "Thường");
+
+        lblBookingTitle = new JLabel(tenBan + "  ·  " + loai + "  ·  " + tongSucChua + " người");
         lblBookingTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblBookingTitle.setForeground(MAIN_BLUE);
         hdr.add(lblBookingTitle, BorderLayout.WEST);
@@ -206,16 +215,21 @@ public class QuanLyDatBan_DB extends JPanel {
         String sdt = txtSdtKH.getText().trim();
         if (ten.isEmpty()) { msg("Vui lòng nhập tên khách hàng!"); return; }
         if (!sdt.matches("0\\d{9}")) { msg("Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)!"); return; }
+        if (selectedBans.isEmpty()) { msg("Không có bàn nào được chọn!"); return; }
 
         if (isToday(selectedBookingDate) && isSlotPastNow(getSlotIndex(currentFilter))) {
             msg("Khung giờ " + getSlotLabel(currentFilter) + " hôm nay đã qua!\nVui lòng chọn khung giờ khác.");
             return;
         }
 
-        if (findActiveDon(currentBan.getMaBan()) != null) {
-            msg("Bàn này đã được đặt trong khung giờ " + getSlotLabel(currentFilter)
-                    + "\nngày " + new SimpleDateFormat("dd/MM/yyyy").format(selectedBookingDate) + "!");
-            return;
+        // Kiểm tra tất cả bàn xem có bị trùng lịch không
+        for (Ban ban : selectedBans) {
+            if (findActiveDon(ban.getMaBan()) != null) {
+                msg("Bàn " + ban.getSoBan() + " đã được đặt trong khung giờ "
+                        + getSlotLabel(currentFilter)
+                        + "\nngày " + new SimpleDateFormat("dd/MM/yyyy").format(selectedBookingDate) + "!");
+                return;
+            }
         }
 
         KhachHang kh = khDAO.getKhachHangBySdt(sdt);
@@ -227,20 +241,26 @@ public class QuanLyDatBan_DB extends JPanel {
             khDAO.addKhachHang(kh);
         }
 
+        // Tổng sức chứa của tất cả bàn được chọn
+        int tongSucChua = selectedBans.stream().mapToInt(Ban::getSucChua).sum();
+
         Timestamp now = new Timestamp(System.currentTimeMillis());
         DonDatBan don = new DonDatBan();
         don.setMaDon(ddbDAO.getNextMaDon());
         don.setThoiGianDat(now);
         don.setThoiGianDen(selectedBookingDate);
-        don.setSoLuongKhach(currentBan.getSucChua());
+        don.setSoLuongKhach(tongSucChua);
         don.setKhachHang(kh);
         don.setNhanVien(currentNV);
-        don.setBan(currentBan);
+        don.setDsBan(new ArrayList<>(selectedBans));   // ← gán danh sách bàn
         don.setTrangThai(false);
         don.setKhungGio(currentFilter);
         don.setGhiChu(txtGhiChu.getText().trim());
+
+        // INSERT DonDatBan + INSERT ChiTietDatBan cho mỗi bàn (trong DAO)
         ddbDAO.addDonDatBan(don);
 
+        // Pre-order
         List<SanPham> allSP = spDAO.getAllSanPham();
         Map<String,SanPham> spMap = new HashMap<>();
         for (SanPham sp : allSP) spMap.put(sp.getMaMon(), sp);
@@ -253,7 +273,7 @@ public class QuanLyDatBan_DB extends JPanel {
         HoaDon hd = new HoaDon();
         hd.setMaHD(hdDAO.getNextMaHD());
         hd.setNgayLap(now);
-        hd.setThoiGian(new Time(now.getTime()));
+        hd.setThoiGian(new java.sql.Time(now.getTime()));
         hd.setTongTien(TIEN_COC + foodTotal);
         hd.setTrangThai(false);
         hd.setDonDatBan(don);
@@ -270,12 +290,21 @@ public class QuanLyDatBan_DB extends JPanel {
             cthdDAO.create(new ChiTietHoaDon(sp, ref, e.getValue(), sp.getGiaBan(), "", tt));
         }
 
+        // Cập nhật trạng thái tất cả bàn được chọn
         if (isToday(selectedBookingDate)) {
-            banDAO.updateTinhTrangBan(currentBan.getMaBan(), TrangThaiBan.DaDuocDat);
+            for (Ban ban : selectedBans) {
+                banDAO.updateTinhTrangBan(ban.getMaBan(), TrangThaiBan.DaDuocDat);
+            }
         }
 
+        // Xây chuỗi tên bàn để hiển thị trong thông báo
+        String tenBan = selectedBans.stream()
+                .map(b -> "Bàn " + b.getSoBan())
+                .collect(java.util.stream.Collectors.joining(", "));
+
         JOptionPane.showMessageDialog(this,
-                "Đặt bàn thành công!\nNgày: " + new SimpleDateFormat("dd/MM/yyyy").format(selectedBookingDate)
+                "Đặt bàn thành công!\nBàn: " + tenBan
+                        + "\nNgày: " + new SimpleDateFormat("dd/MM/yyyy").format(selectedBookingDate)
                         + "\nKhung giờ: " + getSlotLabel(currentFilter)
                         + "\nTiền cọc: " + FMT.format(TIEN_COC) + "đ",
                 "Thành công", JOptionPane.INFORMATION_MESSAGE);
@@ -284,9 +313,11 @@ public class QuanLyDatBan_DB extends JPanel {
     }
 
     private DonDatBan findActiveDon(String maBan) {
-        List<DonDatBan> allDons = ddbDAO.getAllDonDatBan();
+        List<DonDatBan> allDons = ddbDAO.getAllDonDatBanWithBan();
         for (DonDatBan d : allDons) {
-            if (!d.isTrangThai() && d.getBan() != null && d.getBan().getMaBan().equals(maBan)
+            boolean hasBan = d.getDsBan().stream()
+                    .anyMatch(b -> b.getMaBan().equals(maBan));
+            if (!d.isTrangThai() && hasBan
                     && isSameDay(d.getThoiGianDen(), selectedBookingDate)
                     && currentFilter.equals(d.getKhungGio())) {
                 return d;

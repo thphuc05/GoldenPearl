@@ -27,14 +27,13 @@ public class QuanLyKhachHang extends JPanel {
     private JLabel lblTotal;
     private JTable table;
     private DefaultTableModel tableModel;
-    private DefaultTableModel invoiceModel;
     private KhachHang_DAO kh_dao;
     private HoaDon_DAO hd_dao;
     private ChiTietHoaDon_DAO ct_dao;
 
     private List<KhachHang> allData = new ArrayList<>();
     private int currentPage = 1;
-    private int pageSize = 10;
+    private int pageSize = 22;
 
     private final Color MAIN_BLUE    = Color.decode("#0B3D59");
     private final Color GOLD_COLOR   = Color.decode("#C5A059");

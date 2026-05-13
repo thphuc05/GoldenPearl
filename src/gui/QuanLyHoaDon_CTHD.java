@@ -22,7 +22,10 @@ public class QuanLyHoaDon_CTHD extends JDialog {
 
     private JPanel receiptPanel;
 
-    public QuanLyHoaDon_CTHD(java.awt.Window parent, HoaDon hd, java.util.List<ChiTietHoaDon> dsCT, boolean isDetail) {
+    // ── Constructor đầy đủ (có tenBan) ───────────────────────────────────────
+    public QuanLyHoaDon_CTHD(java.awt.Window parent, HoaDon hd,
+                             java.util.List<ChiTietHoaDon> dsCT,
+                             boolean isDetail, String tenBan) {
         super(parent, isDetail ? "Chi Tiết Hóa Đơn" : "Phiếu Thanh Toán",
                 java.awt.Dialog.ModalityType.APPLICATION_MODAL);
         setSize(460, 648);
@@ -30,7 +33,7 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         setResizable(false);
         setLayout(new BorderLayout());
 
-        receiptPanel = buildReceipt(hd, dsCT, isDetail);
+        receiptPanel = buildReceipt(hd, dsCT, isDetail, tenBan != null ? tenBan : "");
 
         JScrollPane scroll = new JScrollPane(receiptPanel);
         scroll.setBorder(null);
@@ -62,7 +65,15 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         add(bar, BorderLayout.SOUTH);
     }
 
-    private JPanel buildReceipt(HoaDon hd, List<ChiTietHoaDon> dsCT, boolean isDetail) {
+    // ── Overload tương thích ngược (không có tenBan) ──────────────────────────
+    // Dùng cho QuanLyKhachHang_LSDB và bất kỳ chỗ nào chưa truyền tenBan
+    public QuanLyHoaDon_CTHD(java.awt.Window parent, HoaDon hd,
+                             java.util.List<ChiTietHoaDon> dsCT, boolean isDetail) {
+        this(parent, hd, dsCT, isDetail, "");
+    }
+
+    private JPanel buildReceipt(HoaDon hd, List<ChiTietHoaDon> dsCT,
+                                boolean isDetail, String tenBan) {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
         p.setBackground(R_BG);
@@ -94,9 +105,23 @@ public class QuanLyHoaDon_CTHD extends JDialog {
                 ? hd.getNhanVien().getMaNV() + "  –  " + hd.getNhanVien().getTenNV() : "—";
         p.add(mkInfoRow("Nhân viên", nvText));
         p.add(Box.createVerticalStrut(3));
-        String khText = hd.getKhachHang() != null ? hd.getKhachHang().getMaKH() : "Khách vãng lai";
+        String khText;
+        if (hd.getKhachHang() == null) {
+            khText = "Khách vãng lai";
+        } else {
+            khText = hd.getKhachHang().getMaKH();
+            String ten = hd.getKhachHang().getTenKH();
+            if (ten != null && !ten.isEmpty()) khText += "  –  " + ten;
+        }
         p.add(mkInfoRow("Khách hàng", khText));
+        p.add(Box.createVerticalStrut(3));
+
+        // ── [MỚI] Số bàn ─────────────────────────────────────────────
+        String banDisplay = (tenBan != null && !tenBan.isEmpty()) ? tenBan : "—";
+        p.add(mkInfoRow("Bàn", banDisplay));
         p.add(Box.createVerticalStrut(8));
+        // ─────────────────────────────────────────────────────────────
+
         p.add(mkDashLine());
         p.add(Box.createVerticalStrut(5));
 
@@ -105,20 +130,17 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         p.add(mkSolidLine(R_NAVY));
 
         // ── Item rows ─────────────────────────────────────────────────
-        double tongTienMon = 0; // Đưa biến này lên đây để cộng dồn luôn trong lúc vẽ
+        double tongTienMon = 0;
 
         if (dsCT != null && !dsCT.isEmpty()) {
             int idx = 1;
             for (ChiTietHoaDon ct : dsCT) {
                 String name = ct.getMonAn() != null ? ct.getMonAn().getTenMon() : "";
-
-                // ÉP TÍNH TOÁN CHÍNH XÁC: Thành tiền = Đơn giá * Số lượng
                 double thanhTienThucTe = ct.getDonGia() * ct.getSoLuong();
-                tongTienMon += thanhTienThucTe; // Cộng dồn vào tổng tiền hóa đơn
-
+                tongTienMon += thanhTienThucTe;
                 p.add(mkItemRow(idx, name, ct.getSoLuong(),
                         numFmt.format(ct.getDonGia()) + "đ",
-                        numFmt.format(thanhTienThucTe) + "đ", // In ra số đã nhân
+                        numFmt.format(thanhTienThucTe) + "đ",
                         idx % 2 == 0));
                 idx++;
             }
@@ -137,7 +159,7 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         JLabel kLbl = new JLabel("Tổng tiền");
         kLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         kLbl.setForeground(R_NAVY);
-        JLabel vLbl = new JLabel(numFmt.format( tongTienMon) + "đ", SwingConstants.RIGHT);
+        JLabel vLbl = new JLabel(numFmt.format(tongTienMon) + "đ", SwingConstants.RIGHT);
         vLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         vLbl.setForeground(new Color(60, 60, 60));
         totalRow.add(kLbl, BorderLayout.WEST);
@@ -164,31 +186,30 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         p.add(Box.createVerticalStrut(5));
 
         // ── Tổng cộng ─────────────────────────────────────────────────
-        double tongCong =  tongTienMon - coc;
+        double tongCong = tongTienMon - coc;
         JPanel tongCongRow = new JPanel(new BorderLayout());
         tongCongRow.setOpaque(false);
         tongCongRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
-        JLabel tcK = new JLabel("TỔNG CỘNG");
+        JLabel tcK = new JLabel();
         tcK.setFont(new Font("Segoe UI", Font.BOLD, 13));
         tcK.setForeground(R_NAVY);
-        JLabel tcV = new JLabel(numFmt.format(tongCong) + "đ", SwingConstants.RIGHT);
+        JLabel tcV = new JLabel("", SwingConstants.RIGHT);
         tcV.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        if(tongCong < 0){
+        if (tongCong < 0) {
             tcK.setText("Số Tiền Hoàn Lại");
-            tcV.setText(numFmt.format(Math.abs(tongCong))+"đ");
-            tcV.setForeground(R_GREEN);
-        }else {
+            tcV.setText(numFmt.format(Math.abs(tongCong)) + "đ");
+            tcV.setForeground(Color.decode("#E74C3C"));
+        } else {
             tcK.setText("Số Tiền Thanh Toán");
-            tcV.setText(numFmt.format(tongCong)+"đ");
-            tcV.setForeground(R_GREEN);
+            tcV.setText(numFmt.format(tongCong) + "đ");
+            tcV.setForeground(R_GOLD);
         }
-        tcV.setForeground(tongCong < 0 ? Color.decode("#E74C3C") : R_GOLD);
         tongCongRow.add(tcK, BorderLayout.WEST);
         tongCongRow.add(tcV, BorderLayout.EAST);
         p.add(tongCongRow);
         p.add(Box.createVerticalStrut(7));
 
-        // ── Status badge (chỉ hiện khi xem chi tiết) ─────────────────
+        // ── Status badge ──────────────────────────────────────────────
         boolean paid = hd.isTrangThai();
         if (isDetail) {
             JPanel statusWrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
@@ -207,7 +228,7 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         p.add(mkDashLine());
         p.add(Box.createVerticalStrut(8));
 
-        // ── WiFi (hai dòng, không emoji) ──────────────────────────────
+        // ── WiFi ──────────────────────────────────────────────────────
         p.add(mkCenterLbl("WiFi: Golden Pearl", 11, new Color(80, 80, 80), Font.PLAIN));
         p.add(Box.createVerticalStrut(4));
         p.add(mkCenterLbl("Mật khẩu: 123456789", 11, new Color(80, 80, 80), Font.PLAIN));
