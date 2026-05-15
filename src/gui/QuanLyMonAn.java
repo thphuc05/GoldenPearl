@@ -43,6 +43,7 @@ public class QuanLyMonAn extends JPanel {
         add(createTopSection(), BorderLayout.NORTH);
         add(createCenterSection(), BorderLayout.CENTER);
         add(createBottomSection(), BorderLayout.SOUTH);
+
         bindEvents();
     }
 
@@ -92,6 +93,7 @@ public class QuanLyMonAn extends JPanel {
         JPanel center = new JPanel(new BorderLayout());
         center.setBackground(Color.WHITE);
         center.setBorder(new EmptyBorder(0, 16, 0, 16));
+
         String[] cols = {"Mã món", "Tên món", "Danh mục", "Giá gốc", "Giá bán", "Trạng thái"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -130,6 +132,7 @@ public class QuanLyMonAn extends JPanel {
         JPanel bottom = new JPanel(new BorderLayout(0, 0));
         bottom.setBackground(Color.WHITE);
         bottom.setBorder(new EmptyBorder(8, 16, 14, 16));
+
         JPanel pForm = new JPanel(new GridBagLayout());
         pForm.setBackground(Color.WHITE);
         TitledBorder fb = BorderFactory.createTitledBorder(

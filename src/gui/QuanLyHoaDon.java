@@ -136,6 +136,7 @@ public class QuanLyHoaDon extends JPanel {
     // =========================================================================
     // Color Constants
     // =========================================================================
+
     private static final Color TEXT_DARK    = Color.decode("#333333");
     private static final Color BORDER_COLOR = Color.decode("#E0E0E0");
     private static final Color SELECT_BG    = Color.decode("#EBF5FB");

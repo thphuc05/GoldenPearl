@@ -636,8 +636,8 @@ public class TrangChu extends JFrame {
 
                         pChartContainer.removeAll();
                         pChartContainer.add(new SimpleBarChart(
-                                (Map<String, Double>) res.get("chart"),
-                                (Map<String, Double>) res.get("profitByDate")), BorderLayout.CENTER);
+                            (Map<String, Double>) res.get("chart"),
+                            (Map<String, Double>) res.get("profitByDate")), BorderLayout.CENTER);
                         pChartContainer.revalidate(); pChartContainer.repaint();
 
                         pBestSellers.removeAll();

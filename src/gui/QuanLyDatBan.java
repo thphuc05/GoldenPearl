@@ -303,6 +303,17 @@ public class QuanLyDatBan extends JPanel {
             });
             filterLeft.add(b);
         }
+        JPanel filtercen = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 2));
+        filtercen.setOpaque(false);
+        btnMultiTableMode = new JButton("Chọn nhiều bàn: TẮT");
+        btnMultiTableMode.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnMultiTableMode.setPreferredSize(new Dimension(180, 25));
+        btnMultiTableMode.setBackground(new Color(100, 100, 110));
+        btnMultiTableMode.setForeground(Color.WHITE);
+        btnMultiTableMode.setFocusPainted(false);
+        btnMultiTableMode.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnMultiTableMode.addActionListener(e -> toggleMultiTableMode());
+        filtercen.add(btnMultiTableMode);
 
         JPanel filtercen = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 2));
         filtercen.setOpaque(false);
@@ -324,7 +335,6 @@ public class QuanLyDatBan extends JPanel {
         filterCol.add(chip("● Đang dùng", RED_DANG));
 
         // 4. Ráp hai phần vào container chính
-
         filterContainer.add(filtercen,BorderLayout.CENTER);
         filterContainer.add(filterLeft, BorderLayout.WEST); // Đẩy sang trái
         filterContainer.add(filterCol, BorderLayout.EAST);   // Đẩy sang phải

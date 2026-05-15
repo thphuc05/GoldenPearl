@@ -32,6 +32,7 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         setLocationRelativeTo(parent);
         setResizable(false);
         setLayout(new BorderLayout());
+
         receiptPanel = buildReceipt(hd, dsCT, isDetail, tenBan != null ? tenBan : "");
 
         JScrollPane scroll = new JScrollPane(receiptPanel);
@@ -120,6 +121,7 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         p.add(mkInfoRow("Bàn", banDisplay));
         p.add(Box.createVerticalStrut(8));
         // ─────────────────────────────────────────────────────────────
+
         p.add(mkDashLine());
         p.add(Box.createVerticalStrut(5));
 

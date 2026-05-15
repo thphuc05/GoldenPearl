@@ -6,12 +6,12 @@ public class NhanVien {
     private String soDT;
     private String soCCCD;
     private ChucVu chucVu;
-    private String trangThai;
+    private boolean trangThai;
     private TaiKhoan taiKhoan;
 
     public NhanVien() {}
 
-    public NhanVien(String maNV, String tenNV, String soDT, String soCCCD, ChucVu chucVu, String trangThai, TaiKhoan taiKhoan) {
+    public NhanVien(String maNV, String tenNV, String soDT, String soCCCD, ChucVu chucVu, boolean trangThai, TaiKhoan taiKhoan) {
         this.maNV = maNV;
         this.tenNV = tenNV;
         this.soDT = soDT;
@@ -36,8 +36,8 @@ public class NhanVien {
     public ChucVu getChucVu() { return chucVu; }
     public void setChucVu(ChucVu chucVu) { this.chucVu = chucVu; }
 
-    public String getTrangThai() { return trangThai; }
-    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+    public boolean isTrangThai() { return trangThai; }
+    public void setTrangThai(boolean trangThai) { this.trangThai = trangThai; }
 
     public TaiKhoan getTaiKhoan() { return taiKhoan; }
     public void setTaiKhoan(TaiKhoan taiKhoan) { this.taiKhoan = taiKhoan; }

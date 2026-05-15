@@ -17,17 +17,14 @@ public class ConnectDB {
         if (con != null && !con.isClosed()) return;
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-<<<<<<< HEAD
             String url = "jdbc:sqlserver://localhost:1433;databaseName=GoldenPearlDB;encrypt=true;trustServerCertificate=true;loginTimeout=30;";
             String user = "sa";
             String password = "sa";
             con = DriverManager.getConnection(url, user, password);
-=======
             String url = "jdbc:sqlserver://localhost:1433;"
                     + "databaseName=GoldenPearlDB;"
                     + "encrypt=false;trustServerCertificate=true;loginTimeout=30;";
             con = DriverManager.getConnection(url, "sa", "sapassword");
->>>>>>> c05a3c9def1bded5bbd9ac64d354d86a056e08fa
             System.out.println("✅ Kết nối Database thành công!");
             runMigrations();
         } catch (ClassNotFoundException e) {

@@ -14,6 +14,7 @@ public class HoaDon {
     private KhuyenMai khuyenMai;
     private KhachHang khachHang;
     private double tienCoc;
+    private int soBan;
 
     public HoaDon() {}
 
@@ -36,6 +37,11 @@ public class HoaDon {
     public HoaDon(String maHD, Date ngayLap, Time thoiGian, double tongTien, boolean trangThai, DonDatBan donDatBan, NhanVien nhanVien, KhuyenMai khuyenMai, KhachHang khachHang, double tienCoc) {
         this(maHD, ngayLap, thoiGian, tongTien, trangThai, donDatBan, nhanVien, khuyenMai, khachHang);
         this.tienCoc = tienCoc;
+    }
+
+    public HoaDon(String maHD, Date ngayLap, Time thoiGian, double tongTien, boolean trangThai, DonDatBan donDatBan, NhanVien nhanVien, KhuyenMai khuyenMai, KhachHang khachHang, double tienCoc, int soBan) {
+        this(maHD, ngayLap, thoiGian, tongTien, trangThai, donDatBan, nhanVien, khuyenMai, khachHang, tienCoc);
+        this.soBan = soBan;
     }
 
     public double getTienCoc() { return tienCoc; }
@@ -68,6 +74,9 @@ public class HoaDon {
     public KhachHang getKhachHang() { return khachHang; }
     public void setKhachHang(KhachHang khachHang) { this.khachHang = khachHang; }
 
+    public int getSoBan() { return soBan; }
+    public void setSoBan(int soBan) { this.soBan = soBan; }
+
     public void dongHoaDon() {}
     public double tinhTienTruocKM() { return 0; }
     public double tinhVAT() { return 0; }
@@ -75,6 +84,6 @@ public class HoaDon {
 
     @Override
     public String toString() {
-        return "HoaDon [maHD=" + maHD + ", ngayLap=" + ngayLap + ", tongTien=" + tongTien + "]";
+        return "HoaDon [maHD=" + maHD + ", ngayLap=" + ngayLap + ", tongTien=" + tongTien + ", soBan=" + soBan + "]";
     }
 }

@@ -39,6 +39,7 @@ public class QuanLyDatBan_DB extends JPanel {
     private final HoaDon_DAO         hdDAO   = new HoaDon_DAO();
     private final ChiTietHoaDon_DAO  cthdDAO = new ChiTietHoaDon_DAO();
     private final SanPham_DAO        spDAO   = new SanPham_DAO();
+    private final ChiTietDatBan_DAO  ctdbDAO = new ChiTietDatBan_DAO();
 
     private final ChiTietDatBan_DAO  ctdbDAO = new ChiTietDatBan_DAO();
 
@@ -217,6 +218,7 @@ public class QuanLyDatBan_DB extends JPanel {
         if (ten.isEmpty()) { msg("Vui lòng nhập tên khách hàng!"); return; }
         if (!sdt.matches("0\\d{9}")) { msg("Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)!"); return; }
         if (selectedBans.isEmpty()) { msg("Không có bàn nào được chọn!"); return; }
+
         if (isToday(selectedBookingDate) && isSlotPastNow(getSlotIndex(currentFilter))) {
             msg("Khung giờ " + getSlotLabel(currentFilter) + " hôm nay đã qua!\nVui lòng chọn khung giờ khác.");
             return;
