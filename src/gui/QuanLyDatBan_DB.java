@@ -41,6 +41,8 @@ public class QuanLyDatBan_DB extends JPanel {
     private final SanPham_DAO        spDAO   = new SanPham_DAO();
     private final ChiTietDatBan_DAO  ctdbDAO = new ChiTietDatBan_DAO();
 
+    private final ChiTietDatBan_DAO  ctdbDAO = new ChiTietDatBan_DAO();
+
     // ── state ────────────────────────────────────────────────────────────
     private final NhanVien currentNV;
     /** Danh sách bàn được chọn cho đơn đặt này (1 hoặc nhiều bàn). */

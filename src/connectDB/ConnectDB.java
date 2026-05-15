@@ -17,6 +17,10 @@ public class ConnectDB {
         if (con != null && !con.isClosed()) return;
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+            String url = "jdbc:sqlserver://localhost:1433;databaseName=GoldenPearlDB;encrypt=true;trustServerCertificate=true;loginTimeout=30;";
+            String user = "sa";
+            String password = "sa";
+            con = DriverManager.getConnection(url, user, password);
             String url = "jdbc:sqlserver://localhost:1433;"
                     + "databaseName=GoldenPearlDB;"
                     + "encrypt=false;trustServerCertificate=true;loginTimeout=30;";

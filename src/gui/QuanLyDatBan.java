@@ -315,6 +315,18 @@ public class QuanLyDatBan extends JPanel {
         btnMultiTableMode.addActionListener(e -> toggleMultiTableMode());
         filtercen.add(btnMultiTableMode);
 
+        JPanel filtercen = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 2));
+        filtercen.setOpaque(false);
+        btnMultiTableMode = new JButton("Chọn nhiều bàn: TẮT");
+        btnMultiTableMode.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnMultiTableMode.setPreferredSize(new Dimension(180, 25));
+        btnMultiTableMode.setBackground(new Color(100, 100, 110));
+        btnMultiTableMode.setForeground(Color.WHITE);
+        btnMultiTableMode.setFocusPainted(false);
+        btnMultiTableMode.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnMultiTableMode.addActionListener(e -> toggleMultiTableMode());
+        filtercen.add(btnMultiTableMode);
+
         // 3. Panel bên phải: Các chip trạng thái
         JPanel filterCol = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 2));
         filterCol.setOpaque(false);
