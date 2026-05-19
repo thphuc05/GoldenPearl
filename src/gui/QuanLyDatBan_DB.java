@@ -275,11 +275,15 @@ public class QuanLyDatBan_DB extends JPanel {
         hd.setNgayLap(now);
         hd.setThoiGian(new java.sql.Time(now.getTime()));
         hd.setTongTien(TIEN_COC + foodTotal);
-        hd.setTrangThai(false);
+        // [MỚI] Dùng enum trạng thái thay vì boolean
+        hd.setTrangThaiThanhToan(entity.TrangThaiThanhToan.DA_COC);
         hd.setDonDatBan(don);
         hd.setNhanVien(currentNV);
         hd.setKhachHang(kh);
         hd.setTienCoc(TIEN_COC);
+        // [MỚI] Tự động gán ca hiện tại
+        entity.CaLam caHienTai = new dao.CaLam_DAO().getCurrentCaLam();
+        hd.setCaLam(caHienTai);
         hdDAO.create(hd);
 
         for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {

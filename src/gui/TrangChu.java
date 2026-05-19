@@ -39,6 +39,7 @@ public class TrangChu extends JFrame {
     private QuanLyKhachHang pKhachHang;
     private QuanLyMonAn pMonAn;
     private QuanLyThongKe pThongKe;
+    private QuanLyCaLam   pCaLam;   // [MỚI] Quản lý ca làm
 
     private final Color MAIN_BLUE    = Color.decode("#0B3D59");
     private final Color GOLD_COLOR   = Color.decode("#C5A059");
@@ -143,6 +144,9 @@ public class TrangChu extends JFrame {
         menuButtonsPanel.add(createSidebarButton("Thống kê doanh thu",
                 "attach_money_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png",
                 e -> showCard("ThốngKê", (JButton) e.getSource())));
+        menuButtonsPanel.add(Box.createVerticalStrut(2));
+        menuButtonsPanel.add(createSidebarButton("Quản lý ca làm", "badge_300dp_FFFFFF.png",
+                e -> showCard("CaLàm", (JButton) e.getSource())));  // [MỚI]
 
         panel.add(menuButtonsPanel);
         panel.add(Box.createVerticalGlue());
@@ -304,6 +308,9 @@ public class TrangChu extends JFrame {
             case "ThốngKê":
                 if (pThongKe == null) { pThongKe = new QuanLyThongKe(); contentArea.add(pThongKe, "ThốngKê"); }
                 pThongKe.refreshData(); break;  // thống kê luôn refresh
+            case "CaLàm":   // [MỚI]
+                if (pCaLam == null) { pCaLam = new QuanLyCaLam(); contentArea.add(pCaLam, "CaLàm"); }
+                break;
             case "ĐặtBàn":
                 if (pDatBan == null) { pDatBan = new QuanLyDatBan(nhanVien); contentArea.add(pDatBan, "ĐặtBàn"); }
                 pDatBan.refreshData(); break;  // đặt bàn luôn refresh (trạng thái bàn thay đổi liên tục)

@@ -534,7 +534,7 @@ public class QuanLyDatBan extends JPanel {
                     if (hd != null) {
                         if (hd.getKhachHang() != null)
                             fullKH = khDAO.getKhachHangByMa(hd.getKhachHang().getMaKH());
-                        cths = cthdDAO.getChiTietByMaHD(hd.getMaHD());
+                        cths = cthdDAO.getChiTietByMaHDWithLoai(hd.getMaHD());
                     }
                     return new Object[]{b, t, don, hd, fullKH, cths};
                 }
@@ -759,10 +759,14 @@ public class QuanLyDatBan extends JPanel {
     }
 
     // ── reserved card ────────────────────────────────────────────────────
+    // ── Bảng Reserved – dùng panel động thay cho JTable cố định ─────────
+    private JPanel  pResDishRows;  // container chứa các dòng món (thay cho JTable)
+
     private JPanel buildReserved() {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(Color.WHITE);
 
+        // ── Header tiêu đề bàn ───────────────────────────────────────────
         JPanel hdr = new JPanel(new BorderLayout());
         hdr.setBackground(new Color(255, 248, 240));
         hdr.setBorder(new CompoundBorder(
@@ -778,88 +782,79 @@ public class QuanLyDatBan extends JPanel {
         hdr.add(lblResKhung, BorderLayout.EAST);
         root.add(hdr, BorderLayout.NORTH);
 
-        JPanel body = new JPanel();
-        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBackground(Color.WHITE);
-        body.setBorder(new EmptyBorder(10, 14, 6, 14));
+        // ── Phần cố định phía trên: thông tin KH ─────────────────────────
+        JPanel topFixed = new JPanel();
+        topFixed.setLayout(new BoxLayout(topFixed, BoxLayout.Y_AXIS));
+        topFixed.setBackground(Color.WHITE);
+        topFixed.setBorder(new EmptyBorder(10, 14, 4, 14));
 
         JPanel info = new JPanel(new GridLayout(3, 2, 8, 6));
         info.setOpaque(false);
-        info.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
         info.add(infoKey("Khách hàng:"));    info.add(lblResKhach  = infoVal(""));
         info.add(infoKey("Số điện thoại:")); info.add(lblResSdt    = infoVal(""));
         info.add(infoKey("Ghi chú:"));       info.add(lblResGhiChu = infoVal(""));
-        body.add(info);
-        body.add(Box.createVerticalStrut(8));
-        body.add(hsep());
+        topFixed.add(info);
+        topFixed.add(Box.createVerticalStrut(8));
+        topFixed.add(hsep());
+        topFixed.add(sectionLabel("DANH SÁCH MÓN ĐÃ GỌI"));
 
-        body.add(sectionLabel("DANH SÁCH MÓN ĐÃ GỌI"));
-        // Cập nhật lại 5 cột cho chuẩn
-        tmResDish = new DefaultTableModel(new String[]{"STT", "Tên món", "SL", "Đơn giá", "Thành tiền"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
+        // header cột bảng
+        JPanel dishHeader = buildDishHeaderRow(true);
+        topFixed.add(dishHeader);
 
-        // Ghi đè để bảng tự dãn chiều cao
-        JTable tRes = new JTable(tmResDish) {
-            @Override
-            public Dimension getPreferredScrollableViewportSize() {
-                return getPreferredSize();
-            }
-        };
+        // ── Phần CENTER: bảng món fill toàn bộ không gian còn lại ────────
+        pResDishRows = new ScrollablePanel();
+        pResDishRows.setLayout(new BoxLayout(pResDishRows, BoxLayout.Y_AXIS));
+        pResDishRows.setBackground(Color.WHITE);
 
-        styleTable(tRes);
-        centerCol(tRes, 0); centerCol(tRes, 2);
-        tRes.getColumnModel().getColumn(0).setMaxWidth(42);
-        tRes.getColumnModel().getColumn(2).setMaxWidth(44);
+        JScrollPane tableScroll = new JScrollPane(pResDishRows);
+        tableScroll.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
+        tableScroll.getVerticalScrollBar().setUnitIncrement(14);
+        tableScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // Ghi đè để JScrollPane không bị ép thu nhỏ, cho phép bung lụa
-        JScrollPane sc = new JScrollPane(tRes) {
-            @Override
-            public Dimension getMaximumSize() {
-                // Rộng tối đa, cao vừa đủ theo preferred size của nó
-                return new Dimension(Integer.MAX_VALUE, super.getPreferredSize().height);
-            }
-        };
-        sc.setBorder(new LineBorder(BORDER_CLR));
-        // ĐÃ XÓA: sc.setMaximumSize(...) cũ đi
-        body.add(sc);
-
+        // ── Dòng tổng tiền ────────────────────────────────────────────────
         JPanel totalRow = new JPanel(new BorderLayout());
-        totalRow.setOpaque(false);
-        totalRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        totalRow.setBorder(new EmptyBorder(4, 0, 0, 0));
+        totalRow.setBackground(Color.WHITE);
+        totalRow.setBorder(new EmptyBorder(6, 14, 6, 14));
         lblResTotal = new JLabel("Tổng: 0đ");
         lblResTotal.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblResTotal.setForeground(TEXT_DARK);
         totalRow.add(new JLabel(), BorderLayout.WEST);
         totalRow.add(lblResTotal, BorderLayout.EAST);
-        body.add(totalRow);
 
-        JScrollPane bodyScroll = new JScrollPane(body);
-        bodyScroll.setBorder(null);
-        root.add(bodyScroll, BorderLayout.CENTER);
+        // ── Ghép layout: topFixed NORTH, tableScroll CENTER, totalRow trước SOUTH
+        JPanel centerArea = new JPanel(new BorderLayout());
+        centerArea.setBackground(Color.WHITE);
+        centerArea.add(topFixed,    BorderLayout.NORTH);
+        centerArea.add(tableScroll, BorderLayout.CENTER);
+        centerArea.add(totalRow,    BorderLayout.SOUTH);
+        root.add(centerArea, BorderLayout.CENTER);
 
+        // ── Nút hành động ─────────────────────────────────────────────────
         JPanel btnRow = new JPanel(new GridLayout(1, 3, 8, 0));
         btnRow.setBorder(new CompoundBorder(
                 new MatteBorder(1, 0, 0, 0, BORDER_CLR),
                 new EmptyBorder(10, 14, 10, 14)));
         btnRow.setBackground(Color.WHITE);
-        JButton bHuy    = actionBtn("HỦY ĐẶT",    new Color(255, 236, 236), RED_DANG,  true);
-        JButton bThem   = actionBtn("+ THÊM MÓN",  new Color(232, 242, 255), MAIN_BLUE, true);
+        JButton bHuy     = actionBtn("HỦY ĐẶT",   new Color(255, 236, 236), RED_DANG,   true);
+        JButton bThem    = actionBtn("+ THÊM MÓN", new Color(232, 242, 255), MAIN_BLUE,  true);
         JButton bCheckin = actionBtn("CHECK-IN",   MAIN_BLUE,               Color.WHITE, false);
-        bHuy.addActionListener(e    -> doCancelBooking());
-        bThem.addActionListener(e   -> doAddDish(false));
+        bHuy.addActionListener(e     -> doCancelBooking());
+        bThem.addActionListener(e    -> doAddDish(false));
         bCheckin.addActionListener(e -> doCheckIn());
         btnRow.add(bHuy); btnRow.add(bThem); btnRow.add(bCheckin);
         root.add(btnRow, BorderLayout.SOUTH);
         return root;
     }
 
-    // ── using card ───────────────────────────────────────────────────────
+    // ── Bảng Using – panel động với nút +/- cho Beer/Ngọt/Suối ──────────
+    private JPanel pUseDishRows;   // container các dòng món trong "using"
+
     private JPanel buildUsing() {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(Color.WHITE);
 
+        // ── Header tiêu đề bàn ───────────────────────────────────────────
         JPanel hdr = new JPanel(new BorderLayout());
         hdr.setBackground(new Color(255, 243, 243));
         hdr.setBorder(new CompoundBorder(
@@ -875,43 +870,29 @@ public class QuanLyDatBan extends JPanel {
         hdr.add(lblUseKhach, BorderLayout.EAST);
         root.add(hdr, BorderLayout.NORTH);
 
-        JPanel body = new JPanel();
-        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBackground(Color.WHITE);
-        body.setBorder(new EmptyBorder(10, 14, 6, 14));
+        // ── Phần cố định phía trên: label + header cột ───────────────────
+        JPanel topFixed = new JPanel();
+        topFixed.setLayout(new BoxLayout(topFixed, BoxLayout.Y_AXIS));
+        topFixed.setBackground(Color.WHITE);
+        topFixed.setBorder(new EmptyBorder(8, 14, 0, 14));
+        topFixed.add(sectionLabel("ĐƠN GỌI MÓN"));
+        JPanel dishHeader = buildDishHeaderRow(true);
+        topFixed.add(dishHeader);
 
-        body.add(sectionLabel("ĐƠN GỌI MÓN"));
-        tmUseDish = new DefaultTableModel(new String[]{"STT", "Tên món", "SL", "Đơn giá", "Thành tiền"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
+        // ── Phần CENTER: bảng món fill toàn bộ không gian còn lại ────────
+        pUseDishRows = new ScrollablePanel();
+        pUseDishRows.setLayout(new BoxLayout(pUseDishRows, BoxLayout.Y_AXIS));
+        pUseDishRows.setBackground(Color.WHITE);
 
-        // Ghi đè để bảng tự dãn chiều cao
-        JTable tUse = new JTable(tmUseDish) {
-            @Override
-            public Dimension getPreferredScrollableViewportSize() {
-                return getPreferredSize();
-            }
-        };
+        JScrollPane tableScroll = new JScrollPane(pUseDishRows);
+        tableScroll.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
+        tableScroll.getVerticalScrollBar().setUnitIncrement(14);
+        tableScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        styleTable(tUse);
-        centerCol(tUse, 0); centerCol(tUse, 2);
-        tUse.getColumnModel().getColumn(0).setMaxWidth(42);
-        tUse.getColumnModel().getColumn(2).setMaxWidth(44);
-
-        // Ghi đè để JScrollPane không bị ép thu nhỏ
-        JScrollPane sc = new JScrollPane(tUse) {
-            @Override
-            public Dimension getMaximumSize() {
-                return new Dimension(Integer.MAX_VALUE, super.getPreferredSize().height);
-            }
-        };
-        sc.setBorder(new LineBorder(BORDER_CLR));
-        // ĐÃ XÓA: sc.setMaximumSize(...) cũ đi
-        body.add(sc);
-
-        JPanel sumOuter = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        sumOuter.setOpaque(false);
-        sumOuter.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
+        // ── Phần tổng kết tiền ────────────────────────────────────────────
+        JPanel sumBlock = new JPanel(new BorderLayout());
+        sumBlock.setBackground(Color.WHITE);
+        sumBlock.setBorder(new EmptyBorder(8, 14, 6, 14));
         JPanel sum = new JPanel(new GridLayout(3, 2, 14, 5));
         sum.setOpaque(false);
         sum.add(infoKey("Tổng tiền món:")); sum.add(lblUseTong   = infoVal("0đ"));
@@ -919,13 +900,17 @@ public class QuanLyDatBan extends JPanel {
         sum.add(infoKey("Còn lại:"));      sum.add(lblUseConLai = infoVal("0đ"));
         lblUseConLai.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblUseConLai.setForeground(RED_DANG);
-        sumOuter.add(sum);
-        body.add(sumOuter);
+        sumBlock.add(sum, BorderLayout.EAST);
 
-        JScrollPane bodyScroll = new JScrollPane(body);
-        bodyScroll.setBorder(null);
-        root.add(bodyScroll, BorderLayout.CENTER);
+        // ── Ghép layout ───────────────────────────────────────────────────
+        JPanel centerArea = new JPanel(new BorderLayout());
+        centerArea.setBackground(Color.WHITE);
+        centerArea.add(topFixed,    BorderLayout.NORTH);
+        centerArea.add(tableScroll, BorderLayout.CENTER);
+        centerArea.add(sumBlock,    BorderLayout.SOUTH);
+        root.add(centerArea, BorderLayout.CENTER);
 
+        // ── Nút hành động ─────────────────────────────────────────────────
         JPanel btnRow = new JPanel(new GridLayout(1, 2, 10, 0));
         btnRow.setBorder(new CompoundBorder(
                 new MatteBorder(1, 0, 0, 0, BORDER_CLR),
@@ -984,25 +969,18 @@ public class QuanLyDatBan extends JPanel {
         lblResGhiChu.setText(don != null && don.getGhiChu() != null && !don.getGhiChu().isEmpty()
                 ? don.getGhiChu() : "");
 
-        tmResDish.setRowCount(0);
+        // Trạng thái "Đã đặt" → cho phép chỉnh sửa toàn bộ món (+/-/xóa)
+        boolean paid = (hd != null && hd.getTrangThaiThanhToan() == TrangThaiThanhToan.DA_THANH_TOAN);
+        rebuildDishRows(pResDishRows, cths, hd,
+                /* canEditAll= */ !paid,
+                /* onlyBeverages= */ false,
+                /* isPaid= */ paid);
+
+        // Tính tổng
         double total = 0;
-        int stt = 1;
-
-        for (ChiTietHoaDon ct : cths) {
-            // ĐÂY LÀ CHỖ QUYẾT ĐỊNH: ÉP NHÂN SỐ LƯỢNG NGAY TẠI LÚC VẼ GIAO DIỆN
-            double donGia = ct.getDonGia();
-            double thanhTienDung = donGia * ct.getSoLuong();
-
-            tmResDish.addRow(new Object[]{
-                    stt++,
-                    ct.getMonAn().getTenMon(),
-                    ct.getSoLuong(),
-                    FMT.format(donGia) + "đ",          // In ra cột Đơn giá
-                    FMT.format(thanhTienDung) + "đ"    // In ra cột Thành tiền (Đã nhân)
-            });
-            total += thanhTienDung; // Cộng tổng bằng số tiền đã nhân
-        }
+        for (ChiTietHoaDon ct : cths) total += ct.getDonGia() * ct.getSoLuong();
         lblResTotal.setText("Tổng: " + FMT.format(total) + "đ");
+
         rightCard.show(rightPanel, "reserved");
     }
 
@@ -1010,22 +988,16 @@ public class QuanLyDatBan extends JPanel {
         lblUseTitle.setText("ĐANG PHỤC VỤ  —  BÀN " + ban.getSoBan());
         lblUseKhach.setText(fullKH != null ? "Khách: " + fullKH.getTenKH() : "");
 
-        tmUseDish.setRowCount(0);
-        double total = 0;
-        int stt = 1;
-        for (ChiTietHoaDon ct : cths) {
-            // ÉP TÍNH LẠI THÀNH TIỀN: Đơn giá * Số lượng
-            double thanhTienDung = ct.getDonGia() * ct.getSoLuong();
+        boolean paid = (hd != null && hd.getTrangThaiThanhToan() == TrangThaiThanhToan.DA_THANH_TOAN);
 
-            tmUseDish.addRow(new Object[]{
-                    stt++,
-                    ct.getMonAn().getTenMon(),
-                    ct.getSoLuong(),
-                    FMT.format(ct.getDonGia()) + "đ",
-                    FMT.format(thanhTienDung) + "đ"
-            });
-            total += thanhTienDung; // Cộng tổng bằng số đã nhân
-        }
+        // Trạng thái "Đang phục vụ": chỉ cho chỉnh sửa số lượng danh mục đồ uống
+        rebuildDishRows(pUseDishRows, cths, hd,
+                /* canEditAll= */ false,
+                /* onlyBeverages= */ !paid,
+                /* isPaid= */ paid);
+
+        double total = 0;
+        for (ChiTietHoaDon ct : cths) total += ct.getDonGia() * ct.getSoLuong();
 
         double coc    = (hd != null) ? hd.getTienCoc() : TIEN_COC;
         double conLai = total - coc;
@@ -1033,20 +1005,470 @@ public class QuanLyDatBan extends JPanel {
         lblUseTong.setText(FMT.format(total) + "đ");
         lblUseCoc.setText("−" + FMT.format(coc) + "đ");
         lblUseConLai.setText(FMT.format(Math.max(0, conLai)) + "đ");
+
+        // Ẩn/hiện nút THÊM MÓN theo trạng thái hóa đơn
+        updateUsingButtons(paid, hd);
+
         rightCard.show(rightPanel, "using");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // HELPER: Xây dựng lại danh sách dòng món ăn động theo trạng thái bàn
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Các tên danh mục được phép chỉnh sửa số lượng khi bàn đang phục vụ.
+     * So sánh không phân biệt hoa/thường, substring match.
+     */
+    private static boolean isBeverageCategory(ChiTietHoaDon ct) {
+        SanPham sp = ct.getMonAn();
+        if (sp == null || sp.getLoaiSanPham() == null) return false;
+        String cat = sp.getLoaiSanPham().getTenLoai();
+        if (cat == null) return false;
+        cat = cat.toLowerCase().trim();
+        return cat.contains("beer")
+                || cat.contains("bia")
+                || cat.contains("ngọt")
+                || cat.contains("ngot")
+                || cat.contains("có gas")
+                || cat.contains("co gas")
+                || cat.contains("suối")
+                || cat.contains("suoi")
+                || cat.contains("nước suối")
+                || cat.contains("nuoc suoi");
+    }
+
+    /**
+     * Header cố định cho bảng món (thay thế JTable header).
+     * @param hasAction true = có cột hành động (+/-/xóa)
+     */
+    private JPanel buildDishHeaderRow(boolean hasAction) {
+        JPanel row = new JPanel(new GridBagLayout());
+        row.setBackground(new Color(240, 244, 250));
+        row.setBorder(new CompoundBorder(
+                new LineBorder(BORDER_CLR, 1),
+                new EmptyBorder(4, 6, 4, 6)));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+
+        GridBagConstraints g = new GridBagConstraints();
+        g.fill = GridBagConstraints.HORIZONTAL;
+        g.gridy = 0;
+
+        Font hFont = new Font("Segoe UI", Font.BOLD, 11);
+        Color hClr = new Color(80, 100, 130);
+
+        g.gridx = 0;
+        g.weightx = 0;
+        JLabel c0 = headerCell("STT", hFont, hClr, SwingConstants.CENTER);
+        c0.setPreferredSize(new Dimension(35, 20));
+        c0.setMinimumSize(new Dimension(35, 20));
+        row.add(c0, g);
+
+        g.gridx = 1;
+        g.weightx = 1.0;
+        JLabel c1 = headerCell("Tên món", hFont, hClr, SwingConstants.LEFT);
+        row.add(c1, g);
+
+        g.gridx = 2;
+        g.weightx = 0;
+        JLabel c2 = headerCell("SL", hFont, hClr, SwingConstants.CENTER);
+        c2.setPreferredSize(new Dimension(90, 20));
+        c2.setMinimumSize(new Dimension(90, 20));
+        row.add(c2, g);
+
+        g.gridx = 3;
+        g.weightx = 0;
+        JLabel c3 = headerCell("Đơn giá", hFont, hClr, SwingConstants.RIGHT);
+        c3.setPreferredSize(new Dimension(85, 20));
+        c3.setMinimumSize(new Dimension(85, 20));
+        row.add(c3, g);
+
+        g.gridx = 4;
+        g.weightx = 0;
+        JLabel c4 = headerCell("Thành tiền", hFont, hClr, SwingConstants.RIGHT);
+        c4.setPreferredSize(new Dimension(95, 20));
+        c4.setMinimumSize(new Dimension(95, 20));
+        row.add(c4, g);
+
+        if (hasAction) {
+            g.gridx = 5;
+            g.weightx = 0;
+            JLabel c5 = headerCell("", hFont, hClr, SwingConstants.CENTER);
+            c5.setPreferredSize(new Dimension(35, 20));
+            c5.setMinimumSize(new Dimension(35, 20));
+            row.add(c5, g);
+        }
+
+        return row;
+    }
+
+    private JLabel headerCell(String text, Font font, Color clr, int align) {
+        JLabel l = new JLabel(text, align);
+        l.setFont(font); l.setForeground(clr);
+        return l;
+    }
+
+    /**
+     * Xây lại toàn bộ danh sách dòng món trong container chỉ định.
+     *
+     * @param container    Panel chứa các dòng (pResDishRows / pUseDishRows)
+     * @param cths         Danh sách chi tiết hóa đơn hiện tại
+     * @param hd           Hóa đơn (dùng để lưu thay đổi)
+     * @param canEditAll   true → cho phép +/-/xóa tất cả (trạng thái Đã đặt)
+     * @param onlyBeverages true → chỉ cho +/- đồ uống (trạng thái Đang phục vụ)
+     * @param isPaid       true → khóa toàn bộ (đã thanh toán)
+     */
+    private void rebuildDishRows(JPanel container, List<ChiTietHoaDon> cths,
+                                 HoaDon hd, boolean canEditAll,
+                                 boolean onlyBeverages, boolean isPaid) {
+        container.removeAll();
+        int stt = 1;
+        for (ChiTietHoaDon ct : cths) {
+            boolean isBev  = isBeverageCategory(ct);
+            boolean canEdit = !isPaid && (canEditAll || (onlyBeverages && isBev));
+
+            JPanel row = buildDishDataRow(stt++, ct, hd, canEdit, canEditAll, container, cths, isPaid);
+            row.setAlignmentX(Component.LEFT_ALIGNMENT);
+            container.add(row);
+
+            // Zebra striping
+            row.setBackground((stt % 2 == 0) ? new Color(250, 250, 252) : Color.WHITE);
+        }
+
+        if (isPaid) {
+            JLabel lockNote = new JLabel("  🔒 Hóa đơn đã thanh toán, không thể cập nhật món.");
+            lockNote.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+            lockNote.setForeground(new Color(160, 80, 80));
+            lockNote.setAlignmentX(Component.LEFT_ALIGNMENT);
+            lockNote.setBorder(new EmptyBorder(4, 6, 2, 6));
+            container.add(lockNote);
+        }
+
+        container.revalidate();
+        container.repaint();
+    }
+
+    /**
+     * Tạo một dòng dữ liệu cho 1 chi tiết hóa đơn.
+     * Nếu canEdit=true: hiển thị nút [−] SL [+] và nút xóa [×].
+     * Nếu canEdit=false nhưng isServiceBev=true: hiển thị nút [−] SL [+] (không xóa).
+     */
+    private JPanel buildDishDataRow(int stt, ChiTietHoaDon ct, HoaDon hd, boolean canEdit, boolean canDelete, JPanel container, List<ChiTietHoaDon> cths, boolean isPaid) {
+        JPanel row = new JPanel(new GridBagLayout());
+        row.setBorder(new CompoundBorder(
+                new MatteBorder(0, 0, 1, 0, BORDER_CLR),
+                new EmptyBorder(3, 6, 3, 6)));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+
+        Font dFont = new Font("Segoe UI", Font.PLAIN, 12);
+        GridBagConstraints g = new GridBagConstraints();
+        g.fill = GridBagConstraints.HORIZONTAL;
+        g.gridy = 0;
+
+        g.gridx = 0;
+        g.weightx = 0;
+        JLabel lStt = new JLabel(String.valueOf(stt), SwingConstants.CENTER);
+        lStt.setFont(dFont);
+        lStt.setPreferredSize(new Dimension(35, 24));
+        lStt.setMinimumSize(new Dimension(35, 24));
+        row.add(lStt, g);
+
+        g.gridx = 1;
+        g.weightx = 1.0;
+        JLabel lName = new JLabel(ct.getMonAn().getTenMon());
+        lName.setFont(dFont);
+        row.add(lName, g);
+
+        g.gridx = 2;
+        g.weightx = 0;
+        if (canEdit) {
+            JPanel qPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
+            qPanel.setOpaque(false);
+            qPanel.setPreferredSize(new Dimension(90, 24));
+            qPanel.setMinimumSize(new Dimension(90, 24));
+
+            JButton btnMinus = qtyBtn("−");
+
+            // --- THAY THẾ JLabel BẰNG JTextField ---
+            JTextField txtQty = new JTextField(String.valueOf(ct.getSoLuong()), 3);
+            txtQty.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            txtQty.setPreferredSize(new Dimension(28, 22));
+            txtQty.setHorizontalAlignment(JTextField.CENTER);
+            txtQty.setBorder(new LineBorder(BORDER_CLR));
+
+            // Bôi đen khi focus để xóa số cũ nhanh
+            txtQty.addFocusListener(new java.awt.event.FocusAdapter() {
+                public void focusGained(java.awt.event.FocusEvent e) { txtQty.selectAll(); }
+            });
+
+            JButton btnPlus = qtyBtn("+");
+
+            JLabel[] totalRef = {null};
+
+            btnPlus.addActionListener(e -> {
+                if (hd == null) return;
+                int newQty = ct.getSoLuong() + 1;
+                double newTT = ct.getDonGia() * newQty;
+                if (cthdDAO.updateSoLuong(hd.getMaHD(), ct.getMonAn().getMaMon(), newQty, newTT)) {
+                    ct.setSoLuong(newQty);
+                    ct.setThanhTien(newTT);
+                    txtQty.setText(String.valueOf(newQty)); // Cập nhật text field
+                    if (totalRef[0] != null) totalRef[0].setText(FMT.format(newTT) + "đ");
+                    hdDAO.updateTongTien(hd.getMaHD(), recalcTotal(cths));
+                    refreshTotals(container, cths, hd);
+                }
+            });
+
+            btnMinus.addActionListener(e -> {
+                if (hd == null) return;
+                int cur = ct.getSoLuong();
+                if (cur <= 1) {
+                    if (!canDelete) {
+                        msg("Số lượng tối thiểu là 1.");
+                        return;
+                    }
+                    int confirm = JOptionPane.showConfirmDialog(this,
+                            "Số lượng về 0. Xóa \"" + ct.getMonAn().getTenMon() + "\" khỏi hóa đơn?",
+                            "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+                    if (confirm != JOptionPane.YES_OPTION) return;
+                    cthdDAO.deleteByMaHDAndMaMon(hd.getMaHD(), ct.getMonAn().getMaMon());
+                    cths.remove(ct);
+                    hdDAO.updateTongTien(hd.getMaHD(), recalcTotal(cths));
+                    rebuildDishRows(container, cths, hd, canDelete, !canDelete, isPaid);
+                    refreshTotals(container, cths, hd);
+                    return;
+                }
+                int newQty = cur - 1;
+                double newTT = ct.getDonGia() * newQty;
+                if (cthdDAO.updateSoLuong(hd.getMaHD(), ct.getMonAn().getMaMon(), newQty, newTT)) {
+                    ct.setSoLuong(newQty);
+                    ct.setThanhTien(newTT);
+                    txtQty.setText(String.valueOf(newQty)); // Cập nhật text field
+                    if (totalRef[0] != null) totalRef[0].setText(FMT.format(newTT) + "đ");
+                    hdDAO.updateTongTien(hd.getMaHD(), recalcTotal(cths));
+                    refreshTotals(container, cths, hd);
+                }
+            });
+
+            // Xử lý sự kiện nhấn Enter tại JTextField
+            txtQty.addActionListener(e -> {
+                try {
+                    int newQty = Integer.parseInt(txtQty.getText());
+                    if (newQty < 0) throw new NumberFormatException();
+                    double newTT = ct.getDonGia() * newQty;
+                    if (cthdDAO.updateSoLuong(hd.getMaHD(), ct.getMonAn().getMaMon(), newQty, newTT)) {
+                        ct.setSoLuong(newQty);
+                        ct.setThanhTien(newTT);
+                        if (totalRef[0] != null) totalRef[0].setText(FMT.format(newTT) + "đ");
+                        hdDAO.updateTongTien(hd.getMaHD(), recalcTotal(cths));
+                        refreshTotals(container, cths, hd);
+                    }
+                } catch (NumberFormatException ex) { txtQty.setText(String.valueOf(ct.getSoLuong())); }
+            });
+
+            qPanel.add(btnMinus);
+            qPanel.add(txtQty);
+            qPanel.add(btnPlus);
+            row.add(qPanel, g);
+
+            g.gridx = 3;
+            g.weightx = 0;
+            JLabel lDG = new JLabel(FMT.format(ct.getDonGia()) + "đ", SwingConstants.RIGHT);
+            lDG.setFont(dFont);
+            lDG.setPreferredSize(new Dimension(85, 24));
+            lDG.setMinimumSize(new Dimension(85, 24));
+            row.add(lDG, g);
+
+            g.gridx = 4;
+            g.weightx = 0;
+            JLabel lTT = new JLabel(FMT.format(ct.getDonGia() * ct.getSoLuong()) + "đ", SwingConstants.RIGHT);
+            lTT.setFont(dFont);
+            lTT.setPreferredSize(new Dimension(95, 24));
+            lTT.setMinimumSize(new Dimension(95, 24));
+            row.add(lTT, g);
+            totalRef[0] = lTT;
+
+            g.gridx = 5;
+            g.weightx = 0;
+            if (canDelete) {
+                JPanel dPan = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+                dPan.setOpaque(false);
+                dPan.setPreferredSize(new Dimension(35, 24));
+                dPan.setMinimumSize(new Dimension(35, 24));
+
+                JButton btnDel = new JButton("×");
+                btnDel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                btnDel.setPreferredSize(new Dimension(24, 22));
+                btnDel.setMargin(new Insets(0, 0, 0, 0));
+                btnDel.setFocusPainted(false);
+                btnDel.setBackground(new Color(255, 230, 230));
+                btnDel.setForeground(RED_DANG);
+                btnDel.setToolTipText("Xóa món này");
+                btnDel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                btnDel.addActionListener(e -> {
+                    if (hd == null) return;
+                    int confirm = JOptionPane.showConfirmDialog(this,
+                            "Xóa \"" + ct.getMonAn().getTenMon() + "\" khỏi danh sách?",
+                            "Xóa món", JOptionPane.YES_NO_OPTION);
+                    if (confirm != JOptionPane.YES_OPTION) return;
+                    cthdDAO.deleteByMaHDAndMaMon(hd.getMaHD(), ct.getMonAn().getMaMon());
+                    cths.remove(ct);
+                    hdDAO.updateTongTien(hd.getMaHD(), recalcTotal(cths));
+                    rebuildDishRows(container, cths, hd, true, false, isPaid);
+                    refreshTotals(container, cths, hd);
+                });
+                dPan.add(btnDel);
+                row.add(dPan, g);
+            } else {
+                JLabel bLk = new JLabel();
+                bLk.setPreferredSize(new Dimension(35, 24));
+                bLk.setMinimumSize(new Dimension(35, 24));
+                row.add(bLk, g);
+            }
+
+        } else {
+            JLabel lQty = new JLabel(String.valueOf(ct.getSoLuong()), SwingConstants.CENTER);
+            lQty.setFont(dFont);
+            lQty.setForeground(isPaid ? new Color(140, 140, 140) : TEXT_DARK);
+            lQty.setPreferredSize(new Dimension(90, 24));
+            lQty.setMinimumSize(new Dimension(90, 24));
+            row.add(lQty, g);
+
+            g.gridx = 3;
+            g.weightx = 0;
+            JLabel lDG = new JLabel(FMT.format(ct.getDonGia()) + "đ", SwingConstants.RIGHT);
+            lDG.setFont(dFont);
+            lDG.setForeground(isPaid ? new Color(140, 140, 140) : TEXT_DARK);
+            lDG.setPreferredSize(new Dimension(85, 24));
+            lDG.setMinimumSize(new Dimension(85, 24));
+            row.add(lDG, g);
+
+            g.gridx = 4;
+            g.weightx = 0;
+            JLabel lTT = new JLabel(FMT.format(ct.getDonGia() * ct.getSoLuong()) + "đ", SwingConstants.RIGHT);
+            lTT.setFont(dFont);
+            lTT.setForeground(isPaid ? new Color(140, 140, 140) : TEXT_DARK);
+            lTT.setPreferredSize(new Dimension(95, 24));
+            lTT.setMinimumSize(new Dimension(95, 24));
+            row.add(lTT, g);
+
+            g.gridx = 5;
+            g.weightx = 0;
+            JLabel blk2 = new JLabel();
+            blk2.setPreferredSize(new Dimension(35, 24));
+            blk2.setMinimumSize(new Dimension(35, 24));
+            row.add(blk2, g);
+        }
+
+        return row;
+    }
+
+    /** Nút tăng/giảm số lượng nhỏ gọn */
+    private JButton qtyBtn(String text) {
+        JButton b = new JButton(text);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setPreferredSize(new Dimension(24, 22));
+        b.setMargin(new Insets(0,0,0,0));
+        b.setFocusPainted(false);
+        b.setBackground(BG_LIGHT);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return b;
+    }
+
+    /** Tính lại tổng tiền từ list chi tiết */
+    private double recalcTotal(List<ChiTietHoaDon> cths) {
+        double t = 0;
+        for (ChiTietHoaDon ct : cths) t += ct.getDonGia() * ct.getSoLuong();
+        return t;
+    }
+
+    /**
+     * Refresh nhãn tổng tiền sau khi thay đổi số lượng.
+     * Tự phát hiện đang ở "reserved" hay "using" qua container.
+     */
+    private void refreshTotals(JPanel container, List<ChiTietHoaDon> cths, HoaDon hd) {
+        double total = recalcTotal(cths);
+        if (container == pResDishRows && lblResTotal != null) {
+            lblResTotal.setText("Tổng: " + FMT.format(total) + "đ");
+        } else if (container == pUseDishRows) {
+            if (lblUseTong != null) lblUseTong.setText(FMT.format(total) + "đ");
+            double coc    = (hd != null) ? hd.getTienCoc() : TIEN_COC;
+            double conLai = total - coc;
+            if (lblUseConLai != null)
+                lblUseConLai.setText(FMT.format(Math.max(0, conLai)) + "đ");
+        }
+    }
+
+
+    /**
+     * Tìm lại nút trong panel bottom và disable/enable tương ứng.
+     */
+    private void updateUsingButtons(boolean paid, HoaDon hd) {
+        // Tìm panel "using" từ rightPanel
+        for (Component c : rightPanel.getComponents()) {
+            if (!(c instanceof JPanel)) continue;
+            disableThemMonInPanel((JPanel) c, paid, hd);
+        }
+    }
+
+    private void disableThemMonInPanel(JPanel panel, boolean paid, HoaDon hd) {
+        for (Component c : panel.getComponents()) {
+            if (c instanceof JButton) {
+                JButton btn = (JButton) c;
+                if (btn.getText().contains("THÊM MÓN") || btn.getText().contains("+ THÊM")) {
+                    btn.setEnabled(!paid);
+                    btn.setBackground(paid ? new Color(200, 200, 200)
+                            : new Color(232, 242, 255));
+                    btn.setForeground(paid ? new Color(130, 130, 130) : MAIN_BLUE);
+                    if (paid) btn.setToolTipText("Hóa đơn đã thanh toán – không thể gọi thêm món");
+                }
+            }
+            if (c instanceof JPanel) disableThemMonInPanel((JPanel) c, paid, hd);
+        }
     }
 
     // ── business logic ───────────────────────────────────────────────────
     private void doCancelBooking() {
         if (currentBan == null) return;
+        DonDatBan don = findActiveDon(currentBan.getMaBan());
+
+        // ── Kiểm tra nghiệp vụ: chỉ hủy trước giờ đặt ít nhất 4 tiếng ──
+        if (don != null && don.getThoiGianDen() != null) {
+            long now      = System.currentTimeMillis();
+            long gioVao   = don.getThoiGianDen().getTime();
+            // Nếu đã tính theo khungGio thì dùng SLOT_START_H của slot tương ứng
+            // Ưu tiên: lấy giờ bắt đầu ca/slot thực tế từ selectedBookingDate + SLOT_START
+            int slotIdx  = getSlotIndex(currentFilter);
+            Calendar bookingStart = Calendar.getInstance();
+            bookingStart.setTime(selectedBookingDate);
+            bookingStart.set(Calendar.HOUR_OF_DAY, SLOT_START_H[slotIdx]);
+            bookingStart.set(Calendar.MINUTE,      SLOT_START_M[slotIdx]);
+            bookingStart.set(Calendar.SECOND, 0);
+            bookingStart.set(Calendar.MILLISECOND, 0);
+
+            long millisToStart = bookingStart.getTimeInMillis() - now;
+            long fourHoursMs   = 4L * 60 * 60 * 1000; // 4 tiếng tính bằng ms
+
+            if (millisToStart < fourHoursMs) {
+                String gioSlot = String.format("%02d:%02d",
+                        SLOT_START_H[slotIdx], SLOT_START_M[slotIdx]);
+                msg("Chỉ được hủy bàn trước giờ đặt tối thiểu 4 tiếng.\n"
+                        + "Ca đặt bắt đầu lúc " + gioSlot + " – hiện đã quá hạn hủy.");
+                return;
+            }
+        }
+
         int r = JOptionPane.showConfirmDialog(this,
                 "Xác nhận hủy đặt bàn số " + currentBan.getSoBan() + "?",
                 "Hủy đặt bàn", JOptionPane.YES_NO_OPTION);
         if (r != JOptionPane.YES_OPTION) return;
-        DonDatBan don = findActiveDon(currentBan.getMaBan());
+
         if (don != null) {
             HoaDon hd = hdDAO.getHoaDonByMaDon(don.getMaDon());
-            if (hd != null) { cthdDAO.deleteByMaHD(hd.getMaHD()); hdDAO.deleteHoaDon(hd.getMaHD()); }
+            if (hd != null) {
+                // ── Tự động cập nhật trạng thái DA_HUY thay vì xóa HĐ ──
+                hdDAO.updateTrangThai(hd.getMaHD(), entity.TrangThaiThanhToan.DA_HUY);
+            }
             ddbDAO.deleteDonDatBan(don.getMaDon());
             // Reset trạng thái tất cả bàn trong đơn
             if (isToday(selectedBookingDate)) {
@@ -1089,7 +1511,7 @@ public class QuanLyDatBan extends JPanel {
         if (don == null) { msg("Không tìm thấy đơn đặt bàn!"); return; }
         HoaDon hd = hdDAO.getHoaDonByMaDon(don.getMaDon());
         if (hd == null) { msg("Không tìm thấy hóa đơn!"); return; }
-        List<ChiTietHoaDon> cths = cthdDAO.getChiTietByMaHD(hd.getMaHD());
+        List<ChiTietHoaDon> cths = cthdDAO.getChiTietByMaHDWithLoai(hd.getMaHD());
         if (cths == null || cths.isEmpty()) {
             msg("Vui lòng gọi ít nhất 1 món trước khi check-in!");
             return;
@@ -1112,6 +1534,19 @@ public class QuanLyDatBan extends JPanel {
         DonDatBan don = findActiveDon(currentBan.getMaBan());
         HoaDon hd = (don != null) ? hdDAO.getHoaDonByMaDon(don.getMaDon()) : null;
         if (hd == null) { msg("Không tìm thấy hóa đơn!"); return; }
+
+        // ── Kiểm tra khóa tại tầng GUI (validation lớp 1) ────────────────
+        TrangThaiThanhToan tt = hd.getTrangThaiThanhToan();
+        if (tt == TrangThaiThanhToan.DA_THANH_TOAN) {
+            msg("Bàn này đã hoàn tất thanh toán.\nKhông thể gọi thêm món cho hóa đơn đã thanh toán.");
+            return;
+        }
+        if (tt == TrangThaiThanhToan.DA_HUY) {
+            msg("Hóa đơn đã bị hủy. Không thể thực hiện thao tác này.");
+            return;
+        }
+
+        // ── Mở dialog – validation lớp 2 bên trong GM ────────────────────
         new QuanLyDatBan_GM(
                 (Frame) SwingUtilities.getWindowAncestor(this),
                 hd, spDAO, cthdDAO, hdDAO,
@@ -1125,7 +1560,7 @@ public class QuanLyDatBan extends JPanel {
         HoaDon hd = (don != null) ? hdDAO.getHoaDonByMaDon(don.getMaDon()) : null;
         if (hd == null) { msg("Không tìm thấy hóa đơn!"); return; }
 
-        List<ChiTietHoaDon> cths = cthdDAO.getChiTietByMaHD(hd.getMaHD());
+        List<ChiTietHoaDon> cths = cthdDAO.getChiTietByMaHDWithLoai(hd.getMaHD());
         double tongMon = 0;
         for (ChiTietHoaDon ct : cths) tongMon += ct.getThanhTien();
         double coc    = hd.getTienCoc();
@@ -1137,8 +1572,24 @@ public class QuanLyDatBan extends JPanel {
                 "Thanh toán", JOptionPane.YES_NO_OPTION);
         if (r != JOptionPane.YES_OPTION) return;
 
+        // [MỚI] Chọn hình thức thanh toán
+        entity.HinhThucThanhToan[] htOptions = entity.HinhThucThanhToan.values();
+        String[] htLabels = new String[htOptions.length];
+        for (int i = 0; i < htOptions.length; i++) htLabels[i] = htOptions[i].getDisplay();
+        int htChoice = JOptionPane.showOptionDialog(this,
+                "Chọn hình thức thanh toán:", "Hình Thức Thanh Toán",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                null, htLabels, htLabels[0]);
+        entity.HinhThucThanhToan hinhThuc = (htChoice >= 0) ? htOptions[htChoice] : htOptions[0];
+
         hdDAO.updateTongTien(hd.getMaHD(), tongMon);
-        hdDAO.updateStatus(hd.getMaHD(), true);
+        hdDAO.updateThanhToan(hd.getMaHD(), entity.TrangThaiThanhToan.DA_THANH_TOAN, hinhThuc);
+
+        // [MỚI] Tự động gán ca hiện tại nếu hóa đơn chưa có ca
+        if (hd.getCaLam() == null) {
+            entity.CaLam caHienTai = new dao.CaLam_DAO().getCurrentCaLam();
+            if (caHienTai != null) hdDAO.updateCaLam(hd.getMaHD(), caHienTai.getMaCa());
+        }
         if (don != null) { don.setTrangThai(true); ddbDAO.updateDonDatBan(don); }
         // Reset tất cả bàn trong đơn
         if (don != null && !don.getDsBan().isEmpty()) {
@@ -1196,15 +1647,6 @@ public class QuanLyDatBan extends JPanel {
     private String getSlotLabel(String key) { return SLOT_LABELS[getSlotIndex(key)]; }
 
     // ── UI helpers ───────────────────────────────────────────────────────
-    private JButton qtyBtn(String t) {
-        JButton b = new JButton(t);
-        b.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        b.setPreferredSize(new Dimension(26, 26));
-        b.setMargin(new Insets(0, 0, 0, 0)); b.setFocusPainted(false);
-        b.setBackground(BG_LIGHT);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        return b;
-    }
 
     private JLabel sectionLabel(String text) {
         JLabel l = new JLabel(text);
@@ -1410,6 +1852,16 @@ public class QuanLyDatBan extends JPanel {
             }
         }.execute();
     }
+    // ── ScrollablePanel: JPanel tự stretch full width trong JScrollPane ──
+    private static class ScrollablePanel extends JPanel implements javax.swing.Scrollable {
+        ScrollablePanel() { super(); }
+        @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+        @Override public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) { return 14; }
+        @Override public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) { return visibleRect.height; }
+        @Override public boolean getScrollableTracksViewportWidth()  { return true; }
+        @Override public boolean getScrollableTracksViewportHeight() { return false; }
+    }
+
     // ── RoundedPanel ─────────────────────────────────────────────────────
     private static class RoundedPanel extends JPanel {
         private final int   radius;
