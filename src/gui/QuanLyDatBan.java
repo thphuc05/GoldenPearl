@@ -1585,11 +1585,6 @@ public class QuanLyDatBan extends JPanel {
         hdDAO.updateTongTien(hd.getMaHD(), tongMon);
         hdDAO.updateThanhToan(hd.getMaHD(), entity.TrangThaiThanhToan.DA_THANH_TOAN, hinhThuc);
 
-        // [MỚI] Tự động gán ca hiện tại nếu hóa đơn chưa có ca
-        if (hd.getCaLam() == null) {
-            entity.CaLam caHienTai = new dao.CaLam_DAO().getCurrentCaLam();
-            if (caHienTai != null) hdDAO.updateCaLam(hd.getMaHD(), caHienTai.getMaCa());
-        }
         if (don != null) { don.setTrangThai(true); ddbDAO.updateDonDatBan(don); }
         // Reset tất cả bàn trong đơn
         if (don != null && !don.getDsBan().isEmpty()) {

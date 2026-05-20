@@ -141,9 +141,6 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         p.add(mkInfoRow("Bàn", (tenBan != null && !tenBan.isEmpty()) ? tenBan : "—"));
         p.add(Box.createVerticalStrut(3));
 
-        // [MỚI] Ca làm
-        String caText = (hd.getCaLam() != null) ? hd.getCaLam().getDisplayName() : "—";
-        p.add(mkInfoRow("Ca làm", caText));
         p.add(Box.createVerticalStrut(8));
         p.add(mkDashLine());
         p.add(Box.createVerticalStrut(5));

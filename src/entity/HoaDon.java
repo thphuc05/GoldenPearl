@@ -8,7 +8,6 @@ import java.sql.Time;
  * <ul>
  *   <li>{@link TrangThaiThanhToan} – trạng thái thanh toán chi tiết (thay boolean cũ)</li>
  *   <li>{@link HinhThucThanhToan} – hình thức thanh toán (tiền mặt, chuyển khoản…)</li>
- *   <li>{@link CaLam} – ca làm mà hóa đơn này thuộc về</li>
  * </ul>
  *
  * <p><b>Tương thích ngược:</b> Getter/setter {@code isTrangThai()} / {@code setTrangThai(boolean)}
@@ -34,7 +33,7 @@ public class HoaDon {
     private double    tienCoc;
 
     /** Ca làm mà hóa đơn này thuộc về. Có thể NULL với dữ liệu cũ. */
-    private CaLam caLam;
+
 
     // ── Constructors ──────────────────────────────────────────────────────
 
@@ -44,7 +43,7 @@ public class HoaDon {
     public HoaDon(String maHD, Date ngayLap, Time thoiGian, double tongTien,
                   TrangThaiThanhToan trangThaiThanhToan, HinhThucThanhToan hinhThucThanhToan,
                   DonDatBan donDatBan, NhanVien nhanVien, KhuyenMai khuyenMai,
-                  KhachHang khachHang, double tienCoc, CaLam caLam) {
+                  KhachHang khachHang, double tienCoc) {
         this.maHD               = maHD;
         this.ngayLap            = ngayLap;
         this.thoiGian           = thoiGian;
@@ -56,7 +55,6 @@ public class HoaDon {
         this.khuyenMai          = khuyenMai;
         this.khachHang          = khachHang;
         this.tienCoc            = tienCoc;
-        this.caLam              = caLam;
     }
 
     /** Constructor tương thích ngược (boolean trangThai cũ). */
@@ -100,8 +98,6 @@ public class HoaDon {
     public HinhThucThanhToan getHinhThucThanhToan() { return hinhThucThanhToan; }
     public void setHinhThucThanhToan(HinhThucThanhToan v) { this.hinhThucThanhToan = v; }
 
-    public CaLam getCaLam() { return caLam; }
-    public void setCaLam(CaLam caLam) { this.caLam = caLam; }
 
     // ── Tương thích ngược: boolean trangThai ────────────────────────────────
 

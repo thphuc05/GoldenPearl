@@ -1,6 +1,5 @@
 package gui;
 
-import dao.CaLam_DAO;
 import dao.ChiTietHoaDon_DAO;
 import dao.HoaDon_DAO;
 import dao.KhuVuc_DAO;
@@ -61,13 +60,11 @@ public class QuanLyHoaDon extends JPanel {
     private final HoaDon_DAO       hdDao  = new HoaDon_DAO();
     private final ChiTietHoaDon_DAO ctDao  = new ChiTietHoaDon_DAO();
     private final KhuVuc_DAO       kvDao  = new KhuVuc_DAO();
-    private final CaLam_DAO        caDao  = new CaLam_DAO();
 
     // ── Cache ────────────────────────────────────────────────────────────────
     private Map<String, String> maHDToKhuVuc = new HashMap<>();
     private Map<String, String> maHDToBan    = new HashMap<>();
     private List<HoaDon>        cachedHoaDon = new ArrayList<>();
-    private List<CaLam>         dsCaLam      = new ArrayList<>();
 
     // ── Colors ───────────────────────────────────────────────────────────────
     private static final Color TEXT_DARK    = Color.decode("#333333");
@@ -110,7 +107,6 @@ public class QuanLyHoaDon extends JPanel {
         txtToDate.setText(dateSdf.format(new Date()));
 
         bindEvents();
-        loadComboDataAsync();
     }
 
     private String getSlotLabel(String key) {
@@ -306,24 +302,6 @@ public class QuanLyHoaDon extends JPanel {
     //  DATA LOADING
     // ════════════════════════════════════════════════════════════════════════
 
-    private void loadComboDataAsync() {
-        cmbKhuVuc.addItem("Tất cả");
-        new SwingWorker<Object[], Void>() {
-            @Override protected Object[] doInBackground() {
-                return new Object[]{ kvDao.getAllKhuVuc(), caDao.getActiveCaLam() };
-            }
-            @Override @SuppressWarnings("unchecked") protected void done() {
-                try {
-                    Object[] r = get();
-                    List<KhuVuc> dsKV = (List<KhuVuc>) r[0];
-                    dsCaLam = (List<CaLam>) r[1];
-                    for (KhuVuc kv : dsKV) cmbKhuVuc.addItem(kv.getTenKV());
-                    for (CaLam ca : dsCaLam) cmbCaLam.addItem(ca.getDisplayName());
-                    loadDataFromDB();
-                } catch (Exception e) { e.printStackTrace(); }
-            }
-        }.execute();
-    }
 
     private void loadDataFromDB() {
         modelHoaDon.setRowCount(0);
@@ -356,11 +334,9 @@ public class QuanLyHoaDon extends JPanel {
     private void applyCurrentFilters() {
         String selKV = (String) cmbKhuVuc.getSelectedItem();
         String selTT = (String) cmbTrangThai.getSelectedItem();
-        String selCa = (String) cmbCaLam.getSelectedItem();
 
         boolean filterKV = selKV != null && !selKV.equals("Tất cả");
         TrangThaiThanhToan filterTT = resolveTrangThaiFilter(selTT);
-        CaLam filterCa = resolveCaFilter(selCa);
 
         modelHoaDon.setRowCount(0);
         for (HoaDon hd : cachedHoaDon) {
@@ -369,10 +345,6 @@ public class QuanLyHoaDon extends JPanel {
                 if (!selKV.equals(kv)) continue;
             }
             if (filterTT != null && hd.getTrangThaiThanhToan() != filterTT) continue;
-            if (filterCa != null) {
-                if (hd.getCaLam() == null || !filterCa.getMaCa().equals(hd.getCaLam().getMaCa()))
-                    continue;
-            }
             addRowToInvoiceTable(hd);
         }
 
@@ -389,11 +361,6 @@ public class QuanLyHoaDon extends JPanel {
         return TrangThaiThanhToan.fromDisplay(sel);
     }
 
-    private CaLam resolveCaFilter(String sel) {
-        if (sel == null || sel.equals("Tất cả ca")) return null;
-        for (CaLam ca : dsCaLam) if (ca.getDisplayName().equals(sel)) return ca;
-        return null;
-    }
 
     private void searchHoaDon() {
         String keyword = txtSearch.getText().trim();
@@ -476,13 +443,6 @@ public class QuanLyHoaDon extends JPanel {
         lblKhungGio.setText("Khung Giờ ĐB: " + getSlotLabel(rawKhungGio));
         lblKhungGio.setForeground(MAIN_BLUE);
 
-        if (hd.getCaLam() != null) {
-            lblCaLam.setText("Ca Làm: " + hd.getCaLam().getDisplayName());
-            lblCaLam.setForeground(MAIN_BLUE);
-        } else {
-            lblCaLam.setText("Ca Làm: (chưa gán)");
-            lblCaLam.setForeground(Color.GRAY);
-        }
 
         // Trạng thái – chỉ hiển thị, không cho sửa
         TrangThaiThanhToan tt = hd.getTrangThaiThanhToan();
@@ -588,7 +548,6 @@ public class QuanLyHoaDon extends JPanel {
         String khungGio = getSlotLabel(rawKhungGio);
 
         String ht  = hd.getHinhThucThanhToan() != null ? hd.getHinhThucThanhToan().getDisplay() : "";
-        String ca  = hd.getCaLam() != null ? hd.getCaLam().getTenCa() : "";
 
         modelHoaDon.addRow(new Object[]{
                 hd.getMaHD(), ngayGio,
@@ -598,7 +557,7 @@ public class QuanLyHoaDon extends JPanel {
                 tenBan,
                 khungGio,
                 hd.getTrangThaiThanhToan().getDisplay(),
-                ht, ca
+                ht,
         });
     }
 

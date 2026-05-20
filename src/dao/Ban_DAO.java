@@ -73,13 +73,13 @@ public class Ban_DAO {
             String dbValue = "TRONG";
             if (tinhTrang == TrangThaiBan.DaDuocDat) dbValue = "DAT_TRUOC";
             else if (tinhTrang == TrangThaiBan.DangDuocSuDung) dbValue = "DANG_SD";
-            
+
             statement.setString(1, dbValue);
             statement.setString(2, maBan);
             n = statement.executeUpdate();
             if (n > 0) SQLLogger.log(
-                "UPDATE Ban SET maTinhTrang = " + SQLLogger.str(dbValue) +
-                " WHERE maBan = " + SQLLogger.str(maBan) + ";");
+                    "UPDATE Ban SET maTinhTrang = " + SQLLogger.str(dbValue) +
+                            " WHERE maBan = " + SQLLogger.str(maBan) + ";");
         } catch (SQLException e) {
             e.printStackTrace();
         }

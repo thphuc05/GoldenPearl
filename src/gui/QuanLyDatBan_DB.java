@@ -281,9 +281,6 @@ public class QuanLyDatBan_DB extends JPanel {
         hd.setNhanVien(currentNV);
         hd.setKhachHang(kh);
         hd.setTienCoc(TIEN_COC);
-        // [MỚI] Tự động gán ca hiện tại
-        entity.CaLam caHienTai = new dao.CaLam_DAO().getCurrentCaLam();
-        hd.setCaLam(caHienTai);
         hdDAO.create(hd);
 
         for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {
