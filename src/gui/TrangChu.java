@@ -143,6 +143,9 @@ public class TrangChu extends JFrame {
         menuButtonsPanel.add(createSidebarButton("Thống kê doanh thu",
                 "attach_money_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png",
                 e -> showCard("ThốngKê", (JButton) e.getSource())));
+        menuButtonsPanel.add(Box.createVerticalStrut(2));
+        menuButtonsPanel.add(createSidebarButton("Quản lý ca làm", "badge_300dp_FFFFFF.png",
+                e -> showCard("CaLàm", (JButton) e.getSource())));  // [MỚI]
 
         panel.add(menuButtonsPanel);
         panel.add(Box.createVerticalGlue());

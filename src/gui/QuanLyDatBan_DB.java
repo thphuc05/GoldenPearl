@@ -277,7 +277,8 @@ public class QuanLyDatBan_DB extends JPanel {
         hd.setNgayLap(now);
         hd.setThoiGian(new java.sql.Time(now.getTime()));
         hd.setTongTien(TIEN_COC + foodTotal);
-        hd.setTrangThai(false);
+        // [MỚI] Dùng enum trạng thái thay vì boolean
+        hd.setTrangThaiThanhToan(entity.TrangThaiThanhToan.DA_COC);
         hd.setDonDatBan(don);
         hd.setNhanVien(currentNV);
         hd.setKhachHang(kh);
