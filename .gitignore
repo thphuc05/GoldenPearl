@@ -1,0 +1,13 @@
+# Claude Code local settings
+.claude/
+
+# Compiled output
+out/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# OS
+Thumbs.db
+.DS_Store
