@@ -52,15 +52,16 @@ public class ChiTietDatBan_DAO {
         Connection con = ConnectDB.getConnection();
         try {
             String sql = "INSERT INTO ChiTietDatBan (maDonDatBan, maBan) VALUES (?, ?)";
-            PreparedStatement st = con.prepareStatement(sql);
-            st.setString(1, maDon);
-            st.setString(2, maBan);
-            int n = st.executeUpdate();
-            if (n > 0) {
-                SQLLogger.log("INSERT INTO ChiTietDatBan (maDonDatBan, maBan) VALUES ("
-                        + SQLLogger.str(maDon) + ", " + SQLLogger.str(maBan) + ");");
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, maDon);
+                st.setString(2, maBan);
+                int n = st.executeUpdate();
+                if (n > 0) {
+                    SQLLogger.log("INSERT INTO ChiTietDatBan (maDonDatBan, maBan) VALUES ("
+                            + SQLLogger.str(maDon) + ", " + SQLLogger.str(maBan) + ");");
+                }
+                return n > 0;
             }
-            return n > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -79,11 +80,13 @@ public class ChiTietDatBan_DAO {
             String sql = "SELECT b.* FROM Ban b "
                     + "JOIN ChiTietDatBan ct ON b.maBan = ct.maBan "
                     + "WHERE ct.maDonDatBan = ?";
-            PreparedStatement st = con.prepareStatement(sql);
-            st.setString(1, maDon);
-            ResultSet rs = st.executeQuery();
-            while (rs.next()) {
-                result.add(mapBan(rs));
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, maDon);
+                try (ResultSet rs = st.executeQuery()) {
+                    while (rs.next()) {
+                        result.add(mapBan(rs));
+                    }
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -94,44 +97,35 @@ public class ChiTietDatBan_DAO {
     // ── Kiểm tra bàn có bị trùng lịch không ─────────────────────────────
 
     /**
-     * Kiểm tra một bàn đã có đơn đặt chưa trong cùng ngày + khung giờ.
+     * Kiểm tra bàn có bị trùng với một khoảng thời gian mới không.
+     * Overlap khi: thoiGianDen_new < tgRoi_existing AND tgDen_existing < thoiGianDuKienRoi_new
      *
-     * @param maBan            mã bàn cần kiểm tra
-     * @param ngayDen          ngày đặt (chỉ so sánh phần ngày)
-     * @param khungGio         "SANG" / "CHIEU" / "TOI"
-     * @param loaiTrangThai    false = đơn chưa hoàn thành (chưa thanh toán)
-     * @return true nếu bàn đã bị đặt trong khung giờ đó
+     * @param maBan              mã bàn cần kiểm tra
+     * @param thoiGianDen        giờ đến của đơn mới (full datetime)
+     * @param thoiGianDuKienRoi  giờ dự kiến rời của đơn mới (full datetime)
+     * @return true nếu bàn đã bị đặt trùng khoảng thời gian đó
      */
-    public boolean isBanBiTrungLich(String maBan, Date ngayDen,
-                                    String khungGio, boolean loaiTrangThai) {
+    public boolean isBanBiTrungLich(String maBan, Date thoiGianDen, Date thoiGianDuKienRoi) {
         Connection con = ConnectDB.getConnection();
         try {
-            // So sánh ngày theo DAY/MONTH/YEAR để tránh lệch giờ
             String sql = "SELECT COUNT(*) FROM ChiTietDatBan ct "
                     + "JOIN DonDatBan d ON ct.maDonDatBan = d.maDon "
                     + "WHERE ct.maBan = ? "
-                    + "  AND d.trangThai = ? "
-                    + "  AND d.khungGio  = ? "
-                    + "  AND CAST(d.thoiGianDen AS DATE) = CAST(? AS DATE)";
-            PreparedStatement st = con.prepareStatement(sql);
-            st.setString(1, maBan);
-            st.setBoolean(2, loaiTrangThai);
-            st.setString(3, khungGio);
-            st.setTimestamp(4, new Timestamp(ngayDen.getTime()));
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) return rs.getInt(1) > 0;
+                    + "  AND d.trangThai = 0 "
+                    + "  AND d.thoiGianDen < ? "
+                    + "  AND d.thoiGianDuKienRoi > ?";
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, maBan);
+                st.setTimestamp(2, new Timestamp(thoiGianDuKienRoi.getTime()));
+                st.setTimestamp(3, new Timestamp(thoiGianDen.getTime()));
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next()) return rs.getInt(1) > 0;
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
-    }
-
-    /**
-     * Kiểm tra bàn có bị đặt (đơn chưa thanh toán) trong khung giờ không.
-     * Đây là overload tiện dùng nhất (loaiTrangThai = false).
-     */
-    public boolean isBanBiTrungLich(String maBan, Date ngayDen, String khungGio) {
-        return isBanBiTrungLich(maBan, ngayDen, khungGio, false);
     }
 
     // ── Xóa liên kết bàn khỏi đơn ────────────────────────────────────────
@@ -143,15 +137,16 @@ public class ChiTietDatBan_DAO {
         Connection con = ConnectDB.getConnection();
         try {
             String sql = "DELETE FROM ChiTietDatBan WHERE maDonDatBan = ? AND maBan = ?";
-            PreparedStatement st = con.prepareStatement(sql);
-            st.setString(1, maDon);
-            st.setString(2, maBan);
-            int n = st.executeUpdate();
-            if (n > 0) {
-                SQLLogger.log("DELETE FROM ChiTietDatBan WHERE maDonDatBan = "
-                        + SQLLogger.str(maDon) + " AND maBan = " + SQLLogger.str(maBan) + ";");
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, maDon);
+                st.setString(2, maBan);
+                int n = st.executeUpdate();
+                if (n > 0) {
+                    SQLLogger.log("DELETE FROM ChiTietDatBan WHERE maDonDatBan = "
+                            + SQLLogger.str(maDon) + " AND maBan = " + SQLLogger.str(maBan) + ";");
+                }
+                return n > 0;
             }
-            return n > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -165,14 +160,15 @@ public class ChiTietDatBan_DAO {
         Connection con = ConnectDB.getConnection();
         try {
             String sql = "DELETE FROM ChiTietDatBan WHERE maDonDatBan = ?";
-            PreparedStatement st = con.prepareStatement(sql);
-            st.setString(1, maDon);
-            int n = st.executeUpdate();
-            if (n > 0) {
-                SQLLogger.log("DELETE FROM ChiTietDatBan WHERE maDonDatBan = "
-                        + SQLLogger.str(maDon) + ";");
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, maDon);
+                int n = st.executeUpdate();
+                if (n > 0) {
+                    SQLLogger.log("DELETE FROM ChiTietDatBan WHERE maDonDatBan = "
+                            + SQLLogger.str(maDon) + ";");
+                }
+                return n > 0;
             }
-            return n > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

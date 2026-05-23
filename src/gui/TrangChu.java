@@ -39,6 +39,10 @@ public class TrangChu extends JFrame {
     private QuanLyKhachHang pKhachHang;
     private QuanLyMonAn pMonAn;
     private QuanLyThongKe pThongKe;
+    private QuanLyBan       pQuanLyBan;
+    private QuanLyBep       pQuanLyBep;
+    private QuanLyKhuyenMai pKhuyenMai;
+    private QuanLyCaLam     pCaLam;
 
     private final Color MAIN_BLUE    = Color.decode("#0B3D59");
     private final Color GOLD_COLOR   = Color.decode("#C5A059");
@@ -87,20 +91,30 @@ public class TrangChu extends JFrame {
 
         if (menuButtonsPanel != null && menuButtonsPanel.getComponentCount() > 0
                 && menuButtonsPanel.getComponent(0) instanceof JButton) {
-            JButton btnHome = (JButton) menuButtonsPanel.getComponent(0);
-            lastSelectedButton = btnHome;
-            btnHome.setForeground(Color.WHITE);
-            ImageIcon li = (ImageIcon) btnHome.getClientProperty("lightIcon");
-            if (li != null) btnHome.setIcon(li);
-            cardLayout.show(contentArea, "TrangChủ");
-            pDashboard.refreshData();
+            JButton btnFirst = (JButton) menuButtonsPanel.getComponent(0);
+            lastSelectedButton = btnFirst;
+            btnFirst.setForeground(Color.WHITE);
+            ImageIcon li = (ImageIcon) btnFirst.getClientProperty("lightIcon");
+            if (li != null) btnFirst.setIcon(li);
+
+            // Nếu là nhân viên bếp → mở thẳng màn hình bếp
+            String vaiTro = taiKhoan != null ? taiKhoan.getVaiTro() : "";
+            boolean isBep = "BEP".equalsIgnoreCase(vaiTro) || "Bếp".equalsIgnoreCase(vaiTro);
+            if (isBep) {
+                pQuanLyBep = new QuanLyBep();
+                contentArea.add(pQuanLyBep, "MànHìnhBếp");
+                cardLayout.show(contentArea, "MànHìnhBếp");
+            } else {
+                cardLayout.show(contentArea, "TrangChủ");
+                pDashboard.refreshData();
+            }
         }
     }
 
     private JPanel createSidebar() {
         JPanel panel = new JPanel();
         panel.setBackground(SIDEBAR_BG);
-        panel.setPreferredSize(new Dimension(230, getHeight()));
+        panel.setPreferredSize(new Dimension(260, getHeight()));
         panel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER_LIGHT));
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
@@ -115,6 +129,11 @@ public class TrangChu extends JFrame {
         panel.add(sep1);
         panel.add(Box.createVerticalStrut(6));
 
+        // Xác định vai trò để phân quyền menu
+        String vaiTro = taiKhoan != null ? taiKhoan.getVaiTro() : "";
+        boolean isQuanLy = "QL".equalsIgnoreCase(vaiTro) || "Quản Lý".equalsIgnoreCase(vaiTro) || "QUAN_LY".equalsIgnoreCase(vaiTro);
+        boolean isBep    = "BEP".equalsIgnoreCase(vaiTro) || "Bếp".equalsIgnoreCase(vaiTro);
+
         // Menu buttons
         menuButtonsPanel = new JPanel();
         menuButtonsPanel.setOpaque(false);
@@ -122,30 +141,55 @@ public class TrangChu extends JFrame {
         menuButtonsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         menuButtonsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        menuButtonsPanel.add(createSidebarButton("Trang chủ", "home_filled_300dp_FFFFFF.png",
-                e -> showCard("TrangChủ", (JButton) e.getSource())));
-        menuButtonsPanel.add(Box.createVerticalStrut(2));
-        menuButtonsPanel.add(createSidebarButton("Đặt bàn", "menu_open_300dp_FFFFFF.png",
-                e -> showCard("ĐặtBàn", (JButton) e.getSource())));
-        menuButtonsPanel.add(Box.createVerticalStrut(2));
-        menuButtonsPanel.add(createSidebarButton("Quản lý hoá đơn", "receipt_300dp_FFFFFF.png",
-                e -> showCard("HóaĐơn", (JButton) e.getSource())));
-        menuButtonsPanel.add(Box.createVerticalStrut(2));
-        menuButtonsPanel.add(createSidebarButton("Quản lý nhân viên", "badge_300dp_FFFFFF.png",
-                e -> showCard("NhânViên", (JButton) e.getSource())));
-        menuButtonsPanel.add(Box.createVerticalStrut(2));
-        menuButtonsPanel.add(createSidebarButton("Quản lý khách hàng", "people_300dp_FFFFFF.png",
-                e -> showCard("KháchHàng", (JButton) e.getSource())));
-        menuButtonsPanel.add(Box.createVerticalStrut(2));
-        menuButtonsPanel.add(createSidebarButton("Quản lý món ăn", "dinner_dining_300dp_FFFFFF.png",
-                e -> showCard("MónĂn", (JButton) e.getSource())));
-        menuButtonsPanel.add(Box.createVerticalStrut(2));
-        menuButtonsPanel.add(createSidebarButton("Thống kê doanh thu",
-                "attach_money_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png",
-                e -> showCard("ThốngKê", (JButton) e.getSource())));
-        menuButtonsPanel.add(Box.createVerticalStrut(2));
-        menuButtonsPanel.add(createSidebarButton("Quản lý ca làm", "badge_300dp_FFFFFF.png",
-                e -> showCard("CaLàm", (JButton) e.getSource())));  // [MỚI]
+        if (!isBep) {
+            menuButtonsPanel.add(createSidebarButton("Trang chủ", "home_filled_300dp_FFFFFF.png",
+                    e -> showCard("TrangChủ", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+            menuButtonsPanel.add(createSidebarButton("Đặt bàn", "menu_open_300dp_FFFFFF.png",
+                    e -> showCard("ĐặtBàn", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+        }
+
+        if (isQuanLy) {
+            menuButtonsPanel.add(createSidebarButton("Quản lý bàn", "menu_open_300dp_FFFFFF.png",
+                    e -> showCard("QuảnLýBàn", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+        }
+
+        if (!isBep) {
+            menuButtonsPanel.add(createSidebarButton("Quản lý hoá đơn", "receipt_300dp_FFFFFF.png",
+                    e -> showCard("HóaĐơn", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+        }
+
+        if (isQuanLy) {
+            menuButtonsPanel.add(createSidebarButton("Quản lý nhân viên", "badge_300dp_FFFFFF.png",
+                    e -> showCard("NhânViên", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+            menuButtonsPanel.add(createSidebarButton("Quản lý khách hàng", "people_300dp_FFFFFF.png",
+                    e -> showCard("KháchHàng", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+            menuButtonsPanel.add(createSidebarButton("Quản lý món ăn", "dinner_dining_300dp_FFFFFF.png",
+                    e -> showCard("MónĂn", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+            menuButtonsPanel.add(createSidebarButton("Thống kê doanh thu",
+                    "attach_money_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png",
+                    e -> showCard("ThốngKê", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+            menuButtonsPanel.add(createSidebarButton("Khuyến mãi",
+                    "star_half_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png",
+                    e -> showCard("KhuyếnMãi", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+            menuButtonsPanel.add(createSidebarButton("Quản lý ca làm", "badge_300dp_FFFFFF.png",
+                    e -> showCard("CaLàm", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+        }
+
+        if (isQuanLy || isBep) {
+            menuButtonsPanel.add(createSidebarButton("Màn hình bếp", "dinner_dining_300dp_FFFFFF.png",
+                    e -> showCard("MànHìnhBếp", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
+        }
 
         panel.add(menuButtonsPanel);
         panel.add(Box.createVerticalGlue());
@@ -169,7 +213,7 @@ public class TrangChu extends JFrame {
         btnLogout.setForeground(logoutRed);
         btnLogout.putClientProperty("defaultFg", logoutRed);
         ImageIcon logoutIcon = getColoredIcon(
-                "data/icons/person_apron_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png", 17, 17, logoutRed);
+                "data/icons/person_apron_300dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.png", 20, 20, logoutRed);
         if (logoutIcon != null) {
             btnLogout.setIcon(logoutIcon);
             btnLogout.putClientProperty("darkIcon", logoutIcon);
@@ -185,7 +229,7 @@ public class TrangChu extends JFrame {
         outer.setOpaque(false);
         outer.setAlignmentX(Component.LEFT_ALIGNMENT);
         // Tăng nhẹ chiều cao để chứa thêm 1 dòng chữ
-        outer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
+        outer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         outer.setBorder(new EmptyBorder(10, 10, 6, 10));
 
         JPanel box = new JPanel(new BorderLayout(10, 0)) {
@@ -218,18 +262,18 @@ public class TrangChu extends JFrame {
         String nvName = (nhanVien != null) ? nhanVien.getTenNV() : "Chưa xác định";
 
         JLabel lblRole = new JLabel(role);
-        lblRole.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        lblRole.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblRole.setForeground(new Color(180, 210, 235));
         lblRole.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lblTkName = new JLabel(tkName);
-        lblTkName.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblTkName.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblTkName.setForeground(new Color(230, 230, 230));
         lblTkName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // THÊM: Label hiển thị Tên Nhân Viên (In đậm để nổi bật)
         JLabel lblNvName = new JLabel(nvName);
-        lblNvName.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblNvName.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblNvName.setForeground(Color.WHITE);
         lblNvName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -263,16 +307,16 @@ public class TrangChu extends JFrame {
             }
         };
         String iconPath = "data/icons/" + iconName;
-        ImageIcon darkIcon  = getColoredIcon(iconPath, 17, 17, new Color(0x44, 0x44, 0x44));
-        ImageIcon lightIcon = getColoredIcon(iconPath, 17, 17, Color.WHITE);
+        ImageIcon darkIcon  = getColoredIcon(iconPath, 20, 20, new Color(0x44, 0x44, 0x44));
+        ImageIcon lightIcon = getColoredIcon(iconPath, 20, 20, Color.WHITE);
         if (darkIcon != null) btn.setIcon(darkIcon);
         btn.putClientProperty("darkIcon",  darkIcon);
         btn.putClientProperty("lightIcon", lightIcon);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
-        btn.setPreferredSize(new Dimension(230, 42));
-        btn.setMinimumSize(new Dimension(160, 42));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
+        btn.setPreferredSize(new Dimension(260, 48));
+        btn.setMinimumSize(new Dimension(180, 48));
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         btn.setForeground(TEXT_DARK);
         btn.putClientProperty("defaultFg", TEXT_DARK);
         btn.setFocusPainted(false);
@@ -296,8 +340,8 @@ public class TrangChu extends JFrame {
                 if (pNhanVien == null) { pNhanVien = new QuanLyNhanVien(); contentArea.add(pNhanVien, "NhânViên"); pNhanVien.refreshData(); }
                 break;
             case "HóaĐơn":
-                if (pHoaDon == null) { pHoaDon = new QuanLyHoaDon(); contentArea.add(pHoaDon, "HóaĐơn"); pHoaDon.refreshData(); }
-                break;
+                if (pHoaDon == null) { pHoaDon = new QuanLyHoaDon(); contentArea.add(pHoaDon, "HóaĐơn"); }
+                pHoaDon.refreshData(); break;
             case "KháchHàng":
                 if (pKhachHang == null) { pKhachHang = new QuanLyKhachHang(); contentArea.add(pKhachHang, "KháchHàng"); pKhachHang.refreshData(); }
                 break;
@@ -310,6 +354,18 @@ public class TrangChu extends JFrame {
             case "ĐặtBàn":
                 if (pDatBan == null) { pDatBan = new QuanLyDatBan(nhanVien); contentArea.add(pDatBan, "ĐặtBàn"); }
                 pDatBan.refreshData(); break;  // đặt bàn luôn refresh (trạng thái bàn thay đổi liên tục)
+            case "QuảnLýBàn":
+                if (pQuanLyBan == null) { pQuanLyBan = new QuanLyBan(); contentArea.add(pQuanLyBan, "QuảnLýBàn"); }
+                pQuanLyBan.refreshData(); break;
+            case "MànHìnhBếp":
+                if (pQuanLyBep == null) { pQuanLyBep = new QuanLyBep(); contentArea.add(pQuanLyBep, "MànHìnhBếp"); }
+                pQuanLyBep.refreshData(); break;
+            case "KhuyếnMãi":
+                if (pKhuyenMai == null) { pKhuyenMai = new QuanLyKhuyenMai(); contentArea.add(pKhuyenMai, "KhuyếnMãi"); }
+                pKhuyenMai.refreshData(); break;
+            case "CaLàm":
+                if (pCaLam == null) { pCaLam = new QuanLyCaLam(nhanVien); contentArea.add(pCaLam, "CaLàm"); }
+                pCaLam.refreshData(); break;
         }
         cardLayout.show(contentArea, cardName);
         if (lastSelectedButton != null) {
@@ -565,9 +621,12 @@ public class TrangChu extends JFrame {
                 @Override
                 protected Map<String, Object> doInBackground() {
                     Calendar cal = Calendar.getInstance();
+                    cal.set(Calendar.HOUR_OF_DAY, 23); cal.set(Calendar.MINUTE, 59);
+                    cal.set(Calendar.SECOND, 59); cal.set(Calendar.MILLISECOND, 999);
                     Date end = cal.getTime();
                     cal.add(Calendar.DAY_OF_YEAR, -days + 1);
-                    cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0);
+                    cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0);
+                    cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
                     Date start = cal.getTime();
 
                     List<HoaDon> dsHD = hd_dao.getHoaDonByDateRange(start, end);

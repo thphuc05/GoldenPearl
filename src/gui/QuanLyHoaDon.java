@@ -7,25 +7,15 @@ import entity.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
+import javax.swing.border.MatteBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
-/**
- * Panel quản lý hóa đơn – phiên bản 3.0 (POS Logic).
- *
- * <p>Thay đổi so với v2:
- * <ul>
- *   <li>ĐÃ XÓA nút "Cập nhật trạng thái" – trạng thái tự động theo nghiệp vụ</li>
- *   <li>Nút THANH TOÁN chỉ hiện khi hóa đơn chưa/đang cọc – bị vô hiệu sau khi đã TT</li>
- *   <li>Sau thanh toán: disable Thêm Món, không cho sửa</li>
- *   <li>Trạng thái chỉ để theo dõi, KHÔNG sửa thủ công</li>
- * </ul>
- */
 public class QuanLyHoaDon extends JPanel {
 
     // ── Filter bar ───────────────────────────────────────────────────────────
@@ -40,31 +30,21 @@ public class QuanLyHoaDon extends JPanel {
 
     // ── Action buttons ───────────────────────────────────────────────────────
     private JButton btnPrint;
-    private JButton btnViewDetail;
 
-    // ── Tables ───────────────────────────────────────────────────────────────
+    // ── Table ────────────────────────────────────────────────────────────────
     private JTable            tableHoaDon;
-    private JTable            tableChiTiet;
     private DefaultTableModel modelHoaDon;
-    private DefaultTableModel modelChiTiet;
-
-    // ── Info labels ──────────────────────────────────────────────────────────
-    private JLabel lblMaHD, lblNgayLap, lblNhanVien, lblKhachHang;
-    private JLabel lblBan, lblTongTien, lblTienCoc, lblTongCong;
-    private JLabel lblTrangThai;
-    private JLabel lblHinhThuc;
-    private JLabel lblCaLam;
-    private JLabel lblKhungGio;  // [MỚI] khung giờ đặt bàn
 
     // ── DAOs ─────────────────────────────────────────────────────────────────
-    private final HoaDon_DAO       hdDao  = new HoaDon_DAO();
-    private final ChiTietHoaDon_DAO ctDao  = new ChiTietHoaDon_DAO();
-    private final KhuVuc_DAO       kvDao  = new KhuVuc_DAO();
+    private final HoaDon_DAO        hdDao = new HoaDon_DAO();
+    private final ChiTietHoaDon_DAO ctDao = new ChiTietHoaDon_DAO();
+    private final KhuVuc_DAO        kvDao = new KhuVuc_DAO();
 
     // ── Cache ────────────────────────────────────────────────────────────────
-    private Map<String, String> maHDToKhuVuc = new HashMap<>();
-    private Map<String, String> maHDToBan    = new HashMap<>();
-    private List<HoaDon>        cachedHoaDon = new ArrayList<>();
+    private Map<String, String> maHDToKhuVuc   = new HashMap<>();
+    private Map<String, String> maHDToBan      = new HashMap<>();
+    private Map<String, String> maHDToKhungGio = new HashMap<>();
+    private List<HoaDon>        cachedHoaDon   = new ArrayList<>();
 
     // ── Colors ───────────────────────────────────────────────────────────────
     private static final Color TEXT_DARK    = Color.decode("#333333");
@@ -85,38 +65,48 @@ public class QuanLyHoaDon extends JPanel {
     //  CONSTRUCTOR
     // ════════════════════════════════════════════════════════════════════════
 
+    private static final Color BG_LIGHT = Color.decode("#F0F2F5");
+
     public QuanLyHoaDon() {
-        setLayout(new BorderLayout(0, 10));
-        setBackground(Color.WHITE);
-        setBorder(new EmptyBorder(14, 18, 14, 18));
+        setLayout(new BorderLayout(0, 14));
+        setBackground(BG_LIGHT);
 
-        JLabel lblTitle = new JLabel("QUẢN LÝ HÓA ĐƠN", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Inter Bold", Font.BOLD, 30));
-        lblTitle.setForeground(TEXT_DARK);
-        add(lblTitle, BorderLayout.NORTH);
+        // Header
+        JPanel pHeader = new JPanel(new BorderLayout());
+        pHeader.setOpaque(true);
+        pHeader.setBackground(MAIN_BLUE);
+        pHeader.setBorder(new EmptyBorder(10, 24, 10, 24));
+        JLabel lblTitle = new JLabel("QUẢN LÝ HÓA ĐƠN");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitle.setForeground(GOLD_COLOR);
+        JLabel lblSub = new JLabel("Tra cứu và quản lý tất cả hóa đơn");
+        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSub.setForeground(new Color(180, 200, 220));
+        JPanel pTitleBox = new JPanel();
+        pTitleBox.setLayout(new BoxLayout(pTitleBox, BoxLayout.Y_AXIS));
+        pTitleBox.setOpaque(false);
+        pTitleBox.add(lblTitle);
+        pTitleBox.add(Box.createVerticalStrut(2));
+        pTitleBox.add(lblSub);
+        pHeader.add(pTitleBox, BorderLayout.WEST);
+        add(pHeader, BorderLayout.NORTH);
 
-        JPanel content = new JPanel(new BorderLayout(0, 10));
-        content.setBackground(Color.WHITE);
+        JPanel content = new JPanel(new BorderLayout(0, 14));
+        content.setOpaque(false);
+        content.setBorder(new EmptyBorder(0, 24, 20, 24));
         add(content, BorderLayout.CENTER);
 
         content.add(createFilterPanel(), BorderLayout.NORTH);
-        content.add(createCenterPanel(), BorderLayout.CENTER);
+        content.add(createInvoiceListPanel(), BorderLayout.CENTER);
         content.add(createBottomPanel(), BorderLayout.SOUTH);
 
-        txtFromDate.setText(dateSdf.format(new Date()));
-        txtToDate.setText(dateSdf.format(new Date()));
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_MONTH, -30);
+        txtFromDate.setText(dateSdf.format(cal.getTime()));
+        txtToDate.setText(dateSdf.format(new Date(System.currentTimeMillis() + 30L * 86_400_000)));
 
         bindEvents();
-    }
-
-    private String getSlotLabel(String key) {
-        if (key == null || key.trim().isEmpty()) return "—";
-        switch (key.toUpperCase()) {
-            case "SANG":  return "10:00–14:00";
-            case "CHIEU": return "15:00–19:00";
-            case "TOI":   return "19:30–23:00";
-            default:      return key;
-        }
+        loadDataFromDB();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -124,13 +114,20 @@ public class QuanLyHoaDon extends JPanel {
     // ════════════════════════════════════════════════════════════════════════
 
     private JPanel createFilterPanel() {
-        JPanel pFilter = new JPanel(new GridBagLayout());
-        pFilter.setBackground(Color.WHITE);
-        TitledBorder border = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR), "BỘ LỌC TÌM KIẾM");
-        border.setTitleFont(new Font("Inter Bold", Font.BOLD, 13));
-        border.setTitleColor(TEXT_DARK);
-        pFilter.setBorder(border);
+        JPanel pFilter = new JPanel(new GridBagLayout()) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                g2.setColor(BORDER_COLOR);
+                g2.setStroke(new BasicStroke(1f));
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                g2.dispose();
+            }
+        };
+        pFilter.setOpaque(false);
+        pFilter.setBorder(new EmptyBorder(14, 16, 14, 16));
 
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(8, 6, 8, 6);
@@ -163,110 +160,66 @@ public class QuanLyHoaDon extends JPanel {
         p.add(comp instanceof JPanel ? (JPanel) comp : (Component) comp, g);
     }
 
-    private JPanel createCenterPanel() {
-        JPanel center = new JPanel(new GridLayout(1, 2, 14, 0));
-        center.setBackground(Color.WHITE);
-        center.add(createInvoiceListPanel());
-        center.add(createInvoiceDetailPanel());
-        return center;
-    }
-
     private JPanel createInvoiceListPanel() {
-        JPanel left = new JPanel(new BorderLayout());
-        left.setBackground(Color.WHITE);
-        TitledBorder lb = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR), "DANH SÁCH HÓA ĐƠN");
-        lb.setTitleFont(new Font("Inter Bold", Font.BOLD, 13));
-        lb.setTitleColor(TEXT_DARK);
-        left.setBorder(lb);
+        JPanel panel = new JPanel(new BorderLayout()) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                g2.setColor(BORDER_COLOR);
+                g2.setStroke(new BasicStroke(1f));
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                g2.dispose();
+            }
+        };
+        panel.setOpaque(false);
+        // Section header inside card
+        JLabel secLbl = new JLabel("  DANH SÁCH HÓA ĐƠN");
+        secLbl.setFont(new Font("Inter Bold", Font.BOLD, 15));
+        secLbl.setForeground(MAIN_BLUE);
+        secLbl.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR),
+                new EmptyBorder(12, 6, 12, 6)));
+        panel.add(secLbl, BorderLayout.NORTH);
 
-        String[] cols = {"Mã HĐ", "Ngày Lập", "Khách Hàng", "Bàn", "Khung Giờ", "Trạng Thái", "Hình Thức", "Ca Làm"};
+        String[] cols = {"Mã HĐ", "Ngày Lập", "Mã NV", "Khách Hàng", "Bàn",
+                         "Khung Giờ", "Tổng Tiền", "Trạng Thái", "Hình Thức", "Chi Tiết"};
         modelHoaDon = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override public boolean isCellEditable(int r, int c) { return c == 9; }
         };
         tableHoaDon = new JTable(modelHoaDon);
         styleTable(tableHoaDon);
+
         tableHoaDon.getColumnModel().getColumn(0).setPreferredWidth(68);
         tableHoaDon.getColumnModel().getColumn(1).setPreferredWidth(115);
-        tableHoaDon.getColumnModel().getColumn(2).setPreferredWidth(115);
-        tableHoaDon.getColumnModel().getColumn(3).setPreferredWidth(80);
-        tableHoaDon.getColumnModel().getColumn(4).setPreferredWidth(100);
-        tableHoaDon.getColumnModel().getColumn(5).setPreferredWidth(120);
-        tableHoaDon.getColumnModel().getColumn(6).setPreferredWidth(100);
-        tableHoaDon.getColumnModel().getColumn(7).setPreferredWidth(85);
-        tableHoaDon.getColumnModel().getColumn(5).setCellRenderer(new StatusCellRenderer());
+        tableHoaDon.getColumnModel().getColumn(2).setPreferredWidth(75);
+        tableHoaDon.getColumnModel().getColumn(3).setPreferredWidth(120);
+        tableHoaDon.getColumnModel().getColumn(4).setPreferredWidth(75);
+        tableHoaDon.getColumnModel().getColumn(5).setPreferredWidth(115);
+        tableHoaDon.getColumnModel().getColumn(6).setPreferredWidth(95);
+        tableHoaDon.getColumnModel().getColumn(7).setPreferredWidth(120);
+        tableHoaDon.getColumnModel().getColumn(8).setPreferredWidth(100);
+        tableHoaDon.getColumnModel().getColumn(9).setPreferredWidth(90);
+        tableHoaDon.getColumnModel().getColumn(9).setMaxWidth(100);
 
-        left.add(new JScrollPane(tableHoaDon), BorderLayout.CENTER);
-        return left;
-    }
+        tableHoaDon.getColumnModel().getColumn(7).setCellRenderer(new StatusCellRenderer());
+        tableHoaDon.getColumnModel().getColumn(9).setCellRenderer(new ButtonRenderer());
+        tableHoaDon.getColumnModel().getColumn(9).setCellEditor(new ButtonEditor());
 
-    private JPanel createInvoiceDetailPanel() {
-        JPanel right = new JPanel(new BorderLayout(0, 8));
-        right.setBackground(Color.WHITE);
-        TitledBorder rb = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR), "CHI TIẾT HÓA ĐƠN");
-        rb.setTitleFont(new Font("Inter Bold", Font.BOLD, 13));
-        rb.setTitleColor(TEXT_DARK);
-        right.setBorder(rb);
-        right.add(createInfoPanel(), BorderLayout.NORTH);
-
-        String[] colsCT = {"STT", "Tên Món Ăn", "SL", "Đơn Giá", "Thành Tiền"};
-        modelChiTiet = new DefaultTableModel(colsCT, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        tableChiTiet = new JTable(modelChiTiet);
-        styleDetailTable(tableChiTiet);
-
-        DefaultTableCellRenderer centerR = new DefaultTableCellRenderer();
-        centerR.setHorizontalAlignment(SwingConstants.CENTER);
-        tableChiTiet.getColumnModel().getColumn(0).setCellRenderer(centerR);
-        tableChiTiet.getColumnModel().getColumn(0).setPreferredWidth(38);
-        tableChiTiet.getColumnModel().getColumn(2).setCellRenderer(centerR);
-        tableChiTiet.getColumnModel().getColumn(2).setPreferredWidth(38);
-
-        right.add(new JScrollPane(tableChiTiet), BorderLayout.CENTER);
-        return right;
-    }
-
-    private JPanel createInfoPanel() {
-        JPanel info = new JPanel(new GridLayout(12, 1, 0, 3));
-        info.setBackground(Color.WHITE);
-        info.setBorder(new EmptyBorder(8, 10, 4, 10));
-
-        lblMaHD      = mkInfoLabel();
-        lblNgayLap   = mkInfoLabel();
-        lblNhanVien  = mkInfoLabel();
-        lblKhachHang = mkInfoLabel();
-        lblBan       = mkInfoLabel();
-        lblKhungGio  = mkInfoLabel();   // [MỚI]
-        lblCaLam     = mkInfoLabel();
-        lblTrangThai = mkInfoLabel();
-        lblHinhThuc  = mkInfoLabel();
-        lblTongTien  = mkInfoLabel();
-        lblTienCoc   = mkInfoLabel();
-        lblTongCong  = mkInfoLabel();
-
-        info.add(lblMaHD);   info.add(lblNgayLap);  info.add(lblNhanVien);
-        info.add(lblKhachHang); info.add(lblBan);   info.add(lblKhungGio);
-        info.add(lblCaLam);  info.add(lblTrangThai); info.add(lblHinhThuc);
-        info.add(lblTongTien);  info.add(lblTienCoc);  info.add(lblTongCong);
-
-        setInvoiceDetail(null, null);
-        return info;
+        panel.add(new JScrollPane(tableHoaDon), BorderLayout.CENTER);
+        return panel;
     }
 
     private JPanel createBottomPanel() {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 4));
-        p.setBackground(Color.WHITE);
+        p.setOpaque(false);
 
-        btnRefresh    = mkBtn("LÀM MỚI",    Color.WHITE, TEXT_DARK,   120);
+        btnRefresh = mkBtn("LÀM MỚI", Color.WHITE, TEXT_DARK, 120);
         btnRefresh.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
-
-        btnViewDetail = mkBtn("XEM CHI TIẾT", GOLD_COLOR, MAIN_BLUE,  160);
-        btnPrint      = mkBtn("IN HÓA ĐƠN",  MAIN_BLUE,  Color.WHITE, 140);
+        btnPrint   = mkBtn("IN HÓA ĐƠN", MAIN_BLUE, Color.WHITE, 140);
 
         p.add(btnRefresh);
-        p.add(btnViewDetail);
         p.add(btnPrint);
         return p;
     }
@@ -281,14 +234,6 @@ public class QuanLyHoaDon extends JPanel {
         cmbKhuVuc.addActionListener(e -> applyCurrentFilters());
         cmbTrangThai.addActionListener(e -> applyCurrentFilters());
         cmbCaLam.addActionListener(e -> applyCurrentFilters());
-
-        tableHoaDon.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                loadSelectedDetail();
-            }
-        });
-
-        btnViewDetail.addActionListener(e -> handleViewDetail());
         btnPrint.addActionListener(e -> handlePrint());
     }
 
@@ -302,25 +247,36 @@ public class QuanLyHoaDon extends JPanel {
     //  DATA LOADING
     // ════════════════════════════════════════════════════════════════════════
 
-
     private void loadDataFromDB() {
         modelHoaDon.setRowCount(0);
-        modelChiTiet.setRowCount(0);
         new SwingWorker<Object[], Void>() {
             @Override protected Object[] doInBackground() {
                 return new Object[]{
                         hdDao.getKhuVucMapForAllHoaDon(),
                         hdDao.getDsBanDisplayForAllHoaDon(),
-                        hdDao.getAllHoaDon()
+                        hdDao.getKhungGioMapForAllHoaDon(),
+                        hdDao.getAllHoaDon(),
+                        kvDao.getAllKhuVuc()
                 };
             }
             @Override @SuppressWarnings("unchecked") protected void done() {
                 try {
                     Object[] r = get();
-                    maHDToKhuVuc = (Map<String, String>) r[0];
-                    maHDToBan    = (Map<String, String>) r[1];
-                    List<HoaDon> ds = (List<HoaDon>) r[2];
+                    maHDToKhuVuc   = (Map<String, String>) r[0];
+                    maHDToBan      = (Map<String, String>) r[1];
+                    maHDToKhungGio = (Map<String, String>) r[2];
+                    List<HoaDon> ds = (List<HoaDon>) r[3];
                     cachedHoaDon = ds != null ? ds : new ArrayList<>();
+
+                    String prevKV = (String) cmbKhuVuc.getSelectedItem();
+                    cmbKhuVuc.removeAllItems();
+                    cmbKhuVuc.addItem("Tất cả");
+                    List<entity.KhuVuc> dsKV = (List<entity.KhuVuc>) r[4];
+                    if (dsKV != null) {
+                        for (entity.KhuVuc kv : dsKV) cmbKhuVuc.addItem(kv.getTenKV());
+                    }
+                    if (prevKV != null) cmbKhuVuc.setSelectedItem(prevKV);
+
                     applyCurrentFilters();
                 } catch (Exception e) { e.printStackTrace(); }
             }
@@ -347,20 +303,12 @@ public class QuanLyHoaDon extends JPanel {
             if (filterTT != null && hd.getTrangThaiThanhToan() != filterTT) continue;
             addRowToInvoiceTable(hd);
         }
-
-        if (modelHoaDon.getRowCount() > 0) {
-            tableHoaDon.setRowSelectionInterval(0, 0);
-            loadSelectedDetail();
-        } else {
-            setInvoiceDetail(null, null);
-        }
     }
 
     private TrangThaiThanhToan resolveTrangThaiFilter(String sel) {
         if (sel == null || sel.equals("Tất cả")) return null;
         return TrangThaiThanhToan.fromDisplay(sel);
     }
-
 
     private void searchHoaDon() {
         String keyword = txtSearch.getText().trim();
@@ -389,14 +337,12 @@ public class QuanLyHoaDon extends JPanel {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  DETAIL
+    //  ACTION HANDLERS
     // ════════════════════════════════════════════════════════════════════════
 
-    private void loadSelectedDetail() {
-        int row = tableHoaDon.getSelectedRow();
-        if (row == -1) { setInvoiceDetail(null, null); return; }
+    private void openDetailForRow(int row) {
+        if (row < 0 || row >= modelHoaDon.getRowCount()) return;
         final String maHD = modelHoaDon.getValueAt(row, 0).toString();
-
         new SwingWorker<Object[], Void>() {
             @Override protected Object[] doInBackground() {
                 return new Object[]{ hdDao.getHoaDonByMa(maHD), ctDao.getChiTietByMaHD(maHD) };
@@ -404,119 +350,57 @@ public class QuanLyHoaDon extends JPanel {
             @Override @SuppressWarnings("unchecked") protected void done() {
                 try {
                     Object[] r = get();
-                    setInvoiceDetail((HoaDon) r[0], (List<ChiTietHoaDon>) r[1]);
+                    HoaDon hd = (HoaDon) r[0];
+                    List<ChiTietHoaDon> dsCT = (List<ChiTietHoaDon>) r[1];
+                    if (hd != null) {
+                        String tenBan = maHDToBan.getOrDefault(maHD, "");
+                        new QuanLyHoaDon_CTHD(SwingUtilities.getWindowAncestor(QuanLyHoaDon.this),
+                                hd, dsCT, true, tenBan).setVisible(true);
+                    }
                 } catch (Exception e) { e.printStackTrace(); }
             }
         }.execute();
-    }
-
-    private void setInvoiceDetail(HoaDon hd, List<ChiTietHoaDon> dsCT) {
-        if (modelChiTiet != null) modelChiTiet.setRowCount(0);
-
-        if (hd == null) {
-            lblMaHD.setText("Mã HĐ: ");         lblNgayLap.setText("Ngày Lập: ");
-            lblNhanVien.setText("Nhân Viên: ");  lblKhachHang.setText("Khách Hàng: ");
-            lblBan.setText("Bàn: ");             lblKhungGio.setText("Khung Giờ: ");
-            lblCaLam.setText("Ca Làm: ");
-            lblTrangThai.setText("Trạng Thái: "); lblHinhThuc.setText("Hình Thức TT: ");
-            lblTongTien.setText("Tổng Tiền: ");  lblTienCoc.setText("Tiền Cọc: ");
-            lblTongCong.setText("Tổng Cộng: ");
-            return;
-        }
-
-        lblMaHD.setText("Mã HĐ: " + hd.getMaHD());
-        String ngay = hd.getNgayLap() != null ? dateSdf.format(hd.getNgayLap()) : "";
-        String gio  = hd.getThoiGian() != null
-                ? hd.getThoiGian().toString().substring(0, 5)
-                : (hd.getNgayLap() != null ? timeSdf.format(hd.getNgayLap()) : "");
-        lblNgayLap.setText("Ngày Lập: " + ngay + "  " + gio);
-
-        lblNhanVien.setText("Nhân Viên: " + (hd.getNhanVien() != null
-                ? hd.getNhanVien().getMaNV() + " - " + nvTen(hd.getNhanVien()) : ""));
-        lblKhachHang.setText("Khách Hàng: " + (hd.getKhachHang() != null
-                ? hd.getKhachHang().getMaKH() + khTen(hd.getKhachHang()) : "Khách vãng lai"));
-
-        lblBan.setText("Bàn: " + (hd.getDonDatBan() != null
-                ? maHDToBan.getOrDefault(hd.getMaHD(), "") : ""));
-
-        String rawKhungGio = (hd.getDonDatBan() != null) ? hd.getDonDatBan().getKhungGio() : null;
-        lblKhungGio.setText("Khung Giờ ĐB: " + getSlotLabel(rawKhungGio));
-        lblKhungGio.setForeground(MAIN_BLUE);
-
-
-        // Trạng thái – chỉ hiển thị, không cho sửa
-        TrangThaiThanhToan tt = hd.getTrangThaiThanhToan();
-        lblTrangThai.setText("Trạng Thái: " + tt.getDisplay());
-        switch (tt) {
-            case DA_THANH_TOAN:   lblTrangThai.setForeground(GREEN_STATUS);  break;
-            case CHUA_THANH_TOAN: lblTrangThai.setForeground(ORANGE_COLOR);  break;
-            case DA_COC:          lblTrangThai.setForeground(PURPLE_COLOR);  break;
-            case DA_HUY:          lblTrangThai.setForeground(RED_STATUS);    break;
-            default:              lblTrangThai.setForeground(TEXT_DARK);
-        }
-
-        HinhThucThanhToan ht = hd.getHinhThucThanhToan();
-        lblHinhThuc.setText("Hình Thức TT: " + (ht != null ? ht.getDisplay() : "(chưa có)"));
-        lblHinhThuc.setForeground(ht != null ? MAIN_BLUE : Color.GRAY);
-
-        double tongTienMon = 0;
-        if (dsCT != null) {
-            for (ChiTietHoaDon ct : dsCT) {
-                tongTienMon += ct.getThanhTien();
-                modelChiTiet.addRow(new Object[]{
-                        modelChiTiet.getRowCount() + 1,
-                        ct.getMonAn() != null ? ct.getMonAn().getTenMon() : "",
-                        ct.getSoLuong(),
-                        String.format("%,.0fđ", ct.getDonGia()),
-                        String.format("%,.0fđ", ct.getThanhTien())
-                });
-            }
-        }
-
-        double tienCoc = hd.getTienCoc();
-        double hieuSo  = tongTienMon - tienCoc;
-        lblTongTien.setText("Tổng tiền món: " + String.format("%,.0fđ", tongTienMon));
-        lblTienCoc.setText("Tiền đã cọc: "    + String.format("%,.0fđ", tienCoc));
-
-        if (hieuSo < 0) {
-            lblTongCong.setText("TIỀN HOÀN LẠI: " + String.format("%,.0fđ", Math.abs(hieuSo)));
-            lblTongCong.setForeground(GREEN_STATUS);
-        } else {
-            lblTongCong.setText("CẦN THANH TOÁN: " + String.format("%,.0fđ", hieuSo));
-            lblTongCong.setForeground(RED_STATUS);
-        }
-    }
-
-    // ════════════════════════════════════════════════════════════════════════
-    //  ACTION HANDLERS
-    // ════════════════════════════════════════════════════════════════════════
-
-    private void handleViewDetail() {
-        int row = tableHoaDon.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn hóa đơn cần xem!"); return; }
-        String maHD = modelHoaDon.getValueAt(row, 0).toString();
-        HoaDon hd = hdDao.getHoaDonByMa(maHD);
-        if (hd != null) {
-            List<ChiTietHoaDon> dsCT = ctDao.getChiTietByMaHD(maHD);
-            String tenBan = maHDToBan.getOrDefault(maHD, "");
-            new QuanLyHoaDon_CTHD(SwingUtilities.getWindowAncestor(this), hd, dsCT, true, tenBan)
-                    .setVisible(true);
-        }
     }
 
     private void handlePrint() {
         int row = tableHoaDon.getSelectedRow();
         if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn hóa đơn cần in!"); return; }
         String maHD = modelHoaDon.getValueAt(row, 0).toString();
-        Object[] opts = {"Xác nhận", "Hủy"};
-        int choice = JOptionPane.showOptionDialog(this,
-                "Bạn chắc chắn muốn in hóa đơn " + maHD + "?",
-                "Xác nhận in hóa đơn",
-                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
-                null, opts, opts[0]);
-        if (choice == 0)
-            JOptionPane.showMessageDialog(this, "In hóa đơn thành công!",
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+
+        // Tìm HoaDon trong cache
+        HoaDon hd = null;
+        for (HoaDon h : cachedHoaDon) {
+            if (h.getMaHD().equals(maHD)) { hd = h; break; }
+        }
+        if (hd == null) { JOptionPane.showMessageDialog(this, "Không tìm thấy dữ liệu hóa đơn!"); return; }
+
+        final HoaDon hdFinal = hd;
+        final String tenBan  = maHDToBan.getOrDefault(maHD, "Chua xac dinh");
+
+        btnPrint.setEnabled(false);
+        btnPrint.setText("Dang tao PDF...");
+
+        new SwingWorker<Void, Void>() {
+            @Override protected Void doInBackground() throws Exception {
+                java.util.List<entity.ChiTietHoaDon> cths = ctDao.getChiTietByMaHD(maHD);
+                util.PdfHoaDon.xuatVaMo(hdFinal, cths, tenBan);
+                return null;
+            }
+            @Override protected void done() {
+                btnPrint.setEnabled(true);
+                btnPrint.setText("IN HÓA ĐƠN");
+                try {
+                    get();
+                    JOptionPane.showMessageDialog(QuanLyHoaDon.this,
+                            "Da xuat PDF thanh cong!\nFile luu tai: output/hoadon/HoaDon_" + maHD + ".pdf",
+                            "Thanh cong", JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(QuanLyHoaDon.this,
+                            "Loi tao PDF: " + ex.getCause().getMessage(),
+                            "Loi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     private void resetFiltersAndReload() {
@@ -524,8 +408,10 @@ public class QuanLyHoaDon extends JPanel {
         cmbKhuVuc.setSelectedIndex(0);
         cmbTrangThai.setSelectedIndex(0);
         cmbCaLam.setSelectedIndex(0);
-        txtFromDate.setText(dateSdf.format(new Date()));
-        txtToDate.setText(dateSdf.format(new Date()));
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_MONTH, -30);
+        txtFromDate.setText(dateSdf.format(cal.getTime()));
+        txtToDate.setText(dateSdf.format(new Date(System.currentTimeMillis() + 30L * 86_400_000)));
         loadDataFromDB();
     }
 
@@ -542,22 +428,24 @@ public class QuanLyHoaDon extends JPanel {
                     : timeSdf.format(hd.getNgayLap());
             ngayGio = ngay + " " + gio;
         }
-        String tenBan  = maHDToBan.getOrDefault(hd.getMaHD(), "");
-
-        String rawKhungGio = (hd.getDonDatBan() != null) ? hd.getDonDatBan().getKhungGio() : null;
-        String khungGio = getSlotLabel(rawKhungGio);
-
-        String ht  = hd.getHinhThucThanhToan() != null ? hd.getHinhThucThanhToan().getDisplay() : "";
+        String maNV     = hd.getNhanVien()           != null ? hd.getNhanVien().getMaNV()  : "";
+        String tenBan   = maHDToBan.getOrDefault(hd.getMaHD(), "");
+        String khungGio = maHDToKhungGio.getOrDefault(hd.getMaHD(), "—");
+        String ht       = hd.getHinhThucThanhToan()  != null ? hd.getHinhThucThanhToan().getDisplay() : "";
 
         modelHoaDon.addRow(new Object[]{
-                hd.getMaHD(), ngayGio,
+                hd.getMaHD(),
+                ngayGio,
+                maNV,
                 hd.getKhachHang() != null
                         ? hd.getKhachHang().getMaKH() + khTen(hd.getKhachHang())
                         : "Khách vãng lai",
                 tenBan,
                 khungGio,
+                String.format("%,.0fđ", hd.getTongTien()),
                 hd.getTrangThaiThanhToan().getDisplay(),
                 ht,
+                "Xem"
         });
     }
 
@@ -567,14 +455,14 @@ public class QuanLyHoaDon extends JPanel {
 
     private Calendar toStartOfDay(Date d) {
         Calendar c = Calendar.getInstance(); c.setTime(d);
-        c.set(Calendar.HOUR_OF_DAY,0); c.set(Calendar.MINUTE,0);
-        c.set(Calendar.SECOND,0);      c.set(Calendar.MILLISECOND,0);
+        c.set(Calendar.HOUR_OF_DAY, 0); c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);      c.set(Calendar.MILLISECOND, 0);
         return c;
     }
     private Calendar toEndOfDay(Date d) {
         Calendar c = Calendar.getInstance(); c.setTime(d);
-        c.set(Calendar.HOUR_OF_DAY,23); c.set(Calendar.MINUTE,59);
-        c.set(Calendar.SECOND,59);      c.set(Calendar.MILLISECOND,999);
+        c.set(Calendar.HOUR_OF_DAY, 23); c.set(Calendar.MINUTE, 59);
+        c.set(Calendar.SECOND, 59);      c.set(Calendar.MILLISECOND, 999);
         return c;
     }
     private boolean isInDateRange(Date date, Date from, Date to) {
@@ -598,79 +486,78 @@ public class QuanLyHoaDon extends JPanel {
 
     private JLabel mkLabel(String t) {
         JLabel l = new JLabel(t);
-        l.setFont(new Font("Inter Bold", Font.BOLD, 13));
+        l.setFont(new Font("Inter Bold", Font.BOLD, 15));
         l.setForeground(TEXT_DARK);
         return l;
     }
     private JTextField mkField(int w) {
         JTextField f = new JTextField();
-        f.setFont(new Font("Inter", Font.PLAIN, 13));
-        f.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
-        f.setPreferredSize(new Dimension(w, 40));
+        f.setFont(new Font("Inter", Font.PLAIN, 15));
+        f.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                BorderFactory.createEmptyBorder(2, 8, 2, 8)));
+        f.setPreferredSize(new Dimension(w, 44));
         return f;
     }
     private JComboBox<String> mkCombo(int w) {
         JComboBox<String> c = new JComboBox<>();
-        c.setFont(new Font("Inter", Font.PLAIN, 13));
-        c.setPreferredSize(new Dimension(w, 40));
+        c.setFont(new Font("Inter", Font.PLAIN, 15));
+        c.setPreferredSize(new Dimension(w, 44));
         c.setBackground(Color.WHITE);
         return c;
     }
     private JTextField mkReadonlyDate() {
-        JTextField f = mkField(100);
+        JTextField f = mkField(110);
         f.setEditable(false);
         f.setHorizontalAlignment(SwingConstants.CENTER);
         return f;
     }
     private JPanel wrapDate(JTextField field) {
         JButton btn = new JButton("📅");
-        btn.setPreferredSize(new Dimension(40, 40));
+        btn.setPreferredSize(new Dimension(44, 44));
         btn.setFocusPainted(false);
         btn.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
         btn.setBackground(Color.WHITE);
         btn.addActionListener(e -> new DatePickerDialog(
                 (JFrame) SwingUtilities.getWindowAncestor(this), field).setVisible(true));
         JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(Color.WHITE);
+        p.setOpaque(false);
         p.add(field, BorderLayout.CENTER);
         p.add(btn, BorderLayout.EAST);
         return p;
     }
     private JButton mkBtn(String t, Color bg, Color fg, int w) {
-        JButton b = new JButton(t);
-        b.setFont(new Font("Inter Bold", Font.BOLD, 13));
-        b.setBackground(bg); b.setForeground(fg);
+        JButton b = new JButton(t) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(bg.equals(Color.WHITE) ? Color.WHITE
+                        : (getModel().isRollover() ? bg.darker() : bg));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                if (bg.equals(Color.WHITE)) { g2.setColor(BORDER_COLOR); g2.drawRoundRect(0,0,getWidth()-1,getHeight()-1,10,10); }
+                g2.dispose(); super.paintComponent(g);
+            }
+        };
+        b.setFont(new Font("Inter Bold", Font.BOLD, 15));
+        b.setForeground(fg);
+        b.setContentAreaFilled(false);
         b.setFocusPainted(false);
-        b.setPreferredSize(new Dimension(w, 44));
+        b.setPreferredSize(new Dimension(w, 46));
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return b;
     }
-    private JLabel mkInfoLabel() {
-        JLabel l = new JLabel();
-        l.setFont(new Font("Inter Bold", Font.BOLD, 13));
-        l.setForeground(TEXT_DARK);
-        return l;
-    }
     private void styleTable(JTable t) {
-        t.setFont(new Font("Inter", Font.PLAIN, 13));
-        t.setRowHeight(36);
+        t.setFont(new Font("Inter", Font.PLAIN, 15));
+        t.setRowHeight(42);
         t.setSelectionBackground(SELECT_BG);
         t.setSelectionForeground(TEXT_DARK);
-        t.getTableHeader().setFont(new Font("Inter Bold", Font.BOLD, 13));
-        t.getTableHeader().setPreferredSize(new Dimension(0, 38));
-        t.setGridColor(new Color(235,235,235));
+        t.getTableHeader().setFont(new Font("Inter Bold", Font.BOLD, 15));
+        t.getTableHeader().setPreferredSize(new Dimension(0, 44));
+        t.getTableHeader().setBackground(new Color(248, 249, 251));
+        t.setGridColor(new Color(235, 235, 235));
         t.setBackground(Color.WHITE);
         t.setShowVerticalLines(false);
         t.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-    }
-    private void styleDetailTable(JTable t) {
-        t.setFont(new Font("Inter", Font.PLAIN, 13));
-        t.setRowHeight(32);
-        t.getTableHeader().setFont(new Font("Inter Bold", Font.BOLD, 13));
-        t.getTableHeader().setPreferredSize(new Dimension(0, 36));
-        t.setGridColor(new Color(235,235,235));
-        t.setBackground(Color.WHITE);
-        t.setShowVerticalLines(false);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -680,7 +567,7 @@ public class QuanLyHoaDon extends JPanel {
     private class StatusCellRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus, int row, int column) {
+                boolean isSelected, boolean hasFocus, int row, int column) {
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isSelected) {
                 String s = value == null ? "" : value.toString();
@@ -693,9 +580,59 @@ public class QuanLyHoaDon extends JPanel {
                     default:              setForeground(TEXT_DARK);
                 }
             } else { setForeground(TEXT_DARK); }
-            setFont(new Font("Inter Bold", Font.BOLD, 13));
+            setFont(new Font("Inter Bold", Font.BOLD, 15));
             return this;
         }
+    }
+
+    private class ButtonRenderer extends JButton implements TableCellRenderer {
+        public ButtonRenderer() {
+            setOpaque(true);
+            setText("Xem");
+            setFont(new Font("Inter Bold", Font.BOLD, 14));
+            setBackground(GOLD_COLOR);
+            setForeground(MAIN_BLUE);
+            setFocusPainted(false);
+            setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+        }
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            return this;
+        }
+    }
+
+    private class ButtonEditor extends DefaultCellEditor {
+        private final JButton button;
+        private int currentRow;
+
+        public ButtonEditor() {
+            super(new JCheckBox());
+            button = new JButton("Xem");
+            button.setFont(new Font("Inter Bold", Font.BOLD, 14));
+            button.setBackground(GOLD_COLOR);
+            button.setForeground(MAIN_BLUE);
+            button.setOpaque(true);
+            button.setFocusPainted(false);
+            button.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+            button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setClickCountToStart(1);
+            button.addActionListener(e -> {
+                fireEditingStopped();
+                openDetailForRow(currentRow);
+            });
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                boolean isSelected, int row, int column) {
+            currentRow = row;
+            return button;
+        }
+
+        @Override
+        public Object getCellEditorValue() { return "Xem"; }
     }
 
     class DatePickerDialog extends JDialog {
@@ -721,12 +658,12 @@ public class QuanLyHoaDon extends JPanel {
         }
         private JPanel createPickerHeader() {
             JPanel h = new JPanel(new BorderLayout()); h.setBackground(Color.WHITE);
-            h.setBorder(new EmptyBorder(4,4,4,4));
+            h.setBorder(new EmptyBorder(4, 4, 4, 4));
             JButton prev = navBtn("<"); JButton next = navBtn(">");
             monthLabel = new JLabel("", SwingConstants.CENTER);
             monthLabel.setFont(new Font("Inter Bold", Font.BOLD, 14));
-            prev.addActionListener(e -> { cal.add(Calendar.MONTH,-1); refreshCalendar(); });
-            next.addActionListener(e -> { cal.add(Calendar.MONTH, 1); refreshCalendar(); });
+            prev.addActionListener(e -> { cal.add(Calendar.MONTH, -1); refreshCalendar(); });
+            next.addActionListener(e -> { cal.add(Calendar.MONTH,  1); refreshCalendar(); });
             h.add(prev, BorderLayout.WEST); h.add(monthLabel, BorderLayout.CENTER); h.add(next, BorderLayout.EAST);
             return h;
         }
@@ -738,7 +675,7 @@ public class QuanLyHoaDon extends JPanel {
         private void refreshCalendar() {
             daysPanel.removeAll();
             monthLabel.setText(new SimpleDateFormat("MMMM yyyy").format(cal.getTime()));
-            for (String d : new String[]{"CN","T2","T3","T4","T5","T6","T7"}) {
+            for (String d : new String[]{"CN", "T2", "T3", "T4", "T5", "T6", "T7"}) {
                 JLabel l = new JLabel(d, SwingConstants.CENTER);
                 l.setFont(new Font("Inter Bold", Font.BOLD, 11)); daysPanel.add(l);
             }
@@ -750,7 +687,7 @@ public class QuanLyHoaDon extends JPanel {
                 final int d = day;
                 JButton b = new JButton(String.valueOf(d));
                 b.setFont(new Font("Inter", Font.PLAIN, 12)); b.setFocusPainted(false);
-                b.setBackground(Color.WHITE); b.setBorder(BorderFactory.createLineBorder(new Color(220,220,220)));
+                b.setBackground(Color.WHITE); b.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
                 b.addActionListener(e -> { cal.set(Calendar.DAY_OF_MONTH, d); target.setText(dateSdf.format(cal.getTime())); dispose(); });
                 daysPanel.add(b);
             }

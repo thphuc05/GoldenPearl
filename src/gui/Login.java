@@ -188,9 +188,9 @@ public class Login {
                 "❌ Không thể kết nối SQL Server!\n" +
                 "Vui lòng kiểm tra:\n" +
                 "1. SQL Server đã được chạy chưa?\n" +
-                "2. Mật khẩu 'sa' trong ConnectDB.java đã đúng chưa?\n" +
-                "3. Database 'GoldenPearlDB' đã được tạo chưa?\n\n" +
-                "Chi tiết lỗi: " + e.getMessage(), 
+                "2. Thông tin kết nối trong connectDB/db.properties đã đúng chưa?\n" +
+                "3. Database 'GoldenPearlDB_Test' đã được tạo chưa?\n\n" +
+                "Chi tiết lỗi: " + e.getMessage(),
                 "Lỗi Kết Nối", JOptionPane.ERROR_MESSAGE);
         }
 
@@ -210,9 +210,12 @@ public class Login {
             new SwingWorker<TaiKhoan, Void>() {
                 @Override
                 protected TaiKhoan doInBackground() throws Exception {
-                    // This runs on a separate thread
                     TaiKhoan_DAO taiKhoan_dao = new TaiKhoan_DAO();
-                    return taiKhoan_dao.checkLogin(user, pass);
+                    try {
+                        return taiKhoan_dao.checkLogin(user, pass);
+                    } finally {
+                        ConnectDB.closeConnection();
+                    }
                 }
 
                 @Override
@@ -224,20 +227,20 @@ public class Login {
                             String vaiTro = tk.getVaiTro();
 
                             if (vaiTro.equalsIgnoreCase("QUAN_LY")) {
-                                JOptionPane.showMessageDialog(null, "Đăng nhập thành công với quyền Quản lý!");
                                 frame.dispose();
                                 new TrangChu(tk).setVisible(true);
 
                             } else if (vaiTro.equalsIgnoreCase("NHAN_VIEN")) {
-                                // CHẶN LẠI HOẶC CHUYỂN HƯỚNG
-                                // Nếu bạn ĐÃ LÀM giao diện riêng cho Nhân viên thì bỏ comment 2 dòng dưới:
-                                // Nếu CHƯA LÀM thì hiện thông báo chặn:
-                                JOptionPane.showMessageDialog(null,
-                                        "Tài khoản của bạn là Nhân Viên!\nHệ thống Quản lý chỉ dành riêng cho cấp Quản lý.",
-                                        "Từ chối truy cập", JOptionPane.WARNING_MESSAGE);
+                                frame.dispose();
+                                new TrangChu(tk).setVisible(true);
+
+                            } else if (vaiTro.equalsIgnoreCase("BEP")) {
+                                frame.dispose();
+                                new TrangChu(tk).setVisible(true);
 
                             } else {
-                                JOptionPane.showMessageDialog(null, "Lỗi hệ thống: Vai trò không xác định!");
+                                JOptionPane.showMessageDialog(null, "Lỗi hệ thống: Vai trò không xác định!",
+                                        "Lỗi", JOptionPane.ERROR_MESSAGE);
                             }
                         } else {
                             JOptionPane.showMessageDialog(null, "Tên đăng nhập hoặc mật khẩu sai!", "Lỗi", JOptionPane.ERROR_MESSAGE);

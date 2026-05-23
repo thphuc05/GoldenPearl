@@ -60,25 +60,18 @@ public class QuanLyThongKe extends JPanel {
     /** DAO truy vấn bảng ChiTietHoaDon — dùng để tính doanh thu theo danh mục và top món. */
     private final ChiTietHoaDon_DAO ct_dao = new ChiTietHoaDon_DAO();
 
-    /** Định dạng ngày hiển thị và nhập liệu: dd/MM/yyyy. */
-    private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-
     /** Định dạng số tiền với dấu phân cách hàng nghìn (ví dụ: 1,500,000). */
     private final DecimalFormat df = new DecimalFormat("#,###");
 
     // ── Widgets ──────────────────────────────────────────────────────────────
 
-    /** Label hiển thị tổng doanh thu trong khoảng ngày đã chọn. */
     private JLabel lblTotalRevenue;
-
-    /** Label hiển thị tổng số hóa đơn đã thanh toán trong khoảng ngày đã chọn. */
+    private JLabel lblTotalProfit;
     private JLabel lblTotalInvoices;
 
-    /** Ô nhập ngày bắt đầu (chỉ đọc, chọn qua CustomDatePicker). */
-    private JTextField txtFromDate;
-
-    /** Ô nhập ngày kết thúc (chỉ đọc, chọn qua CustomDatePicker). */
-    private JTextField txtToDate;
+    /** Kỳ đang chọn: "TUAN" | "THANG" | "QUY" */
+    private String currentPeriod = "THANG";
+    private JButton btnTuan, btnThang, btnQuy;
 
     /** Biểu đồ Donut hiển thị cơ cấu doanh thu theo danh mục. */
     private DonutChart donutChart;
@@ -106,7 +99,9 @@ public class QuanLyThongKe extends JPanel {
         add(createTitlePanel(), BorderLayout.NORTH);
         add(createContentPanel(), BorderLayout.CENTER);
 
-        initDates();
+        // Mặc định: tháng này
+        activatePeriod(btnThang);
+        loadData();
     }
 
     /**
@@ -115,7 +110,8 @@ public class QuanLyThongKe extends JPanel {
      * Được gọi từ bên ngoài khi chuyển tab sang màn hình này.
      */
     public void refreshData() {
-        initDates();
+        currentPeriod = "THANG";
+        activatePeriod(btnThang);
         loadData();
     }
 
@@ -128,14 +124,18 @@ public class QuanLyThongKe extends JPanel {
      */
     private JPanel createTitlePanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(CARD_BG);
-        panel.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_LIGHT));
+        panel.setBackground(MAIN_BLUE);
+        panel.setBorder(new EmptyBorder(10, 28, 10, 28));
 
-        JLabel lbl = new JLabel("THỐNG KÊ DOANH THU NHÀ HÀNG", SwingConstants.CENTER);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        lbl.setForeground(MAIN_BLUE);
-        lbl.setBorder(new EmptyBorder(18, 0, 18, 0));
-        panel.add(lbl, BorderLayout.CENTER);
+        JLabel lbl = new JLabel("THỐNG KÊ DOANH THU NHÀ HÀNG");
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lbl.setForeground(GOLD_COLOR);
+        JLabel lblSub = new JLabel("Xem báo cáo doanh thu và xu hướng kinh doanh theo thời gian");
+        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSub.setForeground(new Color(180, 200, 220));
+        JPanel pTBox = new JPanel(); pTBox.setLayout(new BoxLayout(pTBox, BoxLayout.Y_AXIS)); pTBox.setOpaque(false);
+        pTBox.add(lbl); pTBox.add(Box.createVerticalStrut(2)); pTBox.add(lblSub);
+        panel.add(pTBox, BorderLayout.WEST);
         return panel;
     }
 
@@ -169,16 +169,18 @@ public class QuanLyThongKe extends JPanel {
      * @return JPanel hàng trên với chiều cao cố định 130px
      */
     private JPanel createTopRow() {
-        JPanel row = new JPanel(new GridLayout(1, 3, 15, 0));
+        JPanel row = new JPanel(new GridLayout(1, 4, 15, 0));
         row.setBackground(CONTENT_BG);
         row.setPreferredSize(new Dimension(0, 130));
 
         lblTotalRevenue  = new JLabel("0 VNĐ");
+        lblTotalProfit   = new JLabel("0 VNĐ");
         lblTotalInvoices = new JLabel("0");
 
-        row.add(createStatCard("TỔNG DOANH THU", lblTotalRevenue, "💰", new Color(39, 174, 96)));
+        row.add(createStatCard("TỔNG DOANH THU", lblTotalRevenue,  "💰", new Color(39, 174, 96)));
+        row.add(createStatCard("LỢI NHUẬN",      lblTotalProfit,   "📈", new Color(197, 160, 89)));
         row.add(createStatCard("TỔNG HÓA ĐƠN",   lblTotalInvoices, "🧾", new Color(52, 152, 219)));
-        row.add(createFilterPanel());
+        row.add(createPeriodPanel());
         return row;
     }
 
@@ -229,14 +231,7 @@ public class QuanLyThongKe extends JPanel {
         return card;
     }
 
-    /**
-     * Tạo panel bộ lọc tìm kiếm theo khoảng ngày.
-     * Gồm 2 ô chọn ngày (txtFromDate, txtToDate) và nút "XEM DOANH THU".
-     * Khi nhấn nút, phương thức {@link #loadData()} được gọi.
-     *
-     * @return JPanel bộ lọc có viền vàng bo góc
-     */
-    private JPanel createFilterPanel() {
+    private JPanel createPeriodPanel() {
         JPanel card = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -244,67 +239,59 @@ public class QuanLyThongKe extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(CARD_BG);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-                // Vẽ viền vàng gold bao quanh card bộ lọc
                 g2.setColor(GOLD_COLOR);
                 g2.setStroke(new BasicStroke(1.5f));
                 g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
             }
         };
         card.setOpaque(false);
-        card.setBorder(new EmptyBorder(12, 16, 12, 16));
+        card.setBorder(new EmptyBorder(16, 20, 16, 20));
 
-        JLabel filterTitle = new JLabel("BỘ LỌC TÌM KIẾM");
-        filterTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        filterTitle.setForeground(GOLD_COLOR);
-        filterTitle.setBorder(new EmptyBorder(0, 0, 8, 0));
-        card.add(filterTitle, BorderLayout.NORTH);
+        JLabel title = new JLabel("KỲ BÁO CÁO");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        title.setForeground(GOLD_COLOR);
+        title.setBorder(new EmptyBorder(0, 0, 12, 0));
+        card.add(title, BorderLayout.NORTH);
 
-        // Dùng GridBagLayout để có thể kiểm soát tỷ lệ chiều rộng giữa label và date picker
-        JPanel dateRow = new JPanel(new GridBagLayout());
-        dateRow.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, 5, 0, 5);
+        JPanel btnRow = new JPanel(new GridLayout(1, 3, 8, 0));
+        btnRow.setOpaque(false);
+        btnTuan  = makePeriodBtn("Tuần này");
+        btnThang = makePeriodBtn("Tháng này");
+        btnQuy   = makePeriodBtn("Quý này");
 
-        txtFromDate = createDateField();
-        txtToDate   = createDateField();
+        btnTuan.addActionListener(e  -> { currentPeriod = "TUAN";  activatePeriod(btnTuan);  loadData(); });
+        btnThang.addActionListener(e -> { currentPeriod = "THANG"; activatePeriod(btnThang); loadData(); });
+        btnQuy.addActionListener(e   -> { currentPeriod = "QUY";   activatePeriod(btnQuy);   loadData(); });
 
-        // Label "Từ ngày" — chiếm ít không gian
-        gbc.weightx = 0.1;
-        dateRow.add(makeLabel("Từ ngày:"), gbc);
-
-        // Date picker "Từ ngày" — chiếm nhiều không gian hơn
-        gbc.weightx = 0.4;
-        dateRow.add(makeDatePicker(txtFromDate), gbc);
-
-        // Label "Đến ngày" — chiếm ít không gian
-        gbc.weightx = 0.1;
-        dateRow.add(makeLabel("Đến ngày:"), gbc);
-
-        // Date picker "Đến ngày" — chiếm nhiều không gian hơn
-        gbc.weightx = 0.4;
-        dateRow.add(makeDatePicker(txtToDate), gbc);
-
-        card.add(dateRow, BorderLayout.CENTER);
-
-        JButton btnView = new JButton("XEM DOANH THU");
-        btnView.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnView.setBackground(GOLD_COLOR);
-        btnView.setForeground(MAIN_BLUE);
-        btnView.setFocusPainted(false);
-        btnView.setBorder(new EmptyBorder(8, 20, 8, 20));
-        btnView.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnView.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btnView.setBackground(GOLD_COLOR.brighter()); }
-            public void mouseExited(MouseEvent e)  { btnView.setBackground(GOLD_COLOR); }
-        });
-        btnView.addActionListener(e -> loadData());
-
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 6));
-        btnPanel.setOpaque(false);
-        btnPanel.add(btnView);
-        card.add(btnPanel, BorderLayout.SOUTH);
+        btnRow.add(btnTuan);
+        btnRow.add(btnThang);
+        btnRow.add(btnQuy);
+        card.add(btnRow, BorderLayout.CENTER);
         return card;
+    }
+
+    private JButton makePeriodBtn(String text) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createLineBorder(BORDER_LIGHT));
+        btn.setBackground(Color.WHITE);
+        btn.setForeground(TEXT_DARK);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
+    private void activatePeriod(JButton active) {
+        for (JButton b : new JButton[]{btnTuan, btnThang, btnQuy}) {
+            b.setBackground(Color.WHITE);
+            b.setForeground(TEXT_DARK);
+            b.setBorder(BorderFactory.createLineBorder(BORDER_LIGHT));
+            b.repaint();
+        }
+        active.setBackground(MAIN_BLUE);
+        active.setForeground(Color.WHITE);
+        active.setBorder(BorderFactory.createLineBorder(MAIN_BLUE));
+        active.repaint();
     }
 
     // ── Bottom row: donut + right panel ──────────────────────────────────────
@@ -411,80 +398,87 @@ public class QuanLyThongKe extends JPanel {
      * ngày kết thúc là hôm nay, ngày bắt đầu là 30 ngày trước.
      * Được gọi trong constructor và khi {@link #refreshData()} được gọi.
      */
-    private void initDates() {
-        Calendar cal = Calendar.getInstance();
-        txtToDate.setText(sdf.format(cal.getTime()));
-        cal.add(Calendar.DAY_OF_MONTH, -30);
-        txtFromDate.setText(sdf.format(cal.getTime()));
-    }
-
-    /**
-     * Tải dữ liệu thống kê từ database theo khoảng ngày đã chọn.
-     *
-     * <p>Sử dụng {@link SwingWorker} để thực hiện các truy vấn database
-     * trên luồng nền (background thread), tránh đơ giao diện.
-     * Sau khi có kết quả, cập nhật UI trên Event Dispatch Thread.</p>
-     *
-     * <p>Các dữ liệu được tải:</p>
-     * <ul>
-     *   <li>Danh sách hóa đơn → tính tổng doanh thu và số lượng hóa đơn đã thanh toán</li>
-     *   <li>Doanh thu theo danh mục → cập nhật biểu đồ Donut và legend</li>
-     *   <li>Top 5 món ăn bán chạy theo ngày → cập nhật mini card và bảng xếp hạng</li>
-     * </ul>
-     */
     private void loadData() {
-        final String fromText = txtFromDate.getText();
-        final String toText   = txtToDate.getText();
+        Calendar cal = Calendar.getInstance();
+        final Date start, end;
+
+        switch (currentPeriod) {
+            case "TUAN": {
+                int dow  = cal.get(Calendar.DAY_OF_WEEK);
+                int diff = (dow == Calendar.SUNDAY) ? -6 : (Calendar.MONDAY - dow);
+                cal.add(Calendar.DAY_OF_YEAR, diff);
+                cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
+                start = cal.getTime();
+                cal.add(Calendar.DAY_OF_YEAR, 6);
+                cal.set(Calendar.HOUR_OF_DAY, 23); cal.set(Calendar.MINUTE, 59);
+                cal.set(Calendar.SECOND, 59); cal.set(Calendar.MILLISECOND, 999);
+                end = cal.getTime();
+                break;
+            }
+            case "QUY": {
+                int m      = cal.get(Calendar.MONTH);
+                int qStart = (m / 3) * 3;
+                cal.set(Calendar.MONTH, qStart);
+                cal.set(Calendar.DAY_OF_MONTH, 1);
+                cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
+                start = cal.getTime();
+                cal.set(Calendar.MONTH, qStart + 2);
+                cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
+                cal.set(Calendar.HOUR_OF_DAY, 23); cal.set(Calendar.MINUTE, 59);
+                cal.set(Calendar.SECOND, 59); cal.set(Calendar.MILLISECOND, 999);
+                end = cal.getTime();
+                break;
+            }
+            default: { // THANG
+                cal.set(Calendar.DAY_OF_MONTH, 1);
+                cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
+                start = cal.getTime();
+                cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
+                cal.set(Calendar.HOUR_OF_DAY, 23); cal.set(Calendar.MINUTE, 59);
+                cal.set(Calendar.SECOND, 59); cal.set(Calendar.MILLISECOND, 999);
+                end = cal.getTime();
+            }
+        }
+
+        final Timestamp tsFrom = new Timestamp(start.getTime());
+        final Timestamp tsTo   = new Timestamp(end.getTime());
+
         new SwingWorker<Object[], Void>() {
             @Override
             protected Object[] doInBackground() throws Exception {
-                Date fromDate = sdf.parse(fromText);
-                Date toDate   = sdf.parse(toText);
-
-                Calendar cal = Calendar.getInstance();
-
-                // Đặt giờ bắt đầu của ngày từ về 00:00:00
-                cal.setTime(fromDate);
-                cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0);
-                Timestamp tsFrom = new Timestamp(cal.getTimeInMillis());
-
-                // Đặt giờ kết thúc của ngày đến về 23:59:59
-                cal.setTime(toDate);
-                cal.set(Calendar.HOUR_OF_DAY, 23); cal.set(Calendar.MINUTE, 59); cal.set(Calendar.SECOND, 59);
-                Timestamp tsTo = new Timestamp(cal.getTimeInMillis());
-
-                List<HoaDon> invoices = hd_dao.getHoaDonByDateRange(fromDate, toDate);
-
-                // Chỉ đếm và tính tổng những hóa đơn có trạng thái = đã thanh toán
-                long paidCount = invoices.stream().filter(HoaDon::isTrangThai).count();
-                double revenue = invoices.stream().filter(HoaDon::isTrangThai).mapToDouble(HoaDon::getTongTien).sum();
-
-                Map<String, Double> catRevenue = ct_dao.getRevenueByCategoryInDateRange(tsFrom, tsTo);
-
-                // Top 5 món ăn bán chạy trong đúng khoảng ngày đã lọc
-                Map<String, Integer> top5 = ct_dao.getTop5SellingDishesByDateRange(tsFrom, tsTo);
-
-                return new Object[]{paidCount, revenue, catRevenue, top5};
+                // Dùng cùng tsFrom/tsTo cho tất cả queries — tránh lệch kết quả
+                List<HoaDon> invoices = hd_dao.getHoaDonByDateRange(tsFrom, tsTo);
+                long   paidCount = invoices.stream().filter(HoaDon::isTrangThai).count();
+                double revenue   = invoices.stream().filter(HoaDon::isTrangThai).mapToDouble(HoaDon::getTongTien).sum();
+                double profit    = ct_dao.getProfitByDateRange(tsFrom, tsTo);
+                Map<String, Double>  catRevenue = ct_dao.getRevenueByCategoryInDateRange(tsFrom, tsTo);
+                Map<String, Integer> top5       = ct_dao.getTop5SellingDishesByDateRange(tsFrom, tsTo);
+                return new Object[]{paidCount, revenue, profit, catRevenue, top5};
             }
 
             @Override
             @SuppressWarnings("unchecked")
             protected void done() {
                 try {
-                    Object[] r = get();
-                    long paidCount              = (long)                 r[0];
-                    double revenue              = (double)               r[1];
-                    Map<String, Double>  catRevenue = (Map<String, Double>)  r[2];
-                    Map<String, Integer> top5       = (Map<String, Integer>) r[3];
+                    Object[] r        = get();
+                    long   paidCount  = (long)   r[0];
+                    double revenue    = (double)  r[1];
+                    double profit     = (double)  r[2];
+                    Map<String, Double>  catRevenue = (Map<String, Double>)  r[3];
+                    Map<String, Integer> top5       = (Map<String, Integer>) r[4];
 
                     lblTotalRevenue.setText(df.format(revenue) + " VNĐ");
+                    lblTotalProfit.setText(df.format(profit)   + " VNĐ");
                     lblTotalInvoices.setText(String.valueOf(paidCount));
                     donutChart.setData(catRevenue);
                     updateLegend(catRevenue);
                     updateMiniCards(top5);
                     updateBestSellers(top5);
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(QuanLyThongKe.this, "Vui lòng chọn ngày hợp lệ.");
+                    JOptionPane.showMessageDialog(QuanLyThongKe.this, "Lỗi tải dữ liệu.");
                 }
             }
         }.execute();
@@ -634,66 +628,6 @@ public class QuanLyThongKe extends JPanel {
         bestSellersPanel.repaint();
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /**
-     * Tạo một JTextField chỉ đọc dùng để hiển thị ngày đã chọn.
-     * Người dùng không gõ trực tiếp mà chọn qua {@link CustomDatePicker}.
-     *
-     * @return JTextField được thiết kế sẵn (căn giữa, font đậm, nền trắng)
-     */
-    private JTextField createDateField() {
-        JTextField f = new JTextField();
-        f.setEditable(false);
-        f.setBackground(Color.WHITE);
-        f.setForeground(MAIN_BLUE);
-        f.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        f.setHorizontalAlignment(SwingConstants.CENTER);
-        f.setBorder(BorderFactory.createLineBorder(BORDER_LIGHT, 1));
-        return f;
-    }
-
-    /**
-     * Tạo một panel gồm ô hiển thị ngày và nút 📅 để mở {@link CustomDatePicker}.
-     * Khi nhấn nút lịch, dialog chọn ngày sẽ mở và cập nhật giá trị vào {@code field}.
-     *
-     * @param field JTextField sẽ nhận giá trị ngày sau khi người dùng chọn
-     * @return JPanel gồm text field + nút lịch bên phải
-     */
-    private JPanel makeDatePicker(JTextField field) {
-        JPanel p = new JPanel(new BorderLayout());
-        p.setOpaque(false);
-
-        JButton calBtn = new JButton("📅");
-        calBtn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
-        calBtn.setBackground(GOLD_COLOR);
-        calBtn.setForeground(MAIN_BLUE);
-        calBtn.setFocusPainted(false);
-        calBtn.setBorder(new EmptyBorder(4, 6, 4, 6));
-        calBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        calBtn.addActionListener(e -> {
-            CustomDatePicker dlg = new CustomDatePicker(
-                    (JFrame) SwingUtilities.getWindowAncestor(this), field);
-            dlg.setVisible(true);
-        });
-
-        p.add(field, BorderLayout.CENTER);
-        p.add(calBtn, BorderLayout.EAST);
-        return p;
-    }
-
-    /**
-     * Tạo một JLabel nhãn văn bản đơn giản với font và màu chuẩn.
-     *
-     * @param text Nội dung hiển thị (ví dụ: "Từ ngày:", "Đến ngày:")
-     * @return JLabel đã được định dạng sẵn
-     */
-    private JLabel makeLabel(String text) {
-        JLabel l = new JLabel(text);
-        l.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        l.setForeground(TEXT_DARK);
-        return l;
-    }
 
     // ── DonutChart ────────────────────────────────────────────────────────────
 
@@ -792,189 +726,4 @@ public class QuanLyThongKe extends JPanel {
         }
     }
 
-    // ── CustomDatePicker ──────────────────────────────────────────────────────
-
-    /**
-     * Dialog chọn ngày dạng lịch tháng tùy chỉnh.
-     *
-     * <p>Hiển thị lưới các ngày trong tháng, cho phép chuyển tháng bằng nút
-     * "&lt;" và "&gt;". Khi người dùng click vào một ngày, giá trị sẽ được
-     * ghi vào {@code target} theo định dạng dd/MM/yyyy và dialog tự đóng.</p>
-     *
-     * <p>Ngày hiện tại được đánh dấu bằng viền vàng,
-     * ngày đang được chọn được tô nền vàng.</p>
-     */
-    class CustomDatePicker extends JDialog {
-
-        /** JTextField sẽ nhận giá trị ngày sau khi người dùng chọn. */
-        private final JTextField target;
-
-        /** Calendar nội bộ để theo dõi tháng/năm đang hiển thị. */
-        private final Calendar cal;
-
-        /** Panel lưới chứa các nút ngày trong tháng. */
-        private JPanel daysPanel;
-
-        /** Label hiển thị tháng và năm ở header của dialog. */
-        private JLabel monthLabel;
-
-        /** Màu nền xanh nhạt của dialog lịch. */
-        private final Color CAL_BG  = Color.decode("#EBF5FB");
-
-        /** Màu chữ cho các ngày trong lưới, dùng MAIN_BLUE từ outer class. */
-        private final Color DAY_TEXT = MAIN_BLUE;
-
-        /**
-         * Khởi tạo dialog chọn ngày.
-         * Tự động đọc ngày hiện tại từ {@code target} để đặt tháng ban đầu.
-         *
-         * @param parent JFrame cha để dialog hiển thị đúng vị trí (modal)
-         * @param target JTextField sẽ nhận ngày sau khi người dùng chọn
-         */
-        public CustomDatePicker(JFrame parent, JTextField target) {
-            super(parent, "Chọn ngày", true);
-            this.target = target;
-            this.cal    = Calendar.getInstance();
-            try {
-                if (!target.getText().isEmpty()) cal.setTime(sdf.parse(target.getText()));
-            } catch (Exception ex) { /* Nếu parse lỗi, giữ nguyên ngày hôm nay */ }
-
-            setSize(320, 380);
-            setLocationRelativeTo(target);
-            setLayout(new BorderLayout());
-            getContentPane().setBackground(CAL_BG);
-
-            JPanel header = new JPanel(new BorderLayout());
-            header.setBackground(MAIN_BLUE);
-            header.setBorder(new EmptyBorder(5, 5, 5, 5));
-
-            JButton btnPrev = makeNavBtn("<");
-            JButton btnNext = makeNavBtn(">");
-            monthLabel = new JLabel("", SwingConstants.CENTER);
-            monthLabel.setForeground(GOLD_COLOR);
-            monthLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            updateHeader();
-
-            btnPrev.addActionListener(e -> { cal.add(Calendar.MONTH, -1); updateCalendar(); });
-            btnNext.addActionListener(e -> { cal.add(Calendar.MONTH, 1);  updateCalendar(); });
-
-            header.add(btnPrev, BorderLayout.WEST);
-            header.add(monthLabel, BorderLayout.CENTER);
-            header.add(btnNext, BorderLayout.EAST);
-            add(header, BorderLayout.NORTH);
-
-            daysPanel = new JPanel(new GridLayout(0, 7, 2, 2));
-            daysPanel.setBackground(CAL_BG);
-            daysPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-            updateCalendar();
-            add(daysPanel, BorderLayout.CENTER);
-        }
-
-        /**
-         * Tạo nút điều hướng tháng ("&lt;" hoặc "&gt;") với style vàng trên nền xanh.
-         *
-         * @param text Ký tự hiển thị trên nút (thường là "&lt;" hoặc "&gt;")
-         * @return JButton đã được định dạng sẵn
-         */
-        private JButton makeNavBtn(String text) {
-            JButton btn = new JButton(text);
-            btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            btn.setForeground(GOLD_COLOR);
-            btn.setContentAreaFilled(false);
-            btn.setBorder(BorderFactory.createLineBorder(GOLD_COLOR, 1));
-            btn.setFocusPainted(false);
-            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btn.setPreferredSize(new Dimension(45, 30));
-            return btn;
-        }
-
-        /**
-         * Cập nhật label tháng/năm ở header theo trạng thái hiện tại của {@code cal}.
-         * Hiển thị theo định dạng "THÁNG NĂM" viết hoa (ví dụ: "MAY 2026").
-         */
-        private void updateHeader() {
-            monthLabel.setText(new SimpleDateFormat("MMMM yyyy").format(cal.getTime()).toUpperCase());
-        }
-
-        /**
-         * Vẽ lại toàn bộ lưới ngày trong tháng theo trạng thái {@code cal} hiện tại.
-         *
-         * <p>Quy trình:</p>
-         * <ol>
-         *   <li>Xóa tất cả component cũ trong daysPanel</li>
-         *   <li>Thêm hàng tiêu đề CN, T2 ... T7</li>
-         *   <li>Thêm ô trống cho các ngày trước ngày đầu tháng</li>
-         *   <li>Thêm nút cho từng ngày trong tháng với highlight ngày hôm nay và ngày đang chọn</li>
-         * </ol>
-         */
-        private void updateCalendar() {
-            daysPanel.removeAll();
-            updateHeader();
-
-            // Hàng tiêu đề các ngày trong tuần
-            String[] days = {"CN", "T2", "T3", "T4", "T5", "T6", "T7"};
-            for (String d : days) {
-                JLabel l = new JLabel(d, SwingConstants.CENTER);
-                l.setFont(new Font("Segoe UI", Font.BOLD, 12));
-                l.setForeground(DAY_TEXT);
-                daysPanel.add(l);
-            }
-
-            Calendar temp = (Calendar) cal.clone();
-            temp.set(Calendar.DAY_OF_MONTH, 1);
-            int startDay    = temp.get(Calendar.DAY_OF_WEEK) - 1; // Số ô trống trước ngày 1
-            int daysInMonth = temp.getActualMaximum(Calendar.DAY_OF_MONTH);
-            Calendar today  = Calendar.getInstance();
-
-            // Thêm ô trống trước ngày đầu tháng để căn đúng cột ngày trong tuần
-            for (int i = 0; i < startDay; i++) daysPanel.add(new JLabel(""));
-
-            for (int i = 1; i <= daysInMonth; i++) {
-                final int day = i;
-                JButton btn = new JButton(String.valueOf(i));
-                btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-                btn.setFocusPainted(false);
-                btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                btn.setBackground(Color.WHITE);
-                btn.setForeground(DAY_TEXT);
-                btn.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 20)));
-
-                temp.set(Calendar.DAY_OF_MONTH, day);
-                boolean isSelected = sdf.format(temp.getTime()).equals(target.getText());
-                boolean isToday    = sdf.format(temp.getTime()).equals(sdf.format(today.getTime()));
-
-                // Highlight ngày đang được chọn (nền vàng) hoặc ngày hôm nay (viền vàng)
-                if (isSelected) {
-                    btn.setBackground(GOLD_COLOR);
-                    btn.setForeground(MAIN_BLUE);
-                } else if (isToday) {
-                    btn.setBorder(BorderFactory.createLineBorder(GOLD_COLOR, 2));
-                }
-
-                // Khi click: ghi ngày vào target và đóng dialog
-                btn.addActionListener(e -> {
-                    cal.set(Calendar.DAY_OF_MONTH, day);
-                    target.setText(sdf.format(cal.getTime()));
-                    dispose();
-                });
-
-                // Hiệu ứng hover: đổi nền xanh nhạt khi rê chuột qua
-                btn.addMouseListener(new MouseAdapter() {
-                    public void mouseEntered(MouseEvent e) {
-                        if (!btn.getBackground().equals(GOLD_COLOR))
-                            btn.setBackground(new Color(235, 245, 251));
-                    }
-                    public void mouseExited(MouseEvent e) {
-                        if (!btn.getBackground().equals(GOLD_COLOR))
-                            btn.setBackground(Color.WHITE);
-                    }
-                });
-
-                daysPanel.add(btn);
-            }
-
-            daysPanel.revalidate();
-            daysPanel.repaint();
-        }
-    }
 }

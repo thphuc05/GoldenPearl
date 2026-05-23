@@ -2,7 +2,12 @@ package gui;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.FlatLightLaf;
+import dao.NhanVien_DAO;
+import dao.TaiKhoan_DAO;
+import entity.NhanVien;
 import lib.FontLoader;
+import util.EmailService;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -13,7 +18,12 @@ import java.util.Map;
 import java.util.Properties;
 
 public class ForgotPassword extends JFrame {
-    // Khung mờ bo tròn (giống Login)
+
+    // ── Bước hiện tại: 1 = nhập email, 2 = nhập OTP + mật khẩu mới ──────────
+    private int step = 1;
+    private NhanVien foundNhanVien = null;
+
+    // ── Panel khung mờ bo tròn ────────────────────────────────────────────────
     private JPanel panel = new JPanel() {
         @Override
         protected void paintComponent(Graphics g) {
@@ -26,66 +36,68 @@ public class ForgotPassword extends JFrame {
         }
     };
 
-    private JLabel screenTitle = new JLabel("Khôi phục mật khẩu");
+    // ── Labels ────────────────────────────────────────────────────────────────
+    private JLabel screenTitle    = new JLabel("Khôi phục mật khẩu");
     private JLabel restaurantName = new JGradientLabel("GOLDEN PEARL");
-    private JLabel phoneLabel = new JLabel("Số điện thoại");
-    private JLabel otpLabel = new JLabel("Mã xác nhận");
+    private JLabel lblStep        = new JLabel("Bước 1 / 2 – Nhập email tài khoản");
 
-    private JTextField txtPhone = new JTextField(30);
-    private JTextField txtOTP = new JTextField(30);
+    // ── Bước 1 ────────────────────────────────────────────────────────────────
+    private JLabel     emailLabel  = new JLabel("Email");
+    private JTextField txtEmail    = new JTextField(30);
+    private JButton    btnSendOTP  = new JButton("GỬI MÃ OTP");
 
-    private JButton btnSendOTP = new JButton("GỬI MÃ");
-    private JButton btnConfirm = new JButton("XÁC NHẬN");
+    // ── Bước 2 ────────────────────────────────────────────────────────────────
+    private JLabel         otpLabel    = new JLabel("Mã OTP");
+    private JTextField     txtOTP      = new JTextField(30);
+    private JLabel         newPwLabel  = new JLabel("Mật khẩu mới");
+    private JPasswordField txtNewPw    = new JPasswordField(30);
+    private JLabel         confirmLabel = new JLabel("Xác nhận MK");
+    private JPasswordField txtConfirm  = new JPasswordField(30);
+    private JButton        btnConfirm  = new JButton("ĐỔI MẬT KHẨU");
+
+    // ── Chung ─────────────────────────────────────────────────────────────────
     private JButton btnBack = new JButton("QUAY LẠI");
 
-    private static final int SCREEN_WIDTH = 1180;
-    private static final int SCREEN_HEIGHT = 820;
-
     public ForgotPassword() {
-        super("Quên mật khẩu - Golden Pearl");
+        super("Quên mật khẩu – Golden Pearl");
         initConfiguration();
         initUI();
         initEvents();
     }
 
+    // ── Cấu hình font + theme ─────────────────────────────────────────────────
     private void initConfiguration() {
         FontLoader.registerFont("data/fonts/InstrumentSerif-Regular.ttf");
         FontLoader.registerFont("data/fonts/Inter-Medium.otf");
         FontLoader.registerFont("data/fonts/Inter-Bold.otf");
-
         try {
             Properties props = new Properties();
             File themeFile = new File("themes/DefaultTheme.properties");
             if (themeFile.exists()) {
-                try (FileInputStream fis = new FileInputStream(themeFile)) {
-                    props.load(fis);
-                }
+                try (FileInputStream fis = new FileInputStream(themeFile)) { props.load(fis); }
                 FlatLaf.registerCustomDefaultsSource(themeFile);
                 com.formdev.flatlaf.FlatLaf.setGlobalExtraDefaults((Map) props);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception ignored) {}
         FlatLightLaf.setup();
     }
 
+    // ── Giao diện ─────────────────────────────────────────────────────────────
     private void initUI() {
-        setExtendedState(JFrame.MAXIMIZED_BOTH); // Phóng to toàn màn hình
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(true);
         getContentPane().setLayout(new BorderLayout());
 
-        // Background
         JPanelWithBackground bg;
         try {
-            bg = new JPanelWithBackground("data/image/Mẫu 1/ForgetBG.png");
+            bg = new JPanelWithBackground("data/image/Mẫu 1/LoginBG.jpg");
         } catch (IOException e) {
             bg = new JPanelWithBackground();
         }
-        bg.setLayout(new GridBagLayout()); // Dùng GridBagLayout để căn giữa
+        bg.setLayout(new GridBagLayout());
         getContentPane().add(bg, BorderLayout.CENTER);
 
-        // Container chính
         JPanel centerContainer = new JPanel();
         centerContainer.setOpaque(false);
         centerContainer.setLayout(new BoxLayout(centerContainer, BoxLayout.Y_AXIS));
@@ -102,82 +114,212 @@ public class ForgotPassword extends JFrame {
         restaurantName.setPreferredSize(new Dimension(800, 130));
         restaurantName.setMaximumSize(new Dimension(800, 130));
 
-        // Panel chính
-        int panelWidth = 704;
-        int panelHeight = 350;
+        // Panel khung
         panel.setOpaque(false);
         panel.setLayout(null);
-        panel.setPreferredSize(new Dimension(panelWidth, panelHeight));
-        panel.setMaximumSize(new Dimension(panelWidth, panelHeight));
+        panel.setPreferredSize(new Dimension(704, 380));
+        panel.setMaximumSize(new Dimension(704, 380));
         panel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Nội dung bên trong panel
-        phoneLabel.setBounds(50, 50, 250, 50);
-        phoneLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
-        phoneLabel.setForeground(Color.BLACK);
-        txtPhone.setBounds(300, 50, 350, 50);
-        txtPhone.setFont(new Font("Inter Medium", Font.PLAIN, 23));
-
-        otpLabel.setBounds(50, 130, 250, 50);
-        otpLabel.setFont(new Font("Inter Bold", Font.BOLD, 30));
-        otpLabel.setForeground(Color.BLACK);
-        txtOTP.setBounds(300, 130, 230, 50);
-        txtOTP.setFont(new Font("Inter Medium", Font.PLAIN, 23));
-
-        btnSendOTP.setBounds(540, 130, 110, 50);
-        btnSendOTP.setFont(new Font("Inter Bold", Font.BOLD, 14));
-
-        // Nút chức năng phía dưới
-        btnBack.setBounds(100, 240, 236, 50);
-        btnBack.setBackground(Color.BLACK);
-        btnBack.setForeground(Color.WHITE);
-        btnBack.setFont(new Font("Inter Bold", Font.BOLD, 20));
-
-        btnConfirm.setBounds(410, 240, 181, 50);
-        btnConfirm.setFont(new Font("Inter Bold", Font.BOLD, 20));
-
-        panel.add(phoneLabel);
-        panel.add(txtPhone);
-        panel.add(otpLabel);
-        panel.add(txtOTP);
-        panel.add(btnSendOTP);
-        panel.add(btnBack);
-        panel.add(btnConfirm);
+        buildStep1UI();
 
         centerContainer.add(screenTitle);
         centerContainer.add(restaurantName);
-        centerContainer.add(Box.createVerticalStrut(20));
+        JPanel spacer = new JPanel();
+        spacer.setOpaque(false);
+        spacer.setPreferredSize(new Dimension(1, 20));
+        spacer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+        centerContainer.add(spacer);
         centerContainer.add(panel);
 
         bg.add(centerContainer, new GridBagConstraints());
-
         SwingUtilities.updateComponentTreeUI(this);
     }
 
+    // ── Bước 1: nhập email ────────────────────────────────────────────────────
+    private void buildStep1UI() {
+        panel.removeAll();
+
+        lblStep.setBounds(50, 15, 600, 30);
+        lblStep.setFont(new Font("Inter Bold", Font.BOLD, 16));
+        lblStep.setForeground(new Color(60, 120, 200));
+        lblStep.setText("Bước 1 / 2 – Nhập email tài khoản");
+        panel.add(lblStep);
+
+        emailLabel.setBounds(50, 70, 250, 50);
+        emailLabel.setFont(new Font("Inter Bold", Font.BOLD, 28));
+        emailLabel.setForeground(Color.BLACK);
+        panel.add(emailLabel);
+
+        txtEmail.setBounds(300, 70, 350, 50);
+        txtEmail.setFont(new Font("Inter Medium", Font.PLAIN, 22));
+        panel.add(txtEmail);
+
+        btnBack.setBounds(100, 280, 200, 50);
+        btnBack.setBackground(Color.BLACK);
+        btnBack.setForeground(Color.WHITE);
+        btnBack.setFont(new Font("Inter Bold", Font.BOLD, 18));
+        panel.add(btnBack);
+
+        btnSendOTP.setBounds(360, 280, 240, 50);
+        btnSendOTP.setFont(new Font("Inter Bold", Font.BOLD, 18));
+        panel.add(btnSendOTP);
+
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    // ── Bước 2: nhập OTP + mật khẩu mới ─────────────────────────────────────
+    private void buildStep2UI(String email) {
+        panel.removeAll();
+
+        lblStep.setBounds(50, 15, 600, 30);
+        lblStep.setFont(new Font("Inter Bold", Font.BOLD, 16));
+        lblStep.setForeground(new Color(40, 160, 80));
+        lblStep.setText("Bước 2 / 2 – OTP đã gửi tới: " + email);
+        panel.add(lblStep);
+
+        otpLabel.setBounds(50, 60, 240, 45);
+        otpLabel.setFont(new Font("Inter Bold", Font.BOLD, 26));
+        otpLabel.setForeground(Color.BLACK);
+        panel.add(otpLabel);
+        txtOTP.setBounds(300, 60, 350, 45);
+        txtOTP.setFont(new Font("Inter Medium", Font.PLAIN, 22));
+        panel.add(txtOTP);
+
+        newPwLabel.setBounds(50, 125, 240, 45);
+        newPwLabel.setFont(new Font("Inter Bold", Font.BOLD, 26));
+        newPwLabel.setForeground(Color.BLACK);
+        panel.add(newPwLabel);
+        txtNewPw.setBounds(300, 125, 350, 45);
+        panel.add(txtNewPw);
+
+        confirmLabel.setBounds(50, 190, 240, 45);
+        confirmLabel.setFont(new Font("Inter Bold", Font.BOLD, 26));
+        confirmLabel.setForeground(Color.BLACK);
+        panel.add(confirmLabel);
+        txtConfirm.setBounds(300, 190, 350, 45);
+        panel.add(txtConfirm);
+
+        btnBack.setBounds(100, 295, 200, 50);
+        panel.add(btnBack);
+
+        btnConfirm.setBounds(360, 295, 240, 50);
+        btnConfirm.setFont(new Font("Inter Bold", Font.BOLD, 18));
+        panel.add(btnConfirm);
+
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    // ── Sự kiện ───────────────────────────────────────────────────────────────
     private void initEvents() {
         btnBack.addActionListener(e -> {
-            dispose();
-            SwingUtilities.invokeLater(Login::new);
+            if (step == 2) {
+                step = 1;
+                foundNhanVien = null;
+                buildStep1UI();
+            } else {
+                dispose();
+                SwingUtilities.invokeLater(Login::new);
+            }
+        });
+
+        btnSendOTP.addActionListener(e -> {
+            String email = txtEmail.getText().trim();
+            if (email.isEmpty()) {
+                warn("Vui lòng nhập địa chỉ email!"); return;
+            }
+            if (!email.matches("^[\\w.+-]+@[\\w-]+\\.[\\w.]+$")) {
+                warn("Địa chỉ email không hợp lệ!"); return;
+            }
+
+            btnSendOTP.setEnabled(false);
+            btnSendOTP.setText("ĐANG GỬI...");
+
+            new SwingWorker<NhanVien, Void>() {
+                @Override
+                protected NhanVien doInBackground() throws Exception {
+                    NhanVien_DAO dao = new NhanVien_DAO();
+                    NhanVien nv = dao.getNhanVienByEmail(email);
+                    if (nv == null) return null;
+                    EmailService.sendOTP(email);
+                    return nv;
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        NhanVien nv = get();
+                        if (nv == null) {
+                            warn("Không tìm thấy nhân viên với email này!");
+                        } else {
+                            foundNhanVien = nv;
+                            step = 2;
+                            buildStep2UI(email);
+                        }
+                    } catch (Exception ex) {
+                        Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+                        cause.printStackTrace();
+                        warn("Không thể gửi email!\nKiểm tra lại:\n"
+                                + "1. Cấu hình mail trong db.properties\n"
+                                + "2. Kết nối internet\n\nLỗi: " + cause.getMessage());
+                    } finally {
+                        btnSendOTP.setEnabled(true);
+                        btnSendOTP.setText("GỬI MÃ OTP");
+                    }
+                }
+            }.execute();
         });
 
         btnConfirm.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Tính năng xác nhận đang được xây dựng!");
+            String otp     = txtOTP.getText().trim();
+            String newPw   = new String(txtNewPw.getPassword());
+            String confirm = new String(txtConfirm.getPassword());
+            String email   = lblStep.getText().replace("Bước 2 / 2 – OTP đã gửi tới: ", "").trim();
+
+            if (otp.isEmpty() || newPw.isEmpty() || confirm.isEmpty()) {
+                warn("Vui lòng điền đầy đủ thông tin!"); return;
+            }
+            if (newPw.length() < 6) {
+                warn("Mật khẩu mới phải có ít nhất 6 ký tự!"); return;
+            }
+            if (!newPw.equals(confirm)) {
+                warn("Xác nhận mật khẩu không khớp!"); return;
+            }
+            if (!EmailService.verifyOTP(email, otp)) {
+                warn("Mã OTP sai hoặc đã hết hạn!\nVui lòng quay lại và gửi mã mới."); return;
+            }
+
+            TaiKhoan_DAO dao = new TaiKhoan_DAO();
+            boolean ok = dao.updateMatKhauByMaTK(foundNhanVien.getTaiKhoan().getMaTK(), newPw);
+            if (ok) {
+                JOptionPane.showMessageDialog(this,
+                        "Đổi mật khẩu thành công!\nVui lòng đăng nhập lại.",
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                dispose();
+                SwingUtilities.invokeLater(Login::new);
+            } else {
+                warn("Lỗi hệ thống khi cập nhật mật khẩu. Vui lòng thử lại!");
+            }
         });
     }
 
-    // --- Inner Classes ---
+    private void warn(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Thông báo", JOptionPane.WARNING_MESSAGE);
+    }
+
+    // ── Inner classes (giống Login) ───────────────────────────────────────────
     public class JPanelWithBackground extends JPanel {
         private Image backgroundImage;
         public JPanelWithBackground(String fileName) throws IOException {
             backgroundImage = ImageIO.read(new File(fileName));
         }
         public JPanelWithBackground() {}
-        @Override
-        protected void paintComponent(Graphics g) {
+        @Override protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            if (backgroundImage != null) {
+            if (backgroundImage != null)
                 g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
-            }
         }
     }
 
@@ -185,8 +327,7 @@ public class ForgotPassword extends JFrame {
         private Color color1 = Color.decode("#FF4B2B");
         private Color color2 = Color.decode("#FFAD06");
         public JGradientLabel(String text) { super(text); }
-        @Override
-        protected void paintComponent(Graphics g) {
+        @Override protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             FontMetrics fm = g2.getFontMetrics();

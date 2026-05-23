@@ -3,10 +3,11 @@ package entity;
 public enum TrangThaiBan {
 	Trong("Trống"),
 	DaDuocDat("Đã được đặt"),
-	DangDuocSuDung("Đang được sử dụng");
+	DangDuocSuDung("Đang được sử dụng"),
+	BaoTri("Bảo trì");
 
 	private final String moTa;
-	
+
 	TrangThaiBan(String moTa) {
         this.moTa = moTa;
     }
@@ -22,11 +23,10 @@ public enum TrangThaiBan {
                 return tt;
             }
         }
-        // Fallback for database values if they are different
         if (value.equals("TRONG")) return Trong;
         if (value.equals("DAT_TRUOC")) return DaDuocDat;
         if (value.equals("DANG_SD")) return DangDuocSuDung;
-        
-        throw new IllegalArgumentException("Không tìm thấy trạng thái: " + value);
+        if (value.equals("BAO_TRI")) return BaoTri;
+        return Trong;
     }
 }

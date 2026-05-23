@@ -31,9 +31,8 @@ public class HoaDon {
     private KhuyenMai khuyenMai;
     private KhachHang khachHang;
     private double    tienCoc;
-
-    /** Ca làm mà hóa đơn này thuộc về. Có thể NULL với dữ liệu cũ. */
-
+    private String    maCa;
+    private Date      thoiGianRoiThucTe;
 
     // ── Constructors ──────────────────────────────────────────────────────
 
@@ -134,6 +133,12 @@ public class HoaDon {
 
     public double getTienCoc() { return tienCoc; }
     public void setTienCoc(double tienCoc) { this.tienCoc = tienCoc; }
+
+    public String getMaCa() { return maCa; }
+    public void setMaCa(String maCa) { this.maCa = maCa; }
+
+    public Date getThoiGianRoiThucTe() { return thoiGianRoiThucTe; }
+    public void setThoiGianRoiThucTe(Date thoiGianRoiThucTe) { this.thoiGianRoiThucTe = thoiGianRoiThucTe; }
 
     // ── Business helpers ────────────────────────────────────────────────────
 

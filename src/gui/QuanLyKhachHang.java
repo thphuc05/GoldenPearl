@@ -3,6 +3,7 @@ package gui;
 import dao.ChiTietHoaDon_DAO;
 import dao.HoaDon_DAO;
 import dao.KhachHang_DAO;
+import dao.LichSuDiem_DAO;
 import entity.HoaDon;
 import entity.KhachHang;
 
@@ -27,13 +28,17 @@ public class QuanLyKhachHang extends JPanel {
     private JLabel lblTotal;
     private JTable table;
     private DefaultTableModel tableModel;
-    private KhachHang_DAO kh_dao;
-    private HoaDon_DAO hd_dao;
+    private KhachHang_DAO   kh_dao;
+    private HoaDon_DAO      hd_dao;
     private ChiTietHoaDon_DAO ct_dao;
+    private LichSuDiem_DAO  lsd_dao = new LichSuDiem_DAO();
 
-    private List<KhachHang> allData = new ArrayList<>();
+    private List<KhachHang>    allData = new ArrayList<>();
+    private Map<String,Integer> diemMap = new HashMap<>();
     private int currentPage = 1;
     private int pageSize = 22;
+
+    private static final Color BG_LIGHT = Color.decode("#F0F2F5");
 
     private final Color MAIN_BLUE    = Color.decode("#0B3D59");
     private final Color GOLD_COLOR   = Color.decode("#C5A059");
@@ -50,21 +55,30 @@ public class QuanLyKhachHang extends JPanel {
         hd_dao = new HoaDon_DAO();
         ct_dao = new ChiTietHoaDon_DAO();
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(BG_LIGHT);
 
-        JLabel lblTitle = new JLabel("QUẢN LÝ KHÁCH HÀNG", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Inter Bold", Font.BOLD, 28));
-        lblTitle.setForeground(TEXT_DARK);
-        lblTitle.setBorder(new EmptyBorder(14, 0, 6, 0));
-        add(lblTitle, BorderLayout.NORTH);
+        JPanel pHeader = new JPanel(new BorderLayout());
+        pHeader.setOpaque(true);
+        pHeader.setBackground(MAIN_BLUE);
+        pHeader.setBorder(new EmptyBorder(10, 24, 10, 24));
+        JLabel lblTitle = new JLabel("QUẢN LÝ KHÁCH HÀNG");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitle.setForeground(GOLD_COLOR);
+        JLabel lblSub = new JLabel("Danh sách khách hàng thành viên và điểm tích lũy");
+        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSub.setForeground(new Color(180, 200, 220));
+        JPanel pTBox = new JPanel(); pTBox.setLayout(new BoxLayout(pTBox, BoxLayout.Y_AXIS)); pTBox.setOpaque(false);
+        pTBox.add(lblTitle); pTBox.add(Box.createVerticalStrut(2)); pTBox.add(lblSub);
+        pHeader.add(pTBox, BorderLayout.WEST);
+        add(pHeader, BorderLayout.NORTH);
 
         JPanel pMain = new JPanel(new BorderLayout(0, 0));
-        pMain.setBackground(Color.WHITE);
-        pMain.setBorder(new EmptyBorder(0, 14, 14, 14));
+        pMain.setOpaque(false);
+        pMain.setBorder(new EmptyBorder(0, 20, 20, 20));
         pMain.add(createFilterBar(), BorderLayout.NORTH);
 
         JPanel pContent = new JPanel(new GridLayout(1, 2, 14, 0));
-        pContent.setBackground(Color.WHITE);
+        pContent.setOpaque(false);
         pContent.add(createLeftPanel());
         pContent.add(createRightPanel());
         pMain.add(pContent, BorderLayout.CENTER);
@@ -78,14 +92,22 @@ public class QuanLyKhachHang extends JPanel {
     // ── Filter bar ───────────────────────────────────────────────────────────────
     private JPanel createFilterBar() {
         JPanel pOuter = new JPanel(new BorderLayout());
-        pOuter.setBackground(Color.WHITE);
+        pOuter.setOpaque(false);
         pOuter.setBorder(new EmptyBorder(0, 0, 8, 0));
 
-        JPanel pBar = new JPanel(new BorderLayout(0, 6));
-        pBar.setBackground(Color.WHITE);
-        pBar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR),
-                new EmptyBorder(8, 12, 10, 12)));
+        JPanel pBar = new JPanel(new BorderLayout(0, 6)) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                g2.setColor(BORDER_COLOR);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                g2.dispose();
+            }
+        };
+        pBar.setOpaque(false);
+        pBar.setBorder(new EmptyBorder(8, 12, 10, 12));
 
         JLabel lblSection = new JLabel("BỘ LỌC TÌM KIẾM");
         lblSection.setFont(new Font("Inter Bold", Font.BOLD, 12));
@@ -96,11 +118,11 @@ public class QuanLyKhachHang extends JPanel {
         pBar.add(lblSection, BorderLayout.NORTH);
 
         JPanel pRow = new JPanel(new BorderLayout(8, 0));
-        pRow.setBackground(Color.WHITE);
+        pRow.setOpaque(false);
 
         // Left: search by name/phone
         JPanel pLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        pLeft.setBackground(Color.WHITE);
+        pLeft.setOpaque(false);
         JLabel lblLbl = new JLabel("Tìm kiếm (Tên/SĐT):");
         lblLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblLbl.setForeground(TEXT_DARK);
@@ -111,7 +133,7 @@ public class QuanLyKhachHang extends JPanel {
 
         // Center: date filter
         JPanel pDate = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        pDate.setBackground(Color.WHITE);
+        pDate.setOpaque(false);
         JLabel lblFrom = new JLabel("Từ ngày:");
         lblFrom.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblFrom.setForeground(TEXT_DARK);
@@ -129,7 +151,7 @@ public class QuanLyKhachHang extends JPanel {
         pRow.add(pDate, BorderLayout.CENTER);
 
         JPanel pBtnRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        pBtnRow.setBackground(Color.WHITE);
+        pBtnRow.setOpaque(false);
         btnSearch     = mkColorBtn("Tìm kiếm", MAIN_BLUE, Color.WHITE);
         btnDateSearch = mkColorBtn("Lọc ngày", GOLD_COLOR, MAIN_BLUE);
         JButton btnRefresh = mkColorBtn("Làm mới", Color.WHITE, TEXT_DARK);
@@ -177,9 +199,18 @@ public class QuanLyKhachHang extends JPanel {
 
     // ── LEFT: table + pagination ──────────────────────────────────────────────
     private JPanel createLeftPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 0));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+        JPanel panel = new JPanel(new BorderLayout(0, 0)) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                g2.setColor(BORDER_COLOR);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                g2.dispose();
+            }
+        };
+        panel.setOpaque(false);
 
         JLabel hdr = new JLabel("  DANH SÁCH KHÁCH HÀNG");
         hdr.setFont(new Font("Inter Bold", Font.BOLD, 13));
@@ -189,19 +220,19 @@ public class QuanLyKhachHang extends JPanel {
                 new EmptyBorder(10, 6, 10, 6)));
         panel.add(hdr, BorderLayout.NORTH);
 
-        String[] cols = {"Mã KH", "Tên khách hàng", "Số điện thoại"};
+        String[] cols = {"Mã KH", "Tên khách hàng", "Số điện thoại", "Điểm tích lũy"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         table = new JTable(tableModel);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        table.setRowHeight(32);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        table.setRowHeight(40);
         table.setGridColor(new Color(235, 235, 235));
         table.setShowVerticalLines(false);
         table.setBackground(Color.WHITE);
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        table.getTableHeader().setBackground(new Color(248, 248, 248));
-        table.getTableHeader().setPreferredSize(new Dimension(0, 35));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 15));
+        table.getTableHeader().setBackground(new Color(248, 249, 251));
+        table.getTableHeader().setPreferredSize(new Dimension(0, 42));
         table.setSelectionBackground(SELECT_BG);
         table.setSelectionForeground(TEXT_DARK);
 
@@ -209,22 +240,24 @@ public class QuanLyKhachHang extends JPanel {
         center.setHorizontalAlignment(SwingConstants.CENTER);
         table.getColumnModel().getColumn(0).setCellRenderer(center);
         table.getColumnModel().getColumn(0).setPreferredWidth(65);
-        table.getColumnModel().getColumn(1).setPreferredWidth(150);
-        table.getColumnModel().getColumn(2).setPreferredWidth(105);
+        table.getColumnModel().getColumn(1).setPreferredWidth(160);
+        table.getColumnModel().getColumn(2).setPreferredWidth(115);
+        table.getColumnModel().getColumn(3).setPreferredWidth(100);
 
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(null);
+        scroll.getViewport().setBackground(Color.WHITE);
         panel.add(scroll, BorderLayout.CENTER);
 
         // Pagination bottom bar (no add button)
         JPanel pPaging = new JPanel(new BorderLayout(6, 0));
-        pPaging.setBackground(Color.WHITE);
+        pPaging.setOpaque(false);
         pPaging.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(1, 0, 0, 0, BORDER_COLOR),
                 new EmptyBorder(6, 8, 6, 8)));
 
         JPanel pNavRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-        pNavRow.setBackground(Color.WHITE);
+        pNavRow.setOpaque(false);
         btnPrevPage = mkColorBtn("< Trang trước", Color.WHITE, TEXT_DARK);
         btnNextPage = mkColorBtn("Trang tiếp >", Color.WHITE, TEXT_DARK);
         cbPageSize = new JComboBox<>(new String[]{"10", "20", "50"});
@@ -244,9 +277,18 @@ public class QuanLyKhachHang extends JPanel {
 
     // ── RIGHT: form + action buttons ──────────────────────────────────────────
     private JPanel createRightPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+        JPanel panel = new JPanel(new BorderLayout()) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                g2.setColor(BORDER_COLOR);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                g2.dispose();
+            }
+        };
+        panel.setOpaque(false);
 
         JLabel hdr = new JLabel("  THÔNG TIN CHI TIẾT KHÁCH HÀNG");
         hdr.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -257,7 +299,7 @@ public class QuanLyKhachHang extends JPanel {
         panel.add(hdr, BorderLayout.NORTH);
 
         JPanel pForm = new JPanel(new GridBagLayout());
-        pForm.setBackground(Color.WHITE);
+        pForm.setOpaque(false);
         pForm.setBorder(new EmptyBorder(16, 20, 16, 20));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -283,7 +325,7 @@ public class QuanLyKhachHang extends JPanel {
 
         // Action buttons at bottom (no add button)
         JPanel pBtns = new JPanel(new GridLayout(1, 3, 8, 0));
-        pBtns.setBackground(Color.WHITE);
+        pBtns.setOpaque(false);
         pBtns.setBorder(BorderFactory.createCompoundBorder(
                 new MatteBorder(1, 0, 0, 0, BORDER_COLOR),
                 new EmptyBorder(10, 12, 10, 12)));
@@ -300,10 +342,10 @@ public class QuanLyKhachHang extends JPanel {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     private JPanel mkFieldGroup(String label, JComponent field) {
-        JPanel g = new JPanel(new BorderLayout(0, 4));
+        JPanel g = new JPanel(new BorderLayout(0, 5));
         g.setOpaque(false);
         JLabel lbl = new JLabel(label);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lbl.setForeground(TEXT_DARK);
         g.add(lbl, BorderLayout.NORTH);
         g.add(field, BorderLayout.CENTER);
@@ -312,12 +354,12 @@ public class QuanLyKhachHang extends JPanel {
 
     private JTextField mkField() {
         JTextField f = new JTextField();
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         f.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER_COLOR),
                 BorderFactory.createEmptyBorder(5, 8, 5, 8)));
         f.setBackground(Color.WHITE);
-        f.setPreferredSize(new Dimension(180, 32));
+        f.setPreferredSize(new Dimension(180, 38));
         return f;
     }
 
@@ -338,7 +380,7 @@ public class QuanLyKhachHang extends JPanel {
                 super.paintComponent(g);
             }
         };
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn.setForeground(fg);
         btn.setContentAreaFilled(false);
         btn.setOpaque(false);
@@ -424,15 +466,24 @@ public class QuanLyKhachHang extends JPanel {
     }
 
     private void loadDataToTable() {
-        new SwingWorker<List<KhachHang>, Void>() {
+        new SwingWorker<Object[], Void>() {
             @Override
-            protected List<KhachHang> doInBackground() {
-                return kh_dao.getAllKhachHang();
+            protected Object[] doInBackground() {
+                List<KhachHang> ds = kh_dao.getAllKhachHang();
+                Map<String,Integer> dm = new HashMap<>();
+                if (ds != null) {
+                    for (KhachHang kh : ds)
+                        dm.put(kh.getMaKH(), lsd_dao.getTongDiem(kh.getMaKH()));
+                }
+                return new Object[]{ds, dm};
             }
+            @SuppressWarnings("unchecked")
             @Override
             protected void done() {
                 try {
-                    List<KhachHang> ds = get();
+                    Object[] r = get();
+                    List<KhachHang> ds = (List<KhachHang>) r[0];
+                    diemMap = (Map<String,Integer>) r[1];
                     allData = ds != null ? ds : new ArrayList<>();
                     currentPage = 1;
                     applyPage();
@@ -486,7 +537,8 @@ public class QuanLyKhachHang extends JPanel {
         int to   = Math.min(from + pageSize, total);
         for (int i = from; i < to; i++) {
             KhachHang kh = allData.get(i);
-            tableModel.addRow(new Object[]{kh.getMaKH(), kh.getTenKH(), kh.getSoDT()});
+            int diem = diemMap.getOrDefault(kh.getMaKH(), 0);
+            tableModel.addRow(new Object[]{kh.getMaKH(), kh.getTenKH(), kh.getSoDT(), diem + " điểm"});
         }
         if (lblTotal != null) lblTotal.setText("Tổng: " + total + " khách hàng");
     }

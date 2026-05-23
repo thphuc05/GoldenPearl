@@ -15,7 +15,7 @@ public class TaiKhoan {
         this.vaiTro = vaiTro;
     }
 
-    public String getMaTK() { return maTK; }
+    public String getMaTK()  { return maTK; }
     public void setMaTK(String maTK) { this.maTK = maTK; }
 
     public String getTenTK() { return tenTK; }

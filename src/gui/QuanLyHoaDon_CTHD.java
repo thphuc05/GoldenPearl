@@ -170,20 +170,30 @@ public class QuanLyHoaDon_CTHD extends JDialog {
         p.add(mkSolidLine(R_LINE));
         p.add(Box.createVerticalStrut(8));
 
-        // ── Tổng tiền, cọc, tổng cộng ─────────────────────────────────
-        double coc     = hd.getTienCoc();
-        double tongCong = tongTienMon - coc;
+        // ── Tổng tiền, cọc, giảm giá, thực trả ───────────────────────
+        double coc      = hd.getTienCoc();
+        // Suy ngược: giảm giá = tổng món - số tiền thực thu (lưu trong tongTien)
+        double tongGiam = Math.max(0, tongTienMon - hd.getTongTien());
+        double conLai   = hd.getTrangThaiThanhToan() == TrangThaiThanhToan.DA_THANH_TOAN
+                          ? Math.max(0, hd.getTongTien() - coc)
+                          : Math.max(0, tongTienMon - coc);
 
-        p.add(mkAmountRow("Tổng tiền", fmt.format(tongTienMon) + "đ", false));
+        p.add(mkAmountRow("Tổng tiền gốc", fmt.format(tongTienMon) + "đ", false));
         p.add(Box.createVerticalStrut(3));
-        p.add(mkAmountRow("Tiền cọc",  "-" + fmt.format(coc) + "đ",  false));
+        p.add(mkAmountRow("Tiền cọc", "-" + fmt.format(coc) + "đ", false));
+
+        if (tongGiam > 0) {
+            p.add(Box.createVerticalStrut(3));
+            p.add(mkAmountRow("Giảm giá", "-" + fmt.format(tongGiam) + "đ", false, R_ORANGE));
+        }
+
         p.add(Box.createVerticalStrut(5));
         p.add(mkSolidLine(R_LINE));
         p.add(Box.createVerticalStrut(5));
 
-        String tcLabel = tongCong < 0 ? "Số Tiền Hoàn Lại" : "Số Tiền Thanh Toán";
-        String tcValue = fmt.format(Math.abs(tongCong)) + "đ";
-        Color  tcColor = tongCong < 0 ? R_RED : R_GOLD;
+        String tcLabel = conLai < 0 ? "Số Tiền Hoàn Lại" : "Số Tiền Thanh Toán";
+        String tcValue = fmt.format(Math.abs(conLai)) + "đ";
+        Color  tcColor = conLai < 0 ? R_RED : R_GOLD;
         p.add(mkAmountRow(tcLabel, tcValue, true, tcColor));
         p.add(Box.createVerticalStrut(8));
 

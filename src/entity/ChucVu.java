@@ -2,7 +2,8 @@ package entity;
 
 public enum ChucVu {
     NHAN_VIEN("Nhân Viên", "NV"),
-    QUAN_LY("Quản Lý", "QL");
+    QUAN_LY("Quản Lý", "QL"),
+    BEP("Bếp", "BEP");
 
     private final String tenHienThi;   // Tên để hiển thị trên UI
     private final String tenDatabase;  // Tên lưu trong CSDL
@@ -38,6 +39,9 @@ public enum ChucVu {
             case "QUANLY":
             case "QUẢN LÝ":
                 return QUAN_LY;
+            case "BEP":
+            case "BẾP":
+                return BEP;
             default:
                 throw new IllegalArgumentException("Không tồn tại chức vụ: " + ten);
         }

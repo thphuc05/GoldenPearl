@@ -7,9 +7,10 @@ import entity.SanPham;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.Dialog;
+import java.awt.Window;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
@@ -18,7 +19,7 @@ public class QuanLyMonAn extends JPanel {
     private JTextField txtMaMon, txtTenMon, txtGiaGoc, txtGiaBan;
     private JTextField txtSearchMa, txtSearchTen;
     private JComboBox<String> cbDanhMuc, cbTrangThai;
-    private JButton btnAdd, btnUpdate, btnRemove, btnClearInputs, btnClear, btnSearch;
+    private JButton btnUpdate, btnRemove, btnClear, btnSearch;
     private JTable table;
     private DefaultTableModel tableModel;
     private SanPham_DAO sp_dao;
@@ -47,23 +48,55 @@ public class QuanLyMonAn extends JPanel {
         bindEvents();
     }
 
-    // ============ TOP: title + search ============
+    // ============ TOP: title bar + toolbar ============
     private JPanel createTopSection() {
-        JPanel top = new JPanel(new BorderLayout(0, 0));
-        top.setBackground(Color.WHITE);
-        top.setBorder(new EmptyBorder(14, 16, 8, 16));
+        JPanel wrapper = new JPanel(new BorderLayout(0, 0));
+        wrapper.setOpaque(false);
 
+        // ── Thanh tiêu đề xanh (chỉ title) ──────────────────────────────
+        JPanel pTitle = new JPanel(new BorderLayout());
+        pTitle.setBackground(MAIN_BLUE);
+        pTitle.setBorder(new EmptyBorder(10, 16, 10, 16));
         JLabel lblTitle = new JLabel("QUẢN LÝ MÓN ĂN");
-        lblTitle.setFont(new Font("Inter Bold", Font.BOLD, 28));
-        lblTitle.setForeground(TEXT_DARK);
-        top.add(lblTitle, BorderLayout.WEST);
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitle.setForeground(GOLD_COLOR);
+        JLabel lblSub = new JLabel("Thêm, sửa và phân loại các món ăn trong thực đơn");
+        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSub.setForeground(new Color(180, 200, 220));
+        JPanel pTBox = new JPanel(); pTBox.setLayout(new BoxLayout(pTBox, BoxLayout.Y_AXIS)); pTBox.setOpaque(false);
+        pTBox.add(lblTitle); pTBox.add(Box.createVerticalStrut(2)); pTBox.add(lblSub);
+        pTitle.add(pTBox, BorderLayout.WEST);
+        wrapper.add(pTitle, BorderLayout.NORTH);
 
-        JPanel pSearch = new JPanel(new GridBagLayout());
-        pSearch.setBackground(Color.WHITE);
-        pSearch.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(GOLD_COLOR), "BỘ LỌC TÌM KIẾM",
-                TitledBorder.LEFT, TitledBorder.TOP,
-                new Font("Inter Bold", Font.BOLD, 12), TEXT_DARK));
+        // ── Toolbar: nút thêm (trái) + tìm kiếm (phải) ──────────────────
+        JPanel pToolbar = new JPanel(new BorderLayout(16, 0));
+        pToolbar.setBackground(Color.decode("#F0F2F5"));
+        pToolbar.setBorder(new EmptyBorder(8, 16, 8, 16));
+
+        JPanel pBtnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        pBtnRow.setOpaque(false);
+        JButton btnAddDanhMuc = mkBtn("+ Thêm Danh mục món", GOLD_COLOR,  MAIN_BLUE);
+        JButton btnAddMonAn   = mkBtn("+ Thêm món ăn",       MAIN_BLUE,   Color.WHITE);
+        pBtnRow.add(btnAddDanhMuc);
+        pBtnRow.add(btnAddMonAn);
+        JPanel pBtnCenter = new JPanel(new GridBagLayout());
+        pBtnCenter.setOpaque(false);
+        pBtnCenter.add(pBtnRow);
+        pToolbar.add(pBtnCenter, BorderLayout.WEST);
+
+        JPanel pSearch = new JPanel(new GridBagLayout()) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                g2.setColor(GOLD_COLOR);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                g2.dispose();
+            }
+        };
+        pSearch.setOpaque(false);
+        pSearch.setBorder(new EmptyBorder(6, 10, 6, 10));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 6, 4, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -84,8 +117,13 @@ public class QuanLyMonAn extends JPanel {
         btnSearch = mkBtn("Tìm", GOLD_COLOR, MAIN_BLUE);
         pSearch.add(btnSearch, gbc);
 
-        top.add(pSearch, BorderLayout.EAST);
-        return top;
+        pToolbar.add(pSearch, BorderLayout.EAST);
+        wrapper.add(pToolbar, BorderLayout.SOUTH);
+
+        btnAddDanhMuc.addActionListener(e -> showAddDanhMucDialog());
+        btnAddMonAn.addActionListener(e -> showAddMonAnDialog());
+
+        return wrapper;
     }
 
     // ============ CENTER: table ============
@@ -117,13 +155,30 @@ public class QuanLyMonAn extends JPanel {
         table.getColumnModel().getColumn(4).setPreferredWidth(110);
         table.getColumnModel().getColumn(5).setPreferredWidth(90);
 
-        TitledBorder tb = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR), "DANH SÁCH MÓN ĂN");
-        tb.setTitleFont(new Font("Inter Bold", Font.BOLD, 13));
-        tb.setTitleColor(TEXT_DARK);
+        JPanel tblWrapper = new JPanel(new BorderLayout()) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                g2.setColor(BORDER_COLOR);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                g2.dispose();
+            }
+        };
+        tblWrapper.setOpaque(false);
+        JLabel tblHdr = new JLabel("  DANH SÁCH MÓN ĂN");
+        tblHdr.setFont(new Font("Inter Bold", Font.BOLD, 13));
+        tblHdr.setForeground(TEXT_DARK);
+        tblHdr.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR),
+                new EmptyBorder(10, 6, 10, 6)));
+        tblWrapper.add(tblHdr, BorderLayout.NORTH);
         JScrollPane scroll = new JScrollPane(table);
-        scroll.setBorder(tb);
-        center.add(scroll, BorderLayout.CENTER);
+        scroll.setBorder(null);
+        scroll.getViewport().setBackground(Color.WHITE);
+        tblWrapper.add(scroll, BorderLayout.CENTER);
+        center.add(tblWrapper, BorderLayout.CENTER);
         return center;
     }
 
@@ -133,13 +188,27 @@ public class QuanLyMonAn extends JPanel {
         bottom.setBackground(Color.WHITE);
         bottom.setBorder(new EmptyBorder(8, 16, 14, 16));
 
+        JPanel formWrapper = new JPanel(new BorderLayout()) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                g2.setColor(BORDER_COLOR);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                g2.dispose();
+            }
+        };
+        formWrapper.setOpaque(false);
+        JLabel formHdr = new JLabel("  THÔNG TIN CHI TIẾT MÓN ĂN");
+        formHdr.setFont(new Font("Inter Bold", Font.BOLD, 13));
+        formHdr.setForeground(TEXT_DARK);
+        formHdr.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR),
+                new EmptyBorder(10, 6, 10, 6)));
+        formWrapper.add(formHdr, BorderLayout.NORTH);
         JPanel pForm = new JPanel(new GridBagLayout());
-        pForm.setBackground(Color.WHITE);
-        TitledBorder fb = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR), "THÔNG TIN CHI TIẾT MÓN ĂN");
-        fb.setTitleFont(new Font("Inter Bold", Font.BOLD, 13));
-        fb.setTitleColor(TEXT_DARK);
-        pForm.setBorder(fb);
+        pForm.setOpaque(false);
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(6, 10, 6, 10);
@@ -189,23 +258,15 @@ public class QuanLyMonAn extends JPanel {
         // Row 3: Buttons
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4; gbc.weightx = 1;
         JPanel pBtns = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        pBtns.setBackground(Color.WHITE);
-        btnAdd         = mkBtn("Thêm món",  GOLD_COLOR,    MAIN_BLUE);
-        btnUpdate      = mkBtn("Cập nhật",  MAIN_BLUE,     Color.WHITE);
-        btnRemove      = mkBtn("Hủy món",   new Color(220, 53, 69), Color.WHITE);
-        btnClearInputs = mkBtn("Xóa trắng", Color.WHITE,   TEXT_DARK);
-        btnClearInputs.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR),
-                BorderFactory.createEmptyBorder(6, 17, 6, 17)));
-        btnClear       = mkBtn("Làm mới",   Color.WHITE,   TEXT_DARK);
-        btnClear.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR),
-                BorderFactory.createEmptyBorder(6, 17, 6, 17)));
-        pBtns.add(btnAdd); pBtns.add(btnUpdate); pBtns.add(btnRemove);
-        pBtns.add(btnClearInputs); pBtns.add(btnClear);
+        pBtns.setOpaque(false);
+        btnUpdate = mkBtn("Cập nhật", MAIN_BLUE, Color.WHITE);
+        btnRemove = mkBtn("Hủy món", new Color(220, 53, 69), Color.WHITE);
+        btnClear = mkBtn("Làm mới", Color.WHITE, TEXT_DARK);
+        pBtns.add(btnUpdate); pBtns.add(btnRemove); pBtns.add(btnClear);
         pForm.add(pBtns, gbc);
 
-        bottom.add(pForm, BorderLayout.CENTER);
+        formWrapper.add(pForm, BorderLayout.CENTER);
+        bottom.add(formWrapper, BorderLayout.CENTER);
         return bottom;
     }
 
@@ -219,10 +280,8 @@ public class QuanLyMonAn extends JPanel {
         });
 
         btnSearch.addActionListener(e -> searchMonAn());
-        btnAdd.addActionListener(e -> addMonAn());
         btnUpdate.addActionListener(e -> updateMonAn());
         btnRemove.addActionListener(e -> deleteMonAn());
-        btnClearInputs.addActionListener(e -> clearInputs());
         btnClear.addActionListener(e -> {
             txtSearchMa.setText(""); txtSearchTen.setText("");
             clearInputs();
@@ -436,13 +495,193 @@ public class QuanLyMonAn extends JPanel {
     }
 
     private JButton mkBtn(String text, Color bg, Color fg) {
-        JButton btn = new JButton(text);
+        JButton btn = new JButton(text) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getModel().isPressed() ? bg.darker() : bg);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.setColor(bg.equals(Color.WHITE) ? BORDER_COLOR : bg.darker());
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 10, 10);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
         btn.setFont(new Font("Inter Bold", Font.BOLD, 13));
-        btn.setBackground(bg);
         btn.setForeground(fg);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(false);
         btn.setFocusPainted(false);
         btn.setBorder(BorderFactory.createEmptyBorder(7, 18, 7, 18));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
+    }
+
+    // ---- auto-ID ----
+    private String generateNextMaDanhMuc() {
+        List<LoaiSanPham> all = lsp_dao.getAllLoaiSanPham();
+        java.util.Set<String> existing = new java.util.HashSet<>();
+        if (all != null) for (LoaiSanPham l : all) existing.add(l.getMaLoai());
+        for (int i = 1; i <= 99; i++) {
+            String candidate = String.format("LSP_%02d", i);
+            if (!existing.contains(candidate)) return candidate;
+        }
+        return "LSP_" + System.currentTimeMillis();
+    }
+
+    // ---- dialogs ----
+    private void showAddDanhMucDialog() {
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        JDialog dlg = new JDialog(owner, "Thêm Danh Mục Món Ăn", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setLayout(new BorderLayout());
+        dlg.setSize(420, 270);
+        dlg.setLocationRelativeTo(owner);
+        dlg.setResizable(false);
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBorder(new EmptyBorder(20, 24, 10, 24));
+        form.setBackground(Color.WHITE);
+        GridBagConstraints g = new GridBagConstraints();
+        g.insets = new Insets(8, 6, 8, 6);
+        g.fill = GridBagConstraints.HORIZONTAL;
+
+        JTextField txtMaDM = mkField(0);
+        txtMaDM.setText(generateNextMaDanhMuc());
+        txtMaDM.setEditable(false);
+        txtMaDM.setBackground(new Color(245, 245, 245));
+        JTextField txtTenDM = mkField(0);
+        JTextField txtMoTaDM = mkField(0);
+
+        g.gridx = 0; g.gridy = 0; g.weightx = 0; form.add(mkLbl("Mã danh mục:"), g);
+        g.gridx = 1; g.weightx = 1; form.add(txtMaDM, g);
+        g.gridx = 0; g.gridy = 1; g.weightx = 0; form.add(mkLbl("Tên danh mục:"), g);
+        g.gridx = 1; g.weightx = 1; form.add(txtTenDM, g);
+        g.gridx = 0; g.gridy = 2; g.weightx = 0; form.add(mkLbl("Mô tả:"), g);
+        g.gridx = 1; g.weightx = 1; form.add(txtMoTaDM, g);
+
+        JPanel pBtn = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        pBtn.setBackground(Color.WHITE);
+        JButton btnLuu = mkBtn("Lưu", MAIN_BLUE, Color.WHITE);
+        JButton btnHuy = mkBtn("Hủy", new Color(220, 53, 69), Color.WHITE);
+        pBtn.add(btnLuu); pBtn.add(btnHuy);
+
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(pBtn, BorderLayout.SOUTH);
+        dlg.getRootPane().setDefaultButton(btnLuu);
+
+        btnHuy.addActionListener(e -> dlg.dispose());
+        btnLuu.addActionListener(e -> {
+            String ten = txtTenDM.getText().trim();
+            if (ten.isEmpty()) { JOptionPane.showMessageDialog(dlg, "Tên danh mục không được trống!"); return; }
+            LoaiSanPham loai = new LoaiSanPham();
+            loai.setMaLoai(txtMaDM.getText().trim());
+            loai.setTenLoai(ten);
+            loai.setMoTa(txtMoTaDM.getText().trim());
+            if (lsp_dao.addLoaiSanPham(loai)) {
+                JOptionPane.showMessageDialog(dlg, "Thêm danh mục thành công!");
+                refreshData();
+                dlg.dispose();
+            } else {
+                JOptionPane.showMessageDialog(dlg, "Thêm danh mục thất bại!");
+            }
+        });
+        dlg.setVisible(true);
+    }
+
+    private void showAddMonAnDialog() {
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        JDialog dlg = new JDialog(owner, "Thêm Món Ăn", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setLayout(new BorderLayout());
+        dlg.setSize(480, 380);
+        dlg.setLocationRelativeTo(owner);
+        dlg.setResizable(false);
+
+        List<LoaiSanPham> dsL = lsp_dao.getAllLoaiSanPham();
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBorder(new EmptyBorder(20, 24, 10, 24));
+        form.setBackground(Color.WHITE);
+        GridBagConstraints g = new GridBagConstraints();
+        g.insets = new Insets(8, 6, 8, 6);
+        g.fill = GridBagConstraints.HORIZONTAL;
+
+        JTextField txtMaDlg   = mkField(0);
+        txtMaDlg.setEditable(false);
+        txtMaDlg.setBackground(new Color(245, 245, 245));
+        JTextField txtTenDlg  = mkField(0);
+        JTextField txtGocDlg  = mkField(0);
+        JTextField txtBanDlg  = mkField(0);
+        JComboBox<String> cbCat = new JComboBox<>();
+        styleCombo(cbCat);
+        if (dsL != null) for (LoaiSanPham l : dsL) cbCat.addItem(l.getTenLoai());
+        JComboBox<String> cbTTDlg = new JComboBox<>(new String[]{"Còn món", "Hết món"});
+        styleCombo(cbTTDlg);
+
+        Runnable updateMaDlg = () -> {
+            if (cbCat.getSelectedItem() == null || dsL == null) { txtMaDlg.setText(""); return; }
+            String selTen = cbCat.getSelectedItem().toString();
+            for (LoaiSanPham l : dsL) {
+                if (l.getTenLoai().equals(selTen)) { txtMaDlg.setText(generateNextMaMon(l)); return; }
+            }
+            txtMaDlg.setText("");
+        };
+        cbCat.addActionListener(e -> updateMaDlg.run());
+        if (cbCat.getItemCount() > 0) { cbCat.setSelectedIndex(0); updateMaDlg.run(); }
+
+        g.gridx = 0; g.gridy = 0; g.weightx = 0; form.add(mkLbl("Mã món:"), g);
+        g.gridx = 1; g.weightx = 1; form.add(txtMaDlg, g);
+        g.gridx = 0; g.gridy = 1; g.weightx = 0; form.add(mkLbl("Tên món:"), g);
+        g.gridx = 1; g.weightx = 1; form.add(txtTenDlg, g);
+        g.gridx = 0; g.gridy = 2; g.weightx = 0; form.add(mkLbl("Danh mục:"), g);
+        g.gridx = 1; g.weightx = 1; form.add(cbCat, g);
+        g.gridx = 0; g.gridy = 3; g.weightx = 0; form.add(mkLbl("Giá gốc (VNĐ):"), g);
+        g.gridx = 1; g.weightx = 1; form.add(txtGocDlg, g);
+        g.gridx = 0; g.gridy = 4; g.weightx = 0; form.add(mkLbl("Giá bán:"), g);
+        g.gridx = 1; g.weightx = 1; form.add(txtBanDlg, g);
+        g.gridx = 0; g.gridy = 5; g.weightx = 0; form.add(mkLbl("Trạng thái:"), g);
+        g.gridx = 1; g.weightx = 1; form.add(cbTTDlg, g);
+
+        JPanel pBtn = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        pBtn.setBackground(Color.WHITE);
+        JButton btnLuu = mkBtn("Lưu", MAIN_BLUE, Color.WHITE);
+        JButton btnHuy = mkBtn("Hủy", new Color(220, 53, 69), Color.WHITE);
+        pBtn.add(btnLuu); pBtn.add(btnHuy);
+
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(pBtn, BorderLayout.SOUTH);
+        dlg.getRootPane().setDefaultButton(btnLuu);
+
+        btnHuy.addActionListener(e -> dlg.dispose());
+        btnLuu.addActionListener(e -> {
+            try {
+                String ma  = txtMaDlg.getText().trim();
+                String ten = txtTenDlg.getText().trim();
+                if (ma.isEmpty())  { JOptionPane.showMessageDialog(dlg, "Vui lòng chọn danh mục để tạo mã món!"); return; }
+                if (ten.isEmpty()) { JOptionPane.showMessageDialog(dlg, "Tên món không được trống!"); return; }
+                List<SanPham> ds = sp_dao.getAllSanPham();
+                if (ds != null) for (SanPham sp : ds) {
+                    if (sp.getMaMon().equalsIgnoreCase(ma))  { JOptionPane.showMessageDialog(dlg, "Mã món đã tồn tại!"); return; }
+                    if (sp.getTenMon().equalsIgnoreCase(ten)) { JOptionPane.showMessageDialog(dlg, "Tên món đã tồn tại!"); return; }
+                }
+                double giaGoc = Double.parseDouble(txtGocDlg.getText().trim().replace(",", ""));
+                double giaBan = Double.parseDouble(txtBanDlg.getText().trim().replace(",", ""));
+                boolean tt = "Còn món".equals(cbTTDlg.getSelectedItem().toString());
+                LoaiSanPham selLoai = null;
+                if (cbCat.getSelectedItem() != null && dsL != null) {
+                    String selTen = cbCat.getSelectedItem().toString();
+                    for (LoaiSanPham l : dsL) if (l.getTenLoai().equals(selTen)) { selLoai = l; break; }
+                }
+                if (selLoai == null) { JOptionPane.showMessageDialog(dlg, "Vui lòng chọn danh mục!"); return; }
+                SanPham sp = new SanPham(ma, ten, giaGoc, giaBan, "", tt, selLoai, "");
+                if (sp_dao.addSanPham(sp)) {
+                    JOptionPane.showMessageDialog(dlg, "Thêm món thành công!");
+                    loadDataToTable();
+                    dlg.dispose();
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dlg, "Giá tiền không hợp lệ!");
+            }
+        });
+        dlg.setVisible(true);
     }
 }

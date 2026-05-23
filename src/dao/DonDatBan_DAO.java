@@ -38,9 +38,10 @@ public class DonDatBan_DAO {
         List<DonDatBan> ds = new ArrayList<>();
         Connection con = ConnectDB.getConnection();
         try {
-            Statement st = con.createStatement();
-            ResultSet rs = st.executeQuery("SELECT * FROM DonDatBan");
-            while (rs.next()) ds.add(mapRow(rs));
+            try (Statement st = con.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT * FROM DonDatBan")) {
+                while (rs.next()) ds.add(mapRow(rs));
+            }
         } catch (SQLException e) { e.printStackTrace(); }
         return ds;
     }
@@ -62,14 +63,16 @@ public class DonDatBan_DAO {
     public DonDatBan getDonDatBanByMa(String ma) {
         Connection con = ConnectDB.getConnection();
         try {
-            PreparedStatement st = con.prepareStatement(
-                    "SELECT * FROM DonDatBan WHERE maDon = ?");
-            st.setString(1, ma);
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) {
-                DonDatBan d = mapRow(rs);
-                d.setDsBan(ctdbDAO.getDsBanCuaDon(ma));
-                return d;
+            try (PreparedStatement st = con.prepareStatement(
+                    "SELECT * FROM DonDatBan WHERE maDon = ?")) {
+                st.setString(1, ma);
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next()) {
+                        DonDatBan d = mapRow(rs);
+                        d.setDsBan(ctdbDAO.getDsBanCuaDon(ma));
+                        return d;
+                    }
+                }
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return null;
@@ -88,13 +91,15 @@ public class DonDatBan_DAO {
                     + "JOIN ChiTietDatBan ct ON d.maDon = ct.maDonDatBan "
                     + "WHERE ct.maBan = ? AND d.trangThai = 0 "
                     + "ORDER BY d.thoiGianDat DESC";
-            PreparedStatement st = con.prepareStatement(sql);
-            st.setString(1, maBan);
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) {
-                DonDatBan d = mapRow(rs);
-                d.setDsBan(ctdbDAO.getDsBanCuaDon(d.getMaDon()));
-                return d;
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, maBan);
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next()) {
+                        DonDatBan d = mapRow(rs);
+                        d.setDsBan(ctdbDAO.getDsBanCuaDon(d.getMaDon()));
+                        return d;
+                    }
+                }
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return null;
@@ -103,14 +108,15 @@ public class DonDatBan_DAO {
     // ── Lấy đơn theo SĐT khách ───────────────────────────────────────────
 
     public DonDatBan getDonDatBanTheoSdtKhach(String sdt, java.util.Date thoiGianDen,
-                                              String khungGio, KhachHang_DAO khDAO) {
+                                              KhachHang_DAO khDAO) {
         KhachHang kh = khDAO.getKhachHangBySdt(sdt);
         if (kh == null) return null;
         for (DonDatBan d : getAllDonDatBan()) {
             if (!d.isTrangThai()
-                    && d.getKhungGio() != null && d.getKhungGio().equals(khungGio)
                     && d.getKhachHang() != null
-                    && d.getKhachHang().getMaKH().equals(kh.getMaKH())) {
+                    && d.getKhachHang().getMaKH().equals(kh.getMaKH())
+                    && d.getThoiGianDen() != null
+                    && d.getThoiGianDen().equals(thoiGianDen)) {
                 return d;
             }
         }
@@ -123,11 +129,12 @@ public class DonDatBan_DAO {
         Connection con = ConnectDB.getConnection();
         String ma = "DDB001";
         try {
-            ResultSet rs = con.createStatement()
-                    .executeQuery("SELECT MAX(maDon) FROM DonDatBan");
-            if (rs.next() && rs.getString(1) != null) {
-                int num = Integer.parseInt(rs.getString(1).substring(3)) + 1;
-                ma = String.format("DDB%03d", num);
+            try (Statement st = con.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT MAX(maDon) FROM DonDatBan")) {
+                if (rs.next() && rs.getString(1) != null) {
+                    int num = Integer.parseInt(rs.getString(1).substring(3)) + 1;
+                    ma = String.format("DDB%03d", num);
+                }
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return ma;
@@ -155,39 +162,43 @@ public class DonDatBan_DAO {
         Connection con = ConnectDB.getConnection();
         try {
             // ── 1. INSERT DonDatBan ──────────────────────────────────────
+            // Đảm bảo thoiGianDuKienRoi được tính trước khi lưu
+            if (ddb.getThoiGianDuKienRoi() == null) ddb.computeAndSetThoiGianDuKienRoi();
+
             String sql = "INSERT INTO DonDatBan "
-                    + "(maDon, thoiGianDat, thoiGianDen, soLuongKhach, "
-                    + " maKH, trangThai, maNV, khungGio, ghiChu) "
+                    + "(maDon, thoiGianDat, thoiGianDen, thoiGianDuKienRoi, soLuongKhach, "
+                    + " maKH, trangThai, maNV, ghiChu) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            PreparedStatement st = con.prepareStatement(sql);
-            st.setString(1, ddb.getMaDon());
-            st.setTimestamp(2, new Timestamp(ddb.getThoiGianDat().getTime()));
-            st.setTimestamp(3, new Timestamp(ddb.getThoiGianDen().getTime()));
-            st.setInt(4, ddb.getSoLuongKhach());
-            st.setString(5, ddb.getKhachHang().getMaKH());
-            st.setBoolean(6, ddb.isTrangThai());
-            if (ddb.getNhanVien() != null)
-                st.setString(7, ddb.getNhanVien().getMaNV());
-            else
-                st.setNull(7, Types.VARCHAR);
-            st.setString(8, ddb.getKhungGio());
-            st.setString(9, ddb.getGhiChu() != null ? ddb.getGhiChu() : "");
-            int n = st.executeUpdate();
-            if (n <= 0) return false;
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, ddb.getMaDon());
+                st.setTimestamp(2, new Timestamp(ddb.getThoiGianDat().getTime()));
+                st.setTimestamp(3, new Timestamp(ddb.getThoiGianDen().getTime()));
+                st.setTimestamp(4, new Timestamp(ddb.getThoiGianDuKienRoi().getTime()));
+                st.setInt(5, ddb.getSoLuongKhach());
+                st.setString(6, ddb.getKhachHang().getMaKH());
+                st.setBoolean(7, ddb.isTrangThai());
+                if (ddb.getNhanVien() != null)
+                    st.setString(8, ddb.getNhanVien().getMaNV());
+                else
+                    st.setNull(8, Types.VARCHAR);
+                st.setString(9, ddb.getGhiChu() != null ? ddb.getGhiChu() : "");
+                int n = st.executeUpdate();
+                if (n <= 0) return false;
+            }
 
             // Log SQL
             String maNV = ddb.getNhanVien() != null
                     ? SQLLogger.str(ddb.getNhanVien().getMaNV()) : "NULL";
             SQLLogger.log("INSERT INTO DonDatBan "
-                    + "(maDon, thoiGianDat, thoiGianDen, soLuongKhach, maKH, trangThai, maNV, khungGio, ghiChu) VALUES ("
+                    + "(maDon, thoiGianDat, thoiGianDen, thoiGianDuKienRoi, soLuongKhach, maKH, trangThai, maNV, ghiChu) VALUES ("
                     + SQLLogger.str(ddb.getMaDon()) + ", "
                     + SQLLogger.ts(ddb.getThoiGianDat()) + ", "
                     + SQLLogger.ts(ddb.getThoiGianDen()) + ", "
+                    + SQLLogger.ts(ddb.getThoiGianDuKienRoi()) + ", "
                     + ddb.getSoLuongKhach() + ", "
                     + SQLLogger.str(ddb.getKhachHang().getMaKH()) + ", "
                     + SQLLogger.bit(ddb.isTrangThai()) + ", "
                     + maNV + ", "
-                    + SQLLogger.str(ddb.getKhungGio()) + ", "
                     + SQLLogger.str(ddb.getGhiChu()) + ");");
 
             // ── 2. INSERT ChiTietDatBan cho mỗi bàn ─────────────────────
@@ -208,36 +219,42 @@ public class DonDatBan_DAO {
     public boolean updateDonDatBan(DonDatBan ddb) {
         Connection con = ConnectDB.getConnection();
         try {
+            // Tính lại thoiGianDuKienRoi nếu giờ đến hoặc số khách thay đổi
+            ddb.computeAndSetThoiGianDuKienRoi();
+
             String sql = "UPDATE DonDatBan SET "
-                    + "thoiGianDat = ?, thoiGianDen = ?, soLuongKhach = ?, "
+                    + "thoiGianDat = ?, thoiGianDen = ?, thoiGianDuKienRoi = ?, soLuongKhach = ?, "
                     + "maKH = ?, trangThai = ?, maNV = ?, ghiChu = ? "
                     + "WHERE maDon = ?";
-            PreparedStatement st = con.prepareStatement(sql);
-            st.setTimestamp(1, new Timestamp(ddb.getThoiGianDat().getTime()));
-            st.setTimestamp(2, new Timestamp(ddb.getThoiGianDen().getTime()));
-            st.setInt(3, ddb.getSoLuongKhach());
-            st.setString(4, ddb.getKhachHang().getMaKH());
-            st.setBoolean(5, ddb.isTrangThai());
-            if (ddb.getNhanVien() != null)
-                st.setString(6, ddb.getNhanVien().getMaNV());
-            else
-                st.setNull(6, Types.VARCHAR);
-            st.setString(7, ddb.getGhiChu() != null ? ddb.getGhiChu() : "");
-            st.setString(8, ddb.getMaDon());
-            int n = st.executeUpdate();
-            if (n > 0) {
-                String maNV = ddb.getNhanVien() != null
-                        ? SQLLogger.str(ddb.getNhanVien().getMaNV()) : "NULL";
-                SQLLogger.log("UPDATE DonDatBan SET "
-                        + "thoiGianDat = " + SQLLogger.ts(ddb.getThoiGianDat()) + ", "
-                        + "thoiGianDen = " + SQLLogger.ts(ddb.getThoiGianDen()) + ", "
-                        + "soLuongKhach = " + ddb.getSoLuongKhach() + ", "
-                        + "maKH = " + SQLLogger.str(ddb.getKhachHang().getMaKH()) + ", "
-                        + "trangThai = " + SQLLogger.bit(ddb.isTrangThai()) + ", "
-                        + "maNV = " + maNV
-                        + " WHERE maDon = " + SQLLogger.str(ddb.getMaDon()) + ";");
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setTimestamp(1, new Timestamp(ddb.getThoiGianDat().getTime()));
+                st.setTimestamp(2, new Timestamp(ddb.getThoiGianDen().getTime()));
+                st.setTimestamp(3, new Timestamp(ddb.getThoiGianDuKienRoi().getTime()));
+                st.setInt(4, ddb.getSoLuongKhach());
+                st.setString(5, ddb.getKhachHang().getMaKH());
+                st.setBoolean(6, ddb.isTrangThai());
+                if (ddb.getNhanVien() != null)
+                    st.setString(7, ddb.getNhanVien().getMaNV());
+                else
+                    st.setNull(7, Types.VARCHAR);
+                st.setString(8, ddb.getGhiChu() != null ? ddb.getGhiChu() : "");
+                st.setString(9, ddb.getMaDon());
+                int n = st.executeUpdate();
+                if (n > 0) {
+                    String maNV = ddb.getNhanVien() != null
+                            ? SQLLogger.str(ddb.getNhanVien().getMaNV()) : "NULL";
+                    SQLLogger.log("UPDATE DonDatBan SET "
+                            + "thoiGianDat = " + SQLLogger.ts(ddb.getThoiGianDat()) + ", "
+                            + "thoiGianDen = " + SQLLogger.ts(ddb.getThoiGianDen()) + ", "
+                            + "thoiGianDuKienRoi = " + SQLLogger.ts(ddb.getThoiGianDuKienRoi()) + ", "
+                            + "soLuongKhach = " + ddb.getSoLuongKhach() + ", "
+                            + "maKH = " + SQLLogger.str(ddb.getKhachHang().getMaKH()) + ", "
+                            + "trangThai = " + SQLLogger.bit(ddb.isTrangThai()) + ", "
+                            + "maNV = " + maNV
+                            + " WHERE maDon = " + SQLLogger.str(ddb.getMaDon()) + ";");
+                }
+                return n > 0;
             }
-            return n > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -247,17 +264,24 @@ public class DonDatBan_DAO {
     // ── Xóa đơn (kèm xóa ChiTietDatBan) ─────────────────────────────────
 
     public boolean deleteDonDatBan(String ma) {
-        // Xóa liên kết bàn trước (FK constraint)
         ctdbDAO.xoaTatCaBanCuaDon(ma);
         Connection con = ConnectDB.getConnection();
         try {
-            PreparedStatement st = con.prepareStatement(
-                    "DELETE FROM DonDatBan WHERE maDon = ?");
-            st.setString(1, ma);
-            int n = st.executeUpdate();
-            if (n > 0) SQLLogger.log(
-                    "DELETE FROM DonDatBan WHERE maDon = " + SQLLogger.str(ma) + ";");
-            return n > 0;
+            // Gỡ FK_HD_Don: bỏ liên kết HoaDon trước khi xóa DonDatBan
+            try (PreparedStatement unlinkHD = con.prepareStatement(
+                    "UPDATE HoaDon SET maDon = NULL WHERE maDon = ?")) {
+                unlinkHD.setString(1, ma);
+                unlinkHD.executeUpdate();
+            }
+
+            try (PreparedStatement st = con.prepareStatement(
+                    "DELETE FROM DonDatBan WHERE maDon = ?")) {
+                st.setString(1, ma);
+                int n = st.executeUpdate();
+                if (n > 0) SQLLogger.log(
+                        "DELETE FROM DonDatBan WHERE maDon = " + SQLLogger.str(ma) + ";");
+                return n > 0;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -275,10 +299,10 @@ public class DonDatBan_DAO {
         d.setMaDon(rs.getString("maDon"));
         d.setThoiGianDat(rs.getTimestamp("thoiGianDat"));
         d.setThoiGianDen(rs.getTimestamp("thoiGianDen"));
+        try { d.setThoiGianDuKienRoi(rs.getTimestamp("thoiGianDuKienRoi")); } catch (Exception ignored) {}
         d.setSoLuongKhach(rs.getInt("soLuongKhach"));
         d.setTrangThai(rs.getBoolean("trangThai"));
-        try { d.setKhungGio(rs.getString("khungGio")); } catch (Exception ignored) {}
-        try { d.setGhiChu(rs.getString("ghiChu"));     } catch (Exception ignored) {}
+        try { d.setGhiChu(rs.getString("ghiChu")); } catch (Exception ignored) {}
 
         KhachHang kh = new KhachHang();
         kh.setMaKH(rs.getString("maKH"));
