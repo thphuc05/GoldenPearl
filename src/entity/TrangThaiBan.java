@@ -4,6 +4,7 @@ public enum TrangThaiBan {
 	Trong("Trống"),
 	DaDuocDat("Đã được đặt"),
 	DangDuocSuDung("Đang được sử dụng"),
+	DangDonDep("Đang dọn dẹp"),
 	BaoTri("Bảo trì");
 
 	private final String moTa;
@@ -26,6 +27,7 @@ public enum TrangThaiBan {
         if (value.equals("TRONG")) return Trong;
         if (value.equals("DAT_TRUOC")) return DaDuocDat;
         if (value.equals("DANG_SD")) return DangDuocSuDung;
+        if (value.equals("DANG_DON")) return DangDonDep;
         if (value.equals("BAO_TRI")) return BaoTri;
         return Trong;
     }

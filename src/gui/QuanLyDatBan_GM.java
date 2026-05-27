@@ -34,6 +34,7 @@ public class QuanLyDatBan_GM extends JDialog {
     private static final DecimalFormat FMT = new DecimalFormat("#,###");
 
     private final HoaDon           hd;
+    private final int              soBan;
     private final SanPham_DAO      spDAO;
     private final ChiTietHoaDon_DAO cthdDAO;
     private final HoaDon_DAO       hdDAO;
@@ -48,10 +49,11 @@ public class QuanLyDatBan_GM extends JDialog {
 
     // ── Constructor ───────────────────────────────────────────────────────
 
-    public QuanLyDatBan_GM(Frame owner, HoaDon hd, SanPham_DAO spDAO,
+    public QuanLyDatBan_GM(Frame owner, HoaDon hd, int soBan, SanPham_DAO spDAO,
                            ChiTietHoaDon_DAO cthdDAO, HoaDon_DAO hdDAO, Runnable onDone) {
         super(owner, buildTitle(hd), true);
         this.hd      = hd;
+        this.soBan   = soBan;
         this.spDAO   = spDAO;
         this.cthdDAO = cthdDAO;
         this.hdDAO   = hdDAO;
@@ -197,7 +199,7 @@ public class QuanLyDatBan_GM extends JDialog {
         lblTotal.setForeground(isLocked ? LOCK_TXT : RED_DANG);
 
         JButton bCancel = btnStatic("Đóng", Color.WHITE, TEXT_DARK, true);
-        JButton bOk     = btnStatic("Thêm món", MAIN_BLUE, Color.WHITE, false);
+        JButton bOk     = btnStatic("Xác Nhận Món", MAIN_BLUE, Color.WHITE, false);
         bCancel.addActionListener(e -> dispose());
 
         if (isLocked) {
@@ -257,7 +259,7 @@ public class QuanLyDatBan_GM extends JDialog {
         JLabel name = new JLabel("<html><b>" + sp.getTenMon() + "</b><br>"
                 + "<font color='" + (isLocked ? "#AAAAAA" : "#E74C3C") + "'>"
                 + FMT.format(sp.getGiaBan()) + "đ</font></html>");
-        name.setFont(new Font("Segoe UI", Font.PLAIN, 10)); // Font nhỏ hơn như bạn muốn
+        name.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         card.add(name, BorderLayout.CENTER);
 
         JPanel qr = new JPanel(new FlowLayout(FlowLayout.CENTER, 3, 0));
@@ -284,7 +286,7 @@ public class QuanLyDatBan_GM extends JDialog {
                 int q = Integer.parseInt(txtQty.getText());
                 if (q <= 0) cart.remove(sp.getMaMon());
                 else cart.put(sp.getMaMon(), q);
-                refreshCart(allSP); // Gọi hàm cập nhật bảng giỏ hàng
+                refreshCart(allSP);
             } catch (NumberFormatException ex) {
                 txtQty.setText(String.valueOf(cart.getOrDefault(sp.getMaMon(), 0)));
             }
@@ -367,30 +369,69 @@ public class QuanLyDatBan_GM extends JDialog {
         Map<String, SanPham> map = new HashMap<>();
         for (SanPham sp : allSP) map.put(sp.getMaMon(), sp);
         double added = 0;
+        List<String> errors = new ArrayList<>();
+
         for (Map.Entry<String, Integer> e : cart.entrySet()) {
             SanPham sp = map.get(e.getKey());
             if (sp == null || e.getValue() <= 0) continue;
             double tt = sp.getGiaBan() * e.getValue();
-            if (cthdDAO.existsChiTiet(hd.getMaHD(), sp.getMaMon())) {
+            int status = cthdDAO.getChiTietStatus(hd.getMaHD(), sp.getMaMon());
+
+            if (status == 2 || status == 3) {
+                // Bếp đang nấu (DANG_LAM) hoặc tất cả đã xong (DA_XONG)
+                // → INSERT dòng mới để bếp thấy phần gọi thêm riêng biệt
+                HoaDon ref = new HoaDon(); ref.setMaHD(hd.getMaHD());
+                boolean ok = cthdDAO.create(new ChiTietHoaDon(sp, ref, e.getValue(), sp.getGiaBan(),
+                        "Bàn " + soBan + " gọi thêm", tt));
+                if (ok) {
+                    added += tt;
+                } else {
+                    errors.add(sp.getTenMon());
+                }
+
+            } else if (status == 1) {
+                // Có row CHO_XU_LY đang chờ → cộng dồn số lượng trên row đó
                 int oldQty = 0; double oldTt = 0;
                 for (ChiTietHoaDon ct : cthdDAO.getChiTietByMaHD(hd.getMaHD())) {
-                    if (ct.getMonAn().getMaMon().equals(sp.getMaMon())) {
+                    if (ct.getMonAn().getMaMon().equals(sp.getMaMon())
+                            && ct.getTrangThaiMon() == entity.TrangThaiMon.CHO_XU_LY) {
                         oldQty = ct.getSoLuong();
                         oldTt  = ct.getThanhTien();
                         break;
                     }
                 }
                 int nq = oldQty + e.getValue();
-                cthdDAO.updateSoLuong(hd.getMaHD(), sp.getMaMon(), nq, sp.getGiaBan() * nq);
-                added += (sp.getGiaBan() * nq - oldTt);
+                // FIX: kiểm tra return value của updateSoLuong
+                boolean ok = cthdDAO.updateSoLuong(hd.getMaHD(), sp.getMaMon(), nq, sp.getGiaBan() * nq);
+                if (ok) {
+                    added += (sp.getGiaBan() * nq - oldTt);
+                } else {
+                    errors.add(sp.getTenMon());
+                }
+
             } else {
-                HoaDon ref = new HoaDon();
-                ref.setMaHD(hd.getMaHD());
-                cthdDAO.create(new ChiTietHoaDon(sp, ref, e.getValue(), sp.getGiaBan(), "", tt));
-                added += tt;
+                // Lần đầu gọi món này → INSERT mới, ghiChu trống
+                HoaDon ref = new HoaDon(); ref.setMaHD(hd.getMaHD());
+                boolean ok = cthdDAO.create(new ChiTietHoaDon(sp, ref, e.getValue(), sp.getGiaBan(), "", tt));
+                if (ok) {
+                    added += tt;
+                } else {
+                    errors.add(sp.getTenMon());
+                }
             }
         }
-        hdDAO.updateTongTien(hd.getMaHD(), hd.getTongTien() + added);
+
+        if (added > 0) {
+            hdDAO.updateTongTien(hd.getMaHD(), hd.getTongTien() + added);
+        }
+
+        // Báo lỗi nếu có món thêm thất bại
+        if (!errors.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Không thể thêm các món sau (lỗi DB):\n• " + String.join("\n• ", errors),
+                    "Lỗi thêm món", JOptionPane.ERROR_MESSAGE);
+        }
+
         dispose();
         onDone.run();
     }

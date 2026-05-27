@@ -11,7 +11,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PdfHoaDon {
 
@@ -100,6 +103,31 @@ public class PdfHoaDon {
         addInfoRow(tblInfo, "HTTT:",    httt,           "Trạng thái:", hd.getTrangThaiThanhToan().getDisplay(), fLabel, fValue);
         doc.add(tblInfo);
 
+        // ── Gom các món trùng tên lại ────────────────────────────────────────
+        SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm");
+        // LinkedHashMap giữ thứ tự xuất hiện đầu tiên
+        Map<String, int[]>    slMap    = new LinkedHashMap<>(); // maMon → [soLuong]
+        Map<String, Double>   donGiaMap = new LinkedHashMap<>();
+        Map<String, String>   tenMonMap = new LinkedHashMap<>();
+        Map<String, List<String>> ghiChuMap = new LinkedHashMap<>();
+
+        for (ChiTietHoaDon ct : cths) {
+            String maMon  = ct.getMonAn() != null ? ct.getMonAn().getMaMon() : "?";
+            String tenMon = ct.getMonAn() != null ? ct.getMonAn().getTenMon() : "?";
+            if (!slMap.containsKey(maMon)) {
+                slMap.put(maMon, new int[]{0});
+                donGiaMap.put(maMon, ct.getDonGia());
+                tenMonMap.put(maMon, tenMon);
+                ghiChuMap.put(maMon, new ArrayList<>());
+            }
+            slMap.get(maMon)[0] += ct.getSoLuong();
+            String gc = ct.getGhiChu() != null ? ct.getGhiChu().trim() : "";
+            if (!gc.isEmpty()) {
+                String tgStr = ct.getThoiGianGoi() != null ? timeFmt.format(ct.getThoiGianGoi()) + " — " : "";
+                ghiChuMap.get(maMon).add(tgStr + gc);
+            }
+        }
+
         // ── Bảng chi tiết món ────────────────────────────────────────────────
         PdfPTable tblMon = new PdfPTable(new float[]{0.5f, 3f, 0.6f, 1.2f, 1.2f});
         tblMon.setWidthPercentage(100);
@@ -117,25 +145,43 @@ public class PdfHoaDon {
             tblMon.addCell(cell);
         }
 
+        Font fGhiChu = new Font(bf, 7, Font.NORMAL, BaseColor.GRAY);
         int stt = 1;
-        for (ChiTietHoaDon ct : cths) {
+        for (String maMon : slMap.keySet()) {
+            int    sl       = slMap.get(maMon)[0];
+            double donGia   = donGiaMap.get(maMon);
+            String tenMon   = tenMonMap.get(maMon);
+            List<String> gcs = ghiChuMap.get(maMon);
             boolean alt = stt % 2 == 0;
             BaseColor rowBg = alt ? rowAlt : BaseColor.WHITE;
-            String tenMon = ct.getMonAn() != null ? ct.getMonAn().getTenMon() : "?";
 
-            addMonRow(tblMon, stt++, tenMon,
-                    ct.getSoLuong(), ct.getDonGia(), ct.getThanhTien(),
-                    fNormal, rowBg, aligns);
+            // Cell tên món: tên + ghi chú nhỏ bên dưới (nếu có)
+            PdfPCell cellTen;
+            if (gcs.isEmpty()) {
+                cellTen = new PdfPCell(new Phrase(tenMon, fNormal));
+            } else {
+                Phrase ph = new Phrase();
+                ph.add(new Chunk(tenMon + "\n", fNormal));
+                ph.add(new Chunk(String.join(", ", gcs), fGhiChu));
+                cellTen = new PdfPCell(ph);
+            }
+            cellTen.setBackgroundColor(rowBg);
+            cellTen.setHorizontalAlignment(Element.ALIGN_LEFT);
+            cellTen.setPaddingTop(4); cellTen.setPaddingBottom(4);
+            cellTen.setPaddingLeft(4); cellTen.setPaddingRight(4);
+            cellTen.setBorder(Rectangle.NO_BORDER);
+
+            addMonRow(tblMon, stt++, tenMon, sl, donGia, donGia * sl, cellTen, fNormal, rowBg, aligns);
         }
         doc.add(tblMon);
 
         addLine(doc, BaseColor.LIGHT_GRAY, 0.5f);
 
         // ── Tổng kết ─────────────────────────────────────────────────────────
-        // tongTienMon = tổng giá gốc từ các món (chưa giảm)
-        // hd.getTongTien() = tiền thực thu sau giảm giá (lưu trong DB)
+        // tongTienMon = tổng giá gốc từ các món gom lại (chưa giảm)
         double tongTienMon = 0;
-        for (ChiTietHoaDon ct : cths) tongTienMon += ct.getDonGia() * ct.getSoLuong();
+        for (String mm : slMap.keySet())
+            tongTienMon += donGiaMap.get(mm) * slMap.get(mm)[0];
 
         double coc      = hd.getTienCoc();
         double tongGiam = Math.max(0, tongTienMon - hd.getTongTien());
@@ -226,17 +272,16 @@ public class PdfHoaDon {
 
     private static void addMonRow(PdfPTable t, int stt, String tenMon,
                                   int sl, double donGia, double thanhTien,
-                                  Font f, BaseColor bg, int[] aligns) {
-        String[] vals = {String.valueOf(stt), tenMon, String.valueOf(sl),
-                FMT.format(donGia) + "d", FMT.format(thanhTien) + "d"};
+                                  PdfPCell cellTen, Font f, BaseColor bg, int[] aligns) {
+        String[] vals = {String.valueOf(stt), null, String.valueOf(sl),
+                FMT.format(donGia) + "đ", FMT.format(thanhTien) + "đ"};
         for (int i = 0; i < vals.length; i++) {
+            if (i == 1) { t.addCell(cellTen); continue; }
             PdfPCell cell = new PdfPCell(new Phrase(vals[i], f));
             cell.setBackgroundColor(bg);
             cell.setHorizontalAlignment(aligns[i]);
-            cell.setPaddingTop(4);
-            cell.setPaddingBottom(4);
-            cell.setPaddingLeft(4);
-            cell.setPaddingRight(4);
+            cell.setPaddingTop(4); cell.setPaddingBottom(4);
+            cell.setPaddingLeft(4); cell.setPaddingRight(4);
             cell.setBorder(Rectangle.NO_BORDER);
             t.addCell(cell);
         }

@@ -1,0 +1,166 @@
+@startuml GoldenPearl_UseCase
+
+skinparam actorStyle awesome
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam usecase {
+    BackgroundColor #EAF4FB
+    BorderColor #0B3D59
+    BorderThickness 1.5
+    FontColor #0B3D59
+}
+skinparam actor {
+    BackgroundColor #FFF8E1
+    BorderColor #E65100
+    FontColor #333333
+}
+skinparam packageStyle rectangle
+skinparam package {
+    BackgroundColor #F5F5F5
+    BorderColor #AAAAAA
+}
+skinparam ArrowColor #0B3D59
+skinparam ArrowThickness 1.2
+
+title <b>Sơ đồ Use Case — Hệ thống Quản lý Nhà hàng GoldenPearl</b>
+
+left to right direction
+
+actor "Quản lý" as QL #LightGoldenRodYellow
+actor "Nhân viên\nphục vụ" as NV #LightCyan
+actor "Nhân viên\nbếp" as BEP #LightGreen
+
+rectangle "Hệ thống GoldenPearl" {
+
+  package "Xác thực" {
+    usecase "Đăng nhập" as UC_Login
+    usecase "Quên mật khẩu\n(OTP qua email)" as UC_ForgotPw
+  }
+
+  package "Trang chủ" {
+    usecase "Xem dashboard\n(thống kê nhanh)" as UC_Dashboard
+  }
+
+  package "Quản lý bàn" {
+    usecase "Xem danh sách bàn" as UC_ViewTable
+    usecase "Thêm / Sửa / Xóa bàn" as UC_CrudTable
+    usecase "Cập nhật trạng thái bàn" as UC_TableStatus
+  }
+
+  package "Quản lý đặt bàn" {
+    usecase "Xem danh sách đặt bàn" as UC_ViewBooking
+    usecase "Tạo đặt bàn mới" as UC_CreateBooking
+    usecase "Hủy đặt bàn" as UC_CancelBooking
+    usecase "Gọi món trước (pre-order)" as UC_PreorderDish
+    usecase "Check-in khách đến" as UC_CheckIn
+  }
+
+  package "Quản lý hóa đơn & Thanh toán" {
+    usecase "Xem danh sách hóa đơn" as UC_ViewInvoice
+    usecase "Tạo hóa đơn" as UC_CreateInvoice
+    usecase "Thanh toán" as UC_Payment
+    usecase "Áp dụng khuyến mãi" as UC_ApplyPromo
+    usecase "Xem chi tiết hóa đơn" as UC_InvoiceDetail
+  }
+
+  package "Quản lý khách hàng" {
+    usecase "Xem danh sách khách hàng" as UC_ViewCustomer
+    usecase "Thêm / Sửa / Xóa khách hàng" as UC_CrudCustomer
+    usecase "Xem lịch sử đặt bàn KH" as UC_CustomerHistory
+  }
+
+  package "Quản lý món ăn" {
+    usecase "Xem thực đơn" as UC_ViewMenu
+    usecase "Thêm / Sửa / Xóa món ăn" as UC_CrudMenu
+  }
+
+  package "Quản lý bếp" {
+    usecase "Xem danh sách món cần nấu" as UC_ViewOrders
+    usecase "Cập nhật trạng thái món" as UC_UpdateDishStatus
+  }
+
+  package "Quản lý nhân viên" {
+    usecase "Xem danh sách nhân viên" as UC_ViewEmployee
+    usecase "Thêm / Sửa / Xóa nhân viên" as UC_CrudEmployee
+    usecase "Quản lý tài khoản đăng nhập" as UC_ManageAccount
+  }
+
+  package "Quản lý ca làm" {
+    usecase "Xem lịch ca làm" as UC_ViewShift
+    usecase "Phân công ca làm" as UC_AssignShift
+    usecase "Xem ca làm của bản thân" as UC_MyShift
+  }
+
+  package "Quản lý khuyến mãi" {
+    usecase "Xem danh sách khuyến mãi" as UC_ViewPromo
+    usecase "Thêm / Sửa / Xóa khuyến mãi" as UC_CrudPromo
+  }
+
+  package "Thống kê & Báo cáo" {
+    usecase "Xem thống kê doanh thu" as UC_Stats
+    usecase "Lọc theo khoảng thời gian" as UC_FilterStats
+    usecase "Xem biểu đồ doanh thu" as UC_Chart
+  }
+
+}
+
+' ===== QUẢN LÝ (full access) =====
+QL --> UC_Login
+QL --> UC_Dashboard
+QL --> UC_ViewTable
+QL --> UC_CrudTable
+QL --> UC_TableStatus
+QL --> UC_ViewBooking
+QL --> UC_CreateBooking
+QL --> UC_CancelBooking
+QL --> UC_CheckIn
+QL --> UC_ViewInvoice
+QL --> UC_CreateInvoice
+QL --> UC_Payment
+QL --> UC_InvoiceDetail
+QL --> UC_ViewCustomer
+QL --> UC_CrudCustomer
+QL --> UC_CustomerHistory
+QL --> UC_ViewMenu
+QL --> UC_CrudMenu
+QL --> UC_ViewEmployee
+QL --> UC_CrudEmployee
+QL --> UC_ManageAccount
+QL --> UC_ViewShift
+QL --> UC_AssignShift
+QL --> UC_ViewPromo
+QL --> UC_CrudPromo
+QL --> UC_Stats
+
+' ===== NHÂN VIÊN PHỤC VỤ =====
+' (Sidebar: Đặt bàn, Hóa đơn, Khách hàng — không có Dashboard, Bàn, Ca làm, Thống kê, KM, NV, Món ăn)
+NV --> UC_Login
+NV --> UC_ViewBooking
+NV --> UC_CreateBooking
+NV --> UC_CancelBooking
+NV --> UC_PreorderDish
+NV --> UC_CheckIn
+NV --> UC_ViewInvoice
+NV --> UC_CreateInvoice
+NV --> UC_Payment
+NV --> UC_InvoiceDetail
+NV --> UC_ViewCustomer
+NV --> UC_CrudCustomer
+NV --> UC_CustomerHistory
+
+' ===== NHÂN VIÊN BẾP =====
+' (Sidebar: Màn hình bếp — chỉ xem và cập nhật trạng thái món)
+BEP --> UC_Login
+BEP --> UC_ViewOrders
+BEP --> UC_UpdateDishStatus
+
+' ===== INCLUDE / EXTEND =====
+UC_Login ..> UC_ForgotPw : <<extend>>
+UC_Payment ..> UC_ApplyPromo : <<include>>
+UC_CreateBooking ..> UC_PreorderDish : <<extend>>
+UC_Stats ..> UC_FilterStats : <<include>>
+UC_Stats ..> UC_Chart : <<include>>
+UC_ViewInvoice ..> UC_InvoiceDetail : <<extend>>
+
+@enduml

@@ -36,7 +36,7 @@ public class Ban_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return dsBan;
     }
 
@@ -61,6 +61,7 @@ public class Ban_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return null;
     }
 
@@ -79,6 +80,7 @@ public class Ban_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return "BAN001";
     }
 
@@ -92,6 +94,7 @@ public class Ban_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return false;
     }
 
@@ -108,6 +111,36 @@ public class Ban_DAO {
                 return st.executeUpdate() > 0;
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
+        return false;
+    }
+
+    public boolean updateBan(Ban ban) {
+        Connection con = ConnectDB.getConnection();
+        try {
+            try (PreparedStatement st = con.prepareStatement(
+                    "UPDATE Ban SET soBan=?, sucChua=?, loaiBan=?, maKV=? WHERE maBan=?")) {
+                st.setInt(1, ban.getSoBan());
+                st.setInt(2, ban.getSucChua());
+                st.setString(3, ban.getLoaiBan());
+                st.setString(4, ban.getKhuVuc().getMaKV());
+                st.setString(5, ban.getMaBan());
+                return st.executeUpdate() > 0;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
+        return false;
+    }
+
+    public boolean deleteBan(String maBan) {
+        Connection con = ConnectDB.getConnection();
+        try {
+            try (PreparedStatement st = con.prepareStatement("DELETE FROM Ban WHERE maBan=?")) {
+                st.setString(1, maBan);
+                return st.executeUpdate() > 0;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return false;
     }
 
@@ -122,6 +155,7 @@ public class Ban_DAO {
                 String dbValue = "TRONG";
                 if (tinhTrang == TrangThaiBan.DaDuocDat) dbValue = "DAT_TRUOC";
                 else if (tinhTrang == TrangThaiBan.DangDuocSuDung) dbValue = "DANG_SD";
+                else if (tinhTrang == TrangThaiBan.DangDonDep) dbValue = "DANG_DON";
                 else if (tinhTrang == TrangThaiBan.BaoTri) dbValue = "BAO_TRI";
 
                 statement.setString(1, dbValue);
@@ -133,7 +167,7 @@ public class Ban_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 }

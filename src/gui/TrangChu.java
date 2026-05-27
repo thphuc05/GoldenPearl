@@ -1,9 +1,6 @@
 package gui;
 
-import dao.ChiTietHoaDon_DAO;
-import dao.HoaDon_DAO;
 import dao.NhanVien_DAO;
-import entity.HoaDon;
 import entity.NhanVien;
 import entity.TaiKhoan;
 
@@ -97,16 +94,22 @@ public class TrangChu extends JFrame {
             ImageIcon li = (ImageIcon) btnFirst.getClientProperty("lightIcon");
             if (li != null) btnFirst.setIcon(li);
 
-            // Nếu là nhân viên bếp → mở thẳng màn hình bếp
+            // Phân quyền màn hình mặc định sau khi đăng nhập
             String vaiTro = taiKhoan != null ? taiKhoan.getVaiTro() : "";
             boolean isBep = "BEP".equalsIgnoreCase(vaiTro) || "Bếp".equalsIgnoreCase(vaiTro);
+            boolean isQL  = "QL".equalsIgnoreCase(vaiTro) || "Quản Lý".equalsIgnoreCase(vaiTro) || "QUAN_LY".equalsIgnoreCase(vaiTro);
             if (isBep) {
                 pQuanLyBep = new QuanLyBep();
                 contentArea.add(pQuanLyBep, "MànHìnhBếp");
                 cardLayout.show(contentArea, "MànHìnhBếp");
-            } else {
+            } else if (isQL) {
                 cardLayout.show(contentArea, "TrangChủ");
                 pDashboard.refreshData();
+            } else {
+                // Nhân viên → mặc định mở Đặt bàn
+                if (pDatBan == null) { pDatBan = new QuanLyDatBan(nhanVien, () -> setMenuEnabled(false), () -> setMenuEnabled(true)); contentArea.add(pDatBan, "ĐặtBàn"); }
+                pDatBan.refreshData();
+                cardLayout.show(contentArea, "ĐặtBàn");
             }
         }
     }
@@ -141,10 +144,14 @@ public class TrangChu extends JFrame {
         menuButtonsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         menuButtonsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        if (!isBep) {
+        // Quản lý: có thêm Trang chủ
+        if (isQuanLy) {
             menuButtonsPanel.add(createSidebarButton("Trang chủ", "home_filled_300dp_FFFFFF.png",
                     e -> showCard("TrangChủ", (JButton) e.getSource())));
             menuButtonsPanel.add(Box.createVerticalStrut(2));
+        }
+
+        if (!isBep) {
             menuButtonsPanel.add(createSidebarButton("Đặt bàn", "menu_open_300dp_FFFFFF.png",
                     e -> showCard("ĐặtBàn", (JButton) e.getSource())));
             menuButtonsPanel.add(Box.createVerticalStrut(2));
@@ -160,14 +167,14 @@ public class TrangChu extends JFrame {
             menuButtonsPanel.add(createSidebarButton("Quản lý hoá đơn", "receipt_300dp_FFFFFF.png",
                     e -> showCard("HóaĐơn", (JButton) e.getSource())));
             menuButtonsPanel.add(Box.createVerticalStrut(2));
+            menuButtonsPanel.add(createSidebarButton("Quản lý khách hàng", "people_300dp_FFFFFF.png",
+                    e -> showCard("KháchHàng", (JButton) e.getSource())));
+            menuButtonsPanel.add(Box.createVerticalStrut(2));
         }
 
         if (isQuanLy) {
             menuButtonsPanel.add(createSidebarButton("Quản lý nhân viên", "badge_300dp_FFFFFF.png",
                     e -> showCard("NhânViên", (JButton) e.getSource())));
-            menuButtonsPanel.add(Box.createVerticalStrut(2));
-            menuButtonsPanel.add(createSidebarButton("Quản lý khách hàng", "people_300dp_FFFFFF.png",
-                    e -> showCard("KháchHàng", (JButton) e.getSource())));
             menuButtonsPanel.add(Box.createVerticalStrut(2));
             menuButtonsPanel.add(createSidebarButton("Quản lý món ăn", "dinner_dining_300dp_FFFFFF.png",
                     e -> showCard("MónĂn", (JButton) e.getSource())));
@@ -352,7 +359,7 @@ public class TrangChu extends JFrame {
                 if (pThongKe == null) { pThongKe = new QuanLyThongKe(); contentArea.add(pThongKe, "ThốngKê"); }
                 pThongKe.refreshData(); break;  // thống kê luôn refresh
             case "ĐặtBàn":
-                if (pDatBan == null) { pDatBan = new QuanLyDatBan(nhanVien); contentArea.add(pDatBan, "ĐặtBàn"); }
+                if (pDatBan == null) { pDatBan = new QuanLyDatBan(nhanVien, () -> setMenuEnabled(false), () -> setMenuEnabled(true)); contentArea.add(pDatBan, "ĐặtBàn"); }
                 pDatBan.refreshData(); break;  // đặt bàn luôn refresh (trạng thái bàn thay đổi liên tục)
             case "QuảnLýBàn":
                 if (pQuanLyBan == null) { pQuanLyBan = new QuanLyBan(); contentArea.add(pQuanLyBan, "QuảnLýBàn"); }
@@ -380,6 +387,13 @@ public class TrangChu extends JFrame {
         ImageIcon li = (ImageIcon) lastSelectedButton.getClientProperty("lightIcon");
         if (li != null) lastSelectedButton.setIcon(li);
         lastSelectedButton.repaint();
+    }
+
+    void setMenuEnabled(boolean enabled) {
+        if (menuButtonsPanel == null) return;
+        for (Component c : menuButtonsPanel.getComponents()) {
+            c.setEnabled(enabled);
+        }
     }
 
     private ImageIcon getScaledIcon(String path, int w, int h) {
@@ -412,15 +426,18 @@ public class TrangChu extends JFrame {
 
     // ======================== DASHBOARD ========================
     private class DashboardPanel extends JPanel {
-        private final HoaDon_DAO hd_dao = new HoaDon_DAO();
-        private final ChiTietHoaDon_DAO ct_dao = new ChiTietHoaDon_DAO();
+        private final service.DashboardService dashboardService = new service.DashboardService();
+        private final dao.CaLam_DAO ca_dao = new dao.CaLam_DAO();
         private JLabel lblRevenue, lblProfit, lblInvoices, lblCustomers;
+        private JLabel lblTienMat, lblChuyenKhoan;
         private JPanel pChartContainer, pBestSellers;
         private DefaultTableModel tableModel;
-        private int currentDays = 7;
-        private JButton btnToday, btn7Days, btn30Days;
+        private String currentMaCa = null;
+        private JButton btnToday, btnTheoCA;
+        private JComboBox<entity.CaLam> cmbCa;
         private final DecimalFormat df = new DecimalFormat("#,### VNĐ");
         private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM");
+        private SwingWorker<?, ?> currentDashboardWorker = null;
 
         public DashboardPanel() {
             setLayout(new BorderLayout(0, 16));
@@ -441,22 +458,34 @@ public class TrangChu extends JFrame {
             JPanel pFilter = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
             pFilter.setOpaque(false);
             btnToday  = makeFilterBtn("Hôm nay");
-            btn7Days  = makeFilterBtn("7 ngày qua");
-            btn30Days = makeFilterBtn("30 ngày qua");
-            btnToday.addActionListener(e -> { currentDays = 1; activateFilter(btnToday); loadData(1); });
-            btn7Days.addActionListener(e -> { currentDays = 7; activateFilter(btn7Days); loadData(7); });
-            btn30Days.addActionListener(e -> { currentDays = 30; activateFilter(btn30Days); loadData(30); });
-            pFilter.add(btnToday); pFilter.add(btn7Days); pFilter.add(btn30Days);
+            btnTheoCA = makeFilterBtn("Theo ca");
+            cmbCa = new JComboBox<>();
+            cmbCa.setFont(new Font("Inter Medium", Font.PLAIN, 12));
+            cmbCa.setPreferredSize(new Dimension(130, 32));
+            cmbCa.setVisible(false);
+            new SwingWorker<java.util.List<entity.CaLam>, Void>() {
+                @Override protected java.util.List<entity.CaLam> doInBackground() { return ca_dao.getAll(); }
+                @Override protected void done() {
+                    try { for (entity.CaLam ca : get()) cmbCa.addItem(ca); } catch (Exception ignored) {}
+                }
+            }.execute();
+            btnToday.addActionListener(e  -> { currentMaCa = null; cmbCa.setVisible(false); activateFilter(btnToday); loadData(); });
+            btnTheoCA.addActionListener(e -> { currentMaCa = null; cmbCa.setVisible(true); activateFilter(btnTheoCA); loadData(); });
+            cmbCa.addActionListener(e -> {
+                entity.CaLam sel = (entity.CaLam) cmbCa.getSelectedItem();
+                if (sel != null) { currentMaCa = sel.getMaCa(); loadData(); }
+            });
+            pFilter.add(btnToday); pFilter.add(btnTheoCA); pFilter.add(cmbCa);
             pHeader.add(pFilter, BorderLayout.EAST);
             add(pHeader, BorderLayout.NORTH);
 
             JPanel pContent = new JPanel(new BorderLayout(0, 16));
             pContent.setOpaque(false);
 
-            // Stat cards
+            // Stat cards — hàng trên 4 card tổng quan
             JPanel pStats = new JPanel(new GridLayout(1, 4, 18, 0));
             pStats.setOpaque(false);
-            pStats.setPreferredSize(new Dimension(0, 115));
+            pStats.setPreferredSize(new Dimension(0, 105));
             lblRevenue   = new JLabel("0 VNĐ");
             lblProfit    = new JLabel("0 VNĐ");
             lblInvoices  = new JLabel("0");
@@ -465,7 +494,23 @@ public class TrangChu extends JFrame {
             pStats.add(makeStatCard("LỢI NHUẬN",       lblProfit,    new Color(230, 126, 34)));
             pStats.add(makeStatCard("TỔNG HÓA ĐƠN",   lblInvoices,  new Color(52, 152, 219)));
             pStats.add(makeStatCard("TỔNG KHÁCH HÀNG", lblCustomers, MAIN_RED));
-            pContent.add(pStats, BorderLayout.NORTH);
+
+            // Hàng dưới — phân tích hình thức thanh toán
+            JPanel pPayment = new JPanel(new GridLayout(1, 2, 18, 0));
+            pPayment.setOpaque(false);
+            pPayment.setPreferredSize(new Dimension(0, 85));
+            lblTienMat      = new JLabel("0 VNĐ");
+            lblChuyenKhoan  = new JLabel("0 VNĐ");
+            pPayment.add(makeStatCard("TIỀN MẶT",      lblTienMat,     new Color(39, 174, 96)));
+            pPayment.add(makeStatCard("CHUYỂN KHOẢN",  lblChuyenKhoan, new Color(41, 128, 185)));
+
+            JPanel pNorthSection = new JPanel();
+            pNorthSection.setLayout(new BoxLayout(pNorthSection, BoxLayout.Y_AXIS));
+            pNorthSection.setOpaque(false);
+            pNorthSection.add(pStats);
+            pNorthSection.add(Box.createVerticalStrut(12));
+            pNorthSection.add(pPayment);
+            pContent.add(pNorthSection, BorderLayout.NORTH);
 
             // Chart — full width
             JPanel pChartCard = makeCard();
@@ -489,7 +534,7 @@ public class TrangChu extends JFrame {
             lblTblTitle.setForeground(TEXT_DARK);
             pInvoiceCard.add(lblTblTitle, BorderLayout.NORTH);
 
-            String[] cols = {"Hóa đơn", "Ngày", "Tổng tiền", "Lợi nhuận"};
+            String[] cols = {"Hóa đơn", "Ngày", "Thời gian", "Tổng tiền", "Lợi nhuận"};
             tableModel = new DefaultTableModel(cols, 0) {
                 @Override public boolean isCellEditable(int r, int c) { return false; }
             };
@@ -564,7 +609,7 @@ public class TrangChu extends JFrame {
         }
 
         private void activateFilter(JButton active) {
-            for (JButton b : new JButton[]{btnToday, btn7Days, btn30Days}) {
+            for (JButton b : new JButton[]{btnToday, btnTheoCA}) {
                 b.setBackground(Color.WHITE); b.setForeground(TEXT_DARK); b.repaint();
             }
             active.setBackground(MAIN_BLUE); active.setForeground(Color.WHITE); active.repaint();
@@ -613,108 +658,49 @@ public class TrangChu extends JFrame {
             return card;
         }
 
-        public void refreshData() { activateFilter(btn7Days); loadData(currentDays); }
+        public void refreshData() { activateFilter(btnToday); currentMaCa = null; cmbCa.setVisible(false); loadData(); }
 
-        @SuppressWarnings("unchecked")
-        public void loadData(int days) {
-            new SwingWorker<Map<String, Object>, Void>() {
+        public void loadData() {
+            if (currentDashboardWorker != null && !currentDashboardWorker.isDone()) {
+                currentDashboardWorker.cancel(true);
+            }
+            final String maCaFilter = currentMaCa;
+            currentDashboardWorker = new SwingWorker<service.DashboardService.DashboardResult, Void>() {
                 @Override
-                protected Map<String, Object> doInBackground() {
-                    Calendar cal = Calendar.getInstance();
-                    cal.set(Calendar.HOUR_OF_DAY, 23); cal.set(Calendar.MINUTE, 59);
-                    cal.set(Calendar.SECOND, 59); cal.set(Calendar.MILLISECOND, 999);
-                    Date end = cal.getTime();
-                    cal.add(Calendar.DAY_OF_YEAR, -days + 1);
-                    cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0);
-                    cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
-                    Date start = cal.getTime();
-
-                    List<HoaDon> dsHD = hd_dao.getHoaDonByDateRange(start, end);
-                    double totalRev = 0; int totalInv = 0;
-                    Set<String> customers = new HashSet<>();
-                    Map<String, Double> chartData = new LinkedHashMap<>();
-
-                    Calendar tmp = Calendar.getInstance(); tmp.setTime(start);
-                    for (int i = 0; i < days; i++) {
-                        chartData.put(sdf.format(tmp.getTime()), 0.0);
-                        tmp.add(Calendar.DAY_OF_YEAR, 1);
-                    }
-
-                    java.sql.Timestamp ts1 = new java.sql.Timestamp(start.getTime());
-                    java.sql.Timestamp ts2 = new java.sql.Timestamp(end.getTime());
-                    double profit = ct_dao.getProfitByDateRange(ts1, ts2);
-                    Map<String, Double> profitMap = ct_dao.getProfitGroupedByMaHD(ts1, ts2);
-                    Map<String, Integer> top = ct_dao.getTop5SellingDishesByDateRange(ts1, ts2);
-
-                    List<Object[]> rows = new ArrayList<>();
-                    SimpleDateFormat dfmt = new SimpleDateFormat("dd/MM/yyyy");
-                    for (HoaDon hd : dsHD) {
-                        if (hd.isTrangThai()) {
-                            totalRev += hd.getTongTien();
-                            totalInv++;
-                            if (hd.getKhachHang() != null) customers.add(hd.getKhachHang().getMaKH());
-                            String ds = sdf.format(hd.getNgayLap());
-                            if (chartData.containsKey(ds)) chartData.put(ds, chartData.get(ds) + hd.getTongTien());
-                            if (rows.size() < 10) {
-                                double rowProfit = profitMap.getOrDefault(hd.getMaHD(), 0.0);
-                                rows.add(new Object[]{hd.getMaHD(), dfmt.format(hd.getNgayLap()),
-                                        new DecimalFormat("#,###").format(hd.getTongTien()) + " VNĐ",
-                                        rowProfit > 0 ? new DecimalFormat("#,###").format(rowProfit) + " VNĐ" : "—"});
-                            }
-                        }
-                    }
-
-                    Map<String, Double> profitByDate = new LinkedHashMap<>();
-                    Calendar tmp2 = Calendar.getInstance(); tmp2.setTime(start);
-                    for (int j = 0; j < days; j++) {
-                        profitByDate.put(sdf.format(tmp2.getTime()), 0.0);
-                        tmp2.add(Calendar.DAY_OF_YEAR, 1);
-                    }
-                    for (HoaDon hd2 : dsHD) {
-                        if (hd2.isTrangThai()) {
-                            String ds2 = sdf.format(hd2.getNgayLap());
-                            double p2 = profitMap.getOrDefault(hd2.getMaHD(), 0.0);
-                            if (profitByDate.containsKey(ds2))
-                                profitByDate.put(ds2, profitByDate.get(ds2) + p2);
-                        }
-                    }
-
-                    Map<String, Object> res = new HashMap<>();
-                    res.put("rev", totalRev); res.put("inv", totalInv);
-                    res.put("cust", customers.size()); res.put("profit", profit);
-                    res.put("chart", chartData); res.put("top", top); res.put("rows", rows);
-                    res.put("profitByDate", profitByDate);
-                    return res;
+                protected service.DashboardService.DashboardResult doInBackground() {
+                    return dashboardService.loadDashboardData(maCaFilter);
                 }
 
                 @Override
                 protected void done() {
+                    if (isCancelled()) return;
                     try {
-                        Map<String, Object> res = get();
-                        lblRevenue.setText(df.format(res.get("rev")));
-                        lblProfit.setText(df.format(res.get("profit")));
-                        lblInvoices.setText(String.valueOf(res.get("inv")));
-                        lblCustomers.setText(String.valueOf(res.get("cust")));
+                        service.DashboardService.DashboardResult res = get();
+                        lblRevenue.setText(df.format(res.totalRev));
+                        lblProfit.setText(df.format(res.profit));
+                        lblInvoices.setText(String.valueOf(res.totalInv));
+                        lblCustomers.setText(String.valueOf(res.totalCustomers));
+                        lblTienMat.setText(df.format(res.tienMat));
+                        lblChuyenKhoan.setText(df.format(res.chuyenKhoan));
 
                         pChartContainer.removeAll();
-                        pChartContainer.add(new SimpleBarChart(
-                            (Map<String, Double>) res.get("chart"),
-                            (Map<String, Double>) res.get("profitByDate")), BorderLayout.CENTER);
+                        pChartContainer.add(new SimpleBarChart(res.chartData, res.profitByDate), BorderLayout.CENTER);
                         pChartContainer.revalidate(); pChartContainer.repaint();
 
                         pBestSellers.removeAll();
                         int rank = 1;
-                        for (Map.Entry<String, Integer> e : ((Map<String, Integer>) res.get("top")).entrySet()) {
+                        for (Map.Entry<String, Integer> e : res.top.entrySet()) {
                             pBestSellers.add(makeBestRow(rank++, e.getKey(), e.getValue()));
                             pBestSellers.add(Box.createVerticalStrut(10));
                         }
                         pBestSellers.revalidate(); pBestSellers.repaint();
 
                         tableModel.setRowCount(0);
-                        for (Object[] row : (List<Object[]>) res.get("rows")) tableModel.addRow(row);
+                        for (Object[] row : res.rows) tableModel.addRow(row);
                     } catch (Exception ex) { ex.printStackTrace(); }
                 }
-            }.execute();
+            };
+            currentDashboardWorker.execute();
         }
 
         private JPanel makeBestRow(int rank, String name, int qty) {

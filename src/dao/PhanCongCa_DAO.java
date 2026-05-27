@@ -38,7 +38,7 @@ public class PhanCongCa_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return ds;
     }
 
@@ -65,7 +65,7 @@ public class PhanCongCa_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        } finally { ConnectDB.closeConnection(); }
     }
 
     public boolean deletePhanCong(int maPhanCong) {
@@ -77,7 +77,7 @@ public class PhanCongCa_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        } finally { ConnectDB.closeConnection(); }
     }
 
     public boolean deletePhanCongByKey(String maCa, String maNV, java.sql.Date ngayLam) {
@@ -92,7 +92,7 @@ public class PhanCongCa_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        } finally { ConnectDB.closeConnection(); }
     }
 
     public static String getMigrationSQL() {

@@ -27,6 +27,7 @@ public class HoaDon_DAO {
                 while (rs.next()) ds.add(mapBasic(rs));
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return ds;
     }
 
@@ -45,6 +46,7 @@ public class HoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return null;
     }
 
@@ -63,6 +65,7 @@ public class HoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return null;
     }
 
@@ -83,6 +86,47 @@ public class HoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
+        return ds;
+    }
+
+    public List<HoaDon> getHoaDonByMaCa(String maCa) {
+        List<HoaDon> ds = new ArrayList<>();
+        Connection con = ConnectDB.getConnection();
+        try {
+            String sql = "SELECT hd.*, nv.tenNV, kh.tenKH, kh.soDT AS khSoDT " +
+                    "FROM HoaDon hd " +
+                    "LEFT JOIN NhanVien nv ON hd.maNV = nv.maNV " +
+                    "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH " +
+                    "WHERE hd.maCa = ?";
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, maCa);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) ds.add(mapFull(rs));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
+        return ds;
+    }
+
+    public List<HoaDon> getHoaDonByMaCaToday(String maCa) {
+        List<HoaDon> ds = new ArrayList<>();
+        Connection con = ConnectDB.getConnection();
+        try {
+            String sql = "SELECT hd.*, nv.tenNV, kh.tenKH, kh.soDT AS khSoDT " +
+                    "FROM HoaDon hd " +
+                    "LEFT JOIN NhanVien nv ON hd.maNV = nv.maNV " +
+                    "LEFT JOIN KhachHang kh ON hd.maKH = kh.maKH " +
+                    "WHERE hd.maCa = ? AND CAST(hd.ngayLap AS DATE) = CAST(GETDATE() AS DATE)";
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, maCa);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) ds.add(mapFull(rs));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return ds;
     }
 
@@ -96,8 +140,8 @@ public class HoaDon_DAO {
         try {
             String sql = "INSERT INTO HoaDon " +
                     "(maHD, ngayLap, thoiGian, tongTien, trangThaiThanhToan, hinhThucThanhToan, " +
-                    " maDon, maNV, maKH, maKM, tienCoc) " +
-                    "VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+                    " maDon, maNV, maKH, maKM, tienCoc, maCa) " +
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, hd.getMaHD());
                 ps.setTimestamp(2, new Timestamp(hd.getNgayLap().getTime()));
@@ -111,13 +155,15 @@ public class HoaDon_DAO {
                     ps.setNull(6, Types.NVARCHAR);
                 setNullable(ps, 7, hd.getDonDatBan() != null ? hd.getDonDatBan().getMaDon() : null);
                 setNullable(ps, 8, hd.getNhanVien()  != null ? hd.getNhanVien().getMaNV()   : null);
-                ps.setString(9, hd.getKhachHang().getMaKH());
+                setNullable(ps, 9, hd.getKhachHang() != null ? hd.getKhachHang().getMaKH() : null);
                 setNullable(ps, 10, hd.getKhuyenMai() != null ? hd.getKhuyenMai().getMaKM() : null);
                 ps.setDouble(11, hd.getTienCoc());
+                setNullable(ps, 12, hd.getMaCa());
                 n = ps.executeUpdate();
                 if (n > 0) logCreate(hd);
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -147,6 +193,7 @@ public class HoaDon_DAO {
                                 + " WHERE maHD=" + SQLLogger.str(maHD) + ";");
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -172,6 +219,26 @@ public class HoaDon_DAO {
                                 + SQLLogger.str(maHD) + ";");
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
+        return n > 0;
+    }
+
+    public boolean updateKhachHangVaGhiChu(String maHD, String maKH, String ghiChu) {
+        Connection con = ConnectDB.getConnection();
+        int n = 0;
+        try {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "UPDATE HoaDon SET maKH=?, ghiChu=? WHERE maHD=?")) {
+                ps.setString(1, maKH);
+                ps.setNString(2, ghiChu);
+                ps.setString(3, maHD);
+                n = ps.executeUpdate();
+                if (n > 0) SQLLogger.log("UPDATE HoaDon SET maKH=" + SQLLogger.str(maKH)
+                        + ", ghiChu=" + SQLLogger.nStr(ghiChu)
+                        + " WHERE maHD=" + SQLLogger.str(maHD) + ";");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -187,6 +254,7 @@ public class HoaDon_DAO {
                         + " WHERE maHD=" + SQLLogger.str(maHD) + ";");
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -204,6 +272,7 @@ public class HoaDon_DAO {
                 if (n > 0) SQLLogger.log("DELETE FROM HoaDon WHERE maHD=" + SQLLogger.str(maHD) + ";");
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -219,6 +288,7 @@ public class HoaDon_DAO {
                 if (rs.next()) return rs.getString(1);
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return "";
     }
 
@@ -248,6 +318,7 @@ public class HoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return 0;
     }
 
@@ -271,6 +342,7 @@ public class HoaDon_DAO {
                 while (rs.next()) map.put(rs.getString("maHD"), rs.getString("tenKV"));
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return map;
     }
 
@@ -302,6 +374,7 @@ public class HoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return map;
     }
 
@@ -333,6 +406,7 @@ public class HoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return map;
     }
 
@@ -356,6 +430,7 @@ public class HoaDon_DAO {
         try { hd.setTienCoc(rs.getDouble("tienCoc")); } catch (Exception ignored) {}
         try { hd.setMaCa(rs.getString("maCa")); } catch (Exception ignored) {}
         try { hd.setThoiGianRoiThucTe(rs.getTimestamp("thoiGianRoiThucTe")); } catch (Exception ignored) {}
+        try { hd.setGhiChu(rs.getNString("ghiChu")); } catch (Exception ignored) {}
 
         String maDon = rs.getString("maDon");
         if (maDon != null) {
@@ -402,7 +477,7 @@ public class HoaDon_DAO {
                         + SQLLogger.str(hd.getThoiGian() != null ? hd.getThoiGian().toString() : "") + ","
                         + SQLLogger.num(hd.getTongTien()) + ","
                         + SQLLogger.nStr(hd.getTrangThaiThanhToan().getDisplay()) + "," + ht + ","
-                        + maDon + "," + maNV + "," + SQLLogger.str(hd.getKhachHang().getMaKH()) + ","
+                        + maDon + "," + maNV + "," + (hd.getKhachHang() != null ? SQLLogger.str(hd.getKhachHang().getMaKH()) : "NULL") + ","
                         + maKM + "," + SQLLogger.num(hd.getTienCoc()) + ");");
     }
 }

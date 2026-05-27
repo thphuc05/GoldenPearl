@@ -189,20 +189,75 @@ public class ConnectDB {
                 // ── email NhanVien ────────────────────────────────────────────
                 "IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS "
                         + "WHERE TABLE_NAME='NhanVien' AND COLUMN_NAME='email') "
-                        + "ALTER TABLE NhanVien ADD email NVARCHAR(100) NULL"
+                        + "ALTER TABLE NhanVien ADD email NVARCHAR(100) NULL",
+
+                // ── ghiChu HoaDon ─────────────────────────────────────────────────
+                "IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS "
+                        + "WHERE TABLE_NAME='HoaDon' AND COLUMN_NAME='ghiChu') "
+                        + "ALTER TABLE HoaDon ADD ghiChu NVARCHAR(500) NULL",
+
+                // ── trangThaiMon ChiTietHoaDon ────────────────────────────────────
+                // Thêm cột lần đầu: row cũ nhận DEFAULT 'CHO_XU_LY', dùng EXEC để
+                // tránh lỗi parse-time khi UPDATE cột vừa tạo.
+                "IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS "
+                        + "WHERE TABLE_NAME='ChiTietHoaDon' AND COLUMN_NAME='trangThaiMon') "
+                        + "BEGIN "
+                        + "  ALTER TABLE ChiTietHoaDon ADD trangThaiMon NVARCHAR(20) NOT NULL "
+                        + "    CONSTRAINT DF_CTHD_TrangThai DEFAULT N'CHO_XU_LY'; "
+                        + "  EXEC('UPDATE ChiTietHoaDon SET trangThaiMon = N''DA_PHUC_VU'' "
+                        + "        WHERE trangThaiMon = N''CHO_XU_LY'''); "
+                        + "END",
+
+                // ── thoiGianGoi ChiTietHoaDon ─────────────────────────────────────
+                // Phải thêm TRƯỚC bước đổi PK bên dưới.
+                "IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS "
+                        + "WHERE TABLE_NAME='ChiTietHoaDon' AND COLUMN_NAME='thoiGianGoi') "
+                        + "ALTER TABLE ChiTietHoaDon ADD thoiGianGoi DATETIME NOT NULL "
+                        + "CONSTRAINT DF_CTHD_ThoiGianGoi DEFAULT GETDATE()",
+
+                // ── ChiTietHoaDon PK: (maHD, maMon) → (maHD, maMon, thoiGianGoi) ──
+                // Bước 1: drop PK cũ nếu chưa bao gồm thoiGianGoi
+                "DECLARE @pkCTHD NVARCHAR(256); "
+                        + "SELECT @pkCTHD = kc.name "
+                        + "FROM sys.key_constraints kc "
+                        + "WHERE kc.parent_object_id = OBJECT_ID('ChiTietHoaDon') AND kc.type = 'PK' "
+                        + "  AND NOT EXISTS ("
+                        + "    SELECT 1 FROM sys.index_columns ic "
+                        + "    JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id "
+                        + "    WHERE ic.object_id = kc.parent_object_id AND ic.index_id = kc.unique_index_id "
+                        + "      AND c.name = 'thoiGianGoi'); "
+                        + "IF @pkCTHD IS NOT NULL "
+                        + "  EXEC('ALTER TABLE ChiTietHoaDon DROP CONSTRAINT [' + @pkCTHD + ']')",
+
+                // Bước 2: thêm PK mới nếu chưa có
+                "IF NOT EXISTS ("
+                        + "  SELECT 1 FROM sys.key_constraints kc "
+                        + "  JOIN sys.index_columns ic ON ic.object_id = kc.parent_object_id AND ic.index_id = kc.unique_index_id "
+                        + "  JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id "
+                        + "  WHERE kc.parent_object_id = OBJECT_ID('ChiTietHoaDon') AND kc.type = 'PK' AND c.name = 'thoiGianGoi') "
+                        + "ALTER TABLE ChiTietHoaDon "
+                        + "ADD CONSTRAINT pk_ChiTietHoaDon PRIMARY KEY (maHD, maMon, thoiGianGoi)"
         };
 
-        try (Statement st = con.createStatement()) {
-            for (String sql : migrations) {
-                try {
-                    st.execute(sql);
-                } catch (SQLException e) {
-                    System.err.println("⚠️ Migration warning: " + e.getMessage());
+
+        try {
+            con.setAutoCommit(false);
+            try (Statement st = con.createStatement()) {
+                for (String sql : migrations) {
+                    try {
+                        st.execute(sql);
+                    } catch (SQLException e) {
+                        System.err.println("⚠️ Migration warning: " + e.getMessage());
+                    }
                 }
+                con.commit();
+                System.out.println("✅ Migrations hoàn thành.");
             }
-            System.out.println("✅ Migrations hoàn thành.");
         } catch (SQLException e) {
-            System.err.println("❌ Không thể tạo Statement: " + e.getMessage());
+            try { con.rollback(); } catch (SQLException ignored) {}
+            System.err.println("❌ Lỗi migration: " + e.getMessage());
+        } finally {
+            try { con.setAutoCommit(true); } catch (SQLException ignored) {}
         }
     }
 }

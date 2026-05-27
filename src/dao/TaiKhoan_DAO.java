@@ -7,24 +7,26 @@ import java.sql.*;
 
 public class TaiKhoan_DAO {
 
-    public TaiKhoan checkLogin(String tenTK, String matKhau) {
+    public TaiKhoan checkLogin(String maTK, String matKhau) {
         Connection con = ConnectDB.getConnection();
         try {
-            String sql = "SELECT * FROM TaiKhoan WHERE tenTK = ?";
+            String sql = "SELECT * FROM TaiKhoan WHERE maTK = ?";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
-                ps.setString(1, tenTK);
+                ps.setString(1, maTK);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         String stored = rs.getString("matKhau");
                         if (PasswordUtil.verify(matKhau, stored)) {
-                            if (!PasswordUtil.isHashed(stored)) updateMatKhau(tenTK, matKhau);
-                            return mapRow(rs, tenTK);
+                            if (!PasswordUtil.isHashed(stored)) updateMatKhauByMaTK(maTK, matKhau);
+                            return mapRow(rs);
                         }
                     }
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            ConnectDB.closeConnection();
         }
         return null;
     }
@@ -36,11 +38,13 @@ public class TaiKhoan_DAO {
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, maTK);
                 try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) return mapRow(rs, rs.getString("tenTK"));
+                    if (rs.next()) return mapRow(rs);
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            ConnectDB.closeConnection();
         }
         return null;
     }
@@ -52,11 +56,13 @@ public class TaiKhoan_DAO {
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, tenTK);
                 try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) return mapRow(rs, tenTK);
+                    if (rs.next()) return mapRow(rs);
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            ConnectDB.closeConnection();
         }
         return null;
     }
@@ -74,6 +80,8 @@ public class TaiKhoan_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            ConnectDB.closeConnection();
         }
         return false;
     }
@@ -90,25 +98,10 @@ public class TaiKhoan_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            ConnectDB.closeConnection();
         }
         return false;
-    }
-
-    public String getNextMaTK() {
-        Connection con = ConnectDB.getConnection();
-        try {
-            String sql = "SELECT MAX(maTK) FROM TaiKhoan WHERE maTK LIKE 'TK%'";
-            try (PreparedStatement ps = con.prepareStatement(sql);
-                 ResultSet rs = ps.executeQuery()) {
-                if (rs.next() && rs.getString(1) != null) {
-                    int num = Integer.parseInt(rs.getString(1).substring(2)) + 1;
-                    return String.format("TK%03d", num);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return "TK001";
     }
 
     public boolean updateMatKhau(String tenTK, String matKhauMoi) {
@@ -122,6 +115,8 @@ public class TaiKhoan_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            ConnectDB.closeConnection();
         }
         return false;
     }
@@ -137,45 +132,35 @@ public class TaiKhoan_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            ConnectDB.closeConnection();
         }
         return false;
     }
 
     public TaiKhoan checkQuenTK(String tenTK, String soDT) {
+        Connection con = ConnectDB.getConnection();
         String sql = "SELECT tk.* FROM TaiKhoan tk "
                 + "JOIN NhanVien nv ON tk.maTK = nv.maTK "
                 + "WHERE tk.tenTK = ? AND nv.soDT = ?";
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, tenTK);
             ps.setString(2, soDT);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs, rs.getString("tenTK"));
+                if (rs.next()) return mapRow(rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            ConnectDB.closeConnection();
         }
         return null;
     }
 
-    public boolean resetMatKhau(String maTK, String soCCCD) {
-        String sql = "UPDATE TaiKhoan SET matKhau = ? "
-                + "WHERE maTK = ? AND maTK IN "
-                + "(SELECT maTK FROM NhanVien WHERE soCCCD = ?)";
-        try (PreparedStatement ps = ConnectDB.getConnection().prepareStatement(sql)) {
-            ps.setString(1, PasswordUtil.hash("123456"));
-            ps.setString(2, maTK);
-            ps.setString(3, soCCCD);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    private TaiKhoan mapRow(ResultSet rs, String tenTK) throws SQLException {
+    private TaiKhoan mapRow(ResultSet rs) throws SQLException {
         return new TaiKhoan(
                 rs.getString("maTK"),
-                tenTK,
+                rs.getString("tenTK"),
                 rs.getString("matKhau"),
                 rs.getString("vaiTro"));
     }

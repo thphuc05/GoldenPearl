@@ -6,15 +6,15 @@ public class LichSuDiem {
     private String maGiaoDich;
     private String maKH;
     private String maHD;
-    private int    soGiaoDich;   // dương = tích lũy, âm = tiêu điểm
-    private String loai;         // "TichLuy" | "DoiVoucher"
+    private int          soGiaoDich;  // dương = tích lũy, âm = tiêu điểm
+    private LoaiGiaoDich loai;
     private Date   thoiGian;
     private String ghiChu;
 
     public LichSuDiem() {}
 
     public LichSuDiem(String maGiaoDich, String maKH, String maHD,
-                      int soGiaoDich, String loai, Date thoiGian, String ghiChu) {
+                      int soGiaoDich, LoaiGiaoDich loai, Date thoiGian, String ghiChu) {
         this.maGiaoDich = maGiaoDich;
         this.maKH       = maKH;
         this.maHD       = maHD;
@@ -36,8 +36,8 @@ public class LichSuDiem {
     public int    getSoGiaoDich()              { return soGiaoDich; }
     public void   setSoGiaoDich(int v)         { soGiaoDich = v; }
 
-    public String getLoai()                    { return loai; }
-    public void   setLoai(String v)            { loai = v; }
+    public LoaiGiaoDich getLoai()              { return loai; }
+    public void         setLoai(LoaiGiaoDich v){ loai = v; }
 
     public Date   getThoiGian()                { return thoiGian; }
     public void   setThoiGian(Date v)          { thoiGian = v; }

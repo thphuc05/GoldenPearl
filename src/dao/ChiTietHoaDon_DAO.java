@@ -33,7 +33,7 @@ public class ChiTietHoaDon_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return dsCTHD;
     }
 
@@ -58,7 +58,7 @@ public class ChiTietHoaDon_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return dsCTHD;
     }
 
@@ -68,18 +68,24 @@ public class ChiTietHoaDon_DAO {
     public List<MonBep> getDsMonChoXuLy() {
         List<MonBep> ds = new ArrayList<>();
         Connection con = ConnectDB.getConnection();
+        // Lấy kèm maDon và danh sách soBan để hiển thị tên cụm bàn trên màn hình bếp.
+        // Filter thời gian: walk-in (hd.maDon IS NULL) luôn hiển thị;
+        //   đơn đặt trước chỉ hiển thị khi thoiGianDen <= GETDATE().
         String sql =
-            "SELECT ct.maHD, ct.maMon, sp.tenMon, ct.soLuong, ct.thoiGianGoi, ct.ghiChu, ct.trangThaiMon, " +
+            "SELECT ct.maHD, hd.maDon, ct.maMon, sp.tenMon, ct.soLuong, ct.thoiGianGoi, ct.ghiChu, ct.trangThaiMon, " +
             "       COALESCE(MIN(b.soBan), 0) AS soBan, " +
-            "       COALESCE(MIN(b.maBan), '') AS maBan " +
+            "       COALESCE(MIN(b.maBan), '') AS maBan, " +
+            "       COALESCE(STRING_AGG(CAST(b.soBan AS NVARCHAR), '+') WITHIN GROUP (ORDER BY b.soBan ASC), '') AS tenCum " +
             "FROM ChiTietHoaDon ct " +
             "JOIN HoaDon hd ON ct.maHD = hd.maHD " +
             "JOIN SanPham sp ON ct.maMon = sp.maMon " +
+            "LEFT JOIN DonDatBan ddb ON ddb.maDon = hd.maDon " +
             "LEFT JOIN ChiTietDatBan ctdb ON ctdb.maDonDatBan = hd.maDon " +
             "LEFT JOIN Ban b ON ctdb.maBan = b.maBan " +
             "WHERE ct.trangThaiMon IN (N'CHO_XU_LY', N'DANG_LAM') " +
             "  AND (hd.trangThai IS NULL OR hd.trangThai = 0) " +
-            "GROUP BY ct.maHD, ct.maMon, sp.tenMon, ct.soLuong, ct.thoiGianGoi, ct.ghiChu, ct.trangThaiMon " +
+            "  AND (hd.maDon IS NULL OR ddb.thoiGianDen <= GETDATE()) " +
+            "GROUP BY ct.maHD, hd.maDon, ct.maMon, sp.tenMon, ct.soLuong, ct.thoiGianGoi, ct.ghiChu, ct.trangThaiMon " +
             "ORDER BY soBan ASC, ct.thoiGianGoi ASC";
         try {
             try (PreparedStatement stmt = con.prepareStatement(sql);
@@ -87,6 +93,7 @@ public class ChiTietHoaDon_DAO {
                 while (rs.next()) {
                     MonBep m = new MonBep();
                     m.maHD        = rs.getString("maHD");
+                    m.maDon       = rs.getString("maDon");
                     m.maMon       = rs.getString("maMon");
                     m.tenMon      = rs.getString("tenMon");
                     m.soLuong     = rs.getInt("soLuong");
@@ -95,33 +102,39 @@ public class ChiTietHoaDon_DAO {
                     m.trangThaiMon = TrangThaiMon.fromString(rs.getString("trangThaiMon"));
                     m.soBan       = rs.getInt("soBan");
                     m.maBan       = rs.getString("maBan");
+                    m.tenCum      = rs.getString("tenCum");
                     ds.add(m);
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return ds;
     }
 
     // ── Cập nhật trạng thái một món (bếp thao tác) ──────────────────────────
-    public boolean updateTrangThaiMon(String maHD, String maMon, TrangThaiMon trangThai) {
+    public boolean updateTrangThaiMon(String maHD, String maMon,
+                                      java.sql.Timestamp thoiGianGoi, TrangThaiMon trangThai) {
         Connection con = ConnectDB.getConnection();
         int n = 0;
         try {
             try (PreparedStatement stmt = con.prepareStatement(
-                    "UPDATE ChiTietHoaDon SET trangThaiMon = ? WHERE maHD = ? AND maMon = ?")) {
+                    "UPDATE ChiTietHoaDon SET trangThaiMon = ? " +
+                    "WHERE maHD = ? AND maMon = ? AND thoiGianGoi = ?")) {
                 stmt.setString(1, trangThai.toDatabaseValue());
                 stmt.setString(2, maHD);
                 stmt.setString(3, maMon);
+                stmt.setTimestamp(4, thoiGianGoi);
                 n = stmt.executeUpdate();
                 if (n > 0) SQLLogger.log(
                         "UPDATE ChiTietHoaDon SET trangThaiMon = " + SQLLogger.str(trangThai.toDatabaseValue()) +
-                        " WHERE maHD = " + SQLLogger.str(maHD) + " AND maMon = " + SQLLogger.str(maMon) + ";");
+                        " WHERE maHD = " + SQLLogger.str(maHD) +
+                        " AND maMon = " + SQLLogger.str(maMon) +
+                        " AND thoiGianGoi = '" + thoiGianGoi + "';");
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -151,7 +164,7 @@ public class ChiTietHoaDon_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -167,18 +180,46 @@ public class ChiTietHoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return false;
     }
 
-    // Khi waiter tăng số lượng → reset trangThaiMon = CHO_XU_LY để bếp biết có thêm
+    /**
+     * Trả về trạng thái gọi món cho (maHD, maMon):
+     *  0 = chưa gọi lần nào
+     *  1 = có row CHO_XU_LY → cộng dồn soLuong trên row đó
+     *  2 = có DANG_LAM nhưng không có CHO_XU_LY → INSERT row mới
+     *  3 = tất cả rows đã DA_XONG → INSERT row mới (gọi thêm)
+     */
+    public int getChiTietStatus(String maHD, String maMon) {
+        Connection con = ConnectDB.getConnection();
+        try {
+            String sql =
+                "SELECT CASE WHEN COUNT(CASE WHEN trangThaiMon = N'CHO_XU_LY' THEN 1 END) > 0 THEN 1 " +
+                "            WHEN COUNT(CASE WHEN trangThaiMon = N'DANG_LAM'   THEN 1 END) > 0 THEN 2 " +
+                "            WHEN COUNT(*) > 0 THEN 3 " +
+                "            ELSE 0 END " +
+                "FROM ChiTietHoaDon WHERE maHD = ? AND maMon = ?";
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, maHD);
+                st.setString(2, maMon);
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next()) return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
+        return 0;
+    }
+
+    // Khi waiter chỉnh số lượng món đang CHO_XU_LY → cập nhật soLuong/thanhTien, giữ nguyên thoiGianGoi
     public boolean updateSoLuong(String maHD, String maMon, int soLuong, double thanhTien) {
         Connection con = ConnectDB.getConnection();
         int n = 0;
         try {
             try (PreparedStatement stmt = con.prepareStatement(
-                    "UPDATE ChiTietHoaDon SET soLuong = ?, thanhTien = ?, " +
-                    "trangThaiMon = N'CHO_XU_LY', thoiGianGoi = GETDATE() " +
-                    "WHERE maHD = ? AND maMon = ?")) {
+                    "UPDATE ChiTietHoaDon SET soLuong = ?, thanhTien = ? " +
+                    "WHERE maHD = ? AND maMon = ? AND trangThaiMon = N'CHO_XU_LY'")) {
                 stmt.setInt(1, soLuong);
                 stmt.setDouble(2, thanhTien);
                 stmt.setString(3, maHD);
@@ -187,11 +228,30 @@ public class ChiTietHoaDon_DAO {
                 if (n > 0) SQLLogger.log(
                         "UPDATE ChiTietHoaDon SET soLuong = " + soLuong +
                         ", thanhTien = " + SQLLogger.num(thanhTien) +
-                        ", trangThaiMon = 'CHO_XU_LY', thoiGianGoi = GETDATE()" +
                         " WHERE maHD = " + SQLLogger.str(maHD) +
-                        " AND maMon = " + SQLLogger.str(maMon) + ";");
+                        " AND maMon = " + SQLLogger.str(maMon) +
+                        " AND trangThaiMon = 'CHO_XU_LY';");
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
+        return n > 0;
+    }
+
+    public boolean deleteChiTietCHO_XU_LY(String maHD, String maMon) {
+        Connection con = ConnectDB.getConnection();
+        int n = 0;
+        try {
+            try (PreparedStatement stmt = con.prepareStatement(
+                    "DELETE FROM ChiTietHoaDon WHERE maHD = ? AND maMon = ? AND trangThaiMon = N'CHO_XU_LY'")) {
+                stmt.setString(1, maHD);
+                stmt.setString(2, maMon);
+                n = stmt.executeUpdate();
+                if (n > 0) SQLLogger.log(
+                        "DELETE FROM ChiTietHoaDon WHERE maHD = " + SQLLogger.str(maHD) +
+                        " AND maMon = " + SQLLogger.str(maMon) + " AND trangThaiMon = 'CHO_XU_LY';");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -209,6 +269,7 @@ public class ChiTietHoaDon_DAO {
                         " AND maMon = " + SQLLogger.str(maMon) + ";");
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -222,6 +283,7 @@ public class ChiTietHoaDon_DAO {
                 if (n > 0) SQLLogger.log("DELETE FROM ChiTietHoaDon WHERE maHD = " + SQLLogger.str(maHD) + ";");
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -243,6 +305,7 @@ public class ChiTietHoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return profit;
     }
 
@@ -264,6 +327,7 @@ public class ChiTietHoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return result;
     }
 
@@ -286,6 +350,7 @@ public class ChiTietHoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return result;
     }
 
@@ -307,6 +372,29 @@ public class ChiTietHoaDon_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
+        return topDishes;
+    }
+
+    public Map<String, Integer> getTop5SellingByMaCa(String maCa) {
+        Map<String, Integer> topDishes = new LinkedHashMap<>();
+        Connection con = ConnectDB.getConnection();
+        try {
+            String sql = "SELECT TOP 5 sp.tenMon, SUM(ct.soLuong) as totalQty " +
+                    "FROM ChiTietHoaDon ct " +
+                    "JOIN SanPham sp ON ct.maMon = sp.maMon " +
+                    "JOIN HoaDon hd ON ct.maHD = hd.maHD " +
+                    "WHERE hd.maCa = ? AND hd.trangThaiThanhToan = N'Đã thanh toán' " +
+                    "AND CAST(hd.ngayLap AS DATE) = CAST(GETDATE() AS DATE) " +
+                    "GROUP BY sp.tenMon ORDER BY totalQty DESC";
+            try (PreparedStatement stmt = con.prepareStatement(sql)) {
+                stmt.setString(1, maCa);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) topDishes.put(rs.getString(1), rs.getInt(2));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return topDishes;
     }
 
@@ -346,6 +434,7 @@ public class ChiTietHoaDon_DAO {
     // ── DTO dùng cho màn hình bếp ────────────────────────────────────────────
     public static class MonBep {
         public String maHD;
+        public String maDon;       // maDonDatBan (null nếu walk-in)
         public String maMon;
         public String tenMon;
         public int soLuong;
@@ -354,5 +443,6 @@ public class ChiTietHoaDon_DAO {
         public TrangThaiMon trangThaiMon;
         public int soBan;
         public String maBan;
+        public String tenCum;      // "Bàn 01" hoặc "Bàn 01+02" nếu gộp bàn
     }
 }

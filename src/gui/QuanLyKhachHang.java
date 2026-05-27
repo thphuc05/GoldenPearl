@@ -60,7 +60,7 @@ public class QuanLyKhachHang extends JPanel {
         JPanel pHeader = new JPanel(new BorderLayout());
         pHeader.setOpaque(true);
         pHeader.setBackground(MAIN_BLUE);
-        pHeader.setBorder(new EmptyBorder(10, 24, 10, 24));
+        pHeader.setBorder(new EmptyBorder(10, 28, 10, 28));
         JLabel lblTitle = new JLabel("QUẢN LÝ KHÁCH HÀNG");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitle.setForeground(GOLD_COLOR);

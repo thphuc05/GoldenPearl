@@ -13,6 +13,7 @@ import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class QuanLyKhachHang_LSDB extends JDialog {
 
@@ -57,8 +58,10 @@ public class QuanLyKhachHang_LSDB extends JDialog {
             }
         }
 
+        Map<String, String> banMap = hd_dao.getDsBanDisplayForAllHoaDon();
+
         // -- Left: invoice table
-        String[] ivCols = {"Mã HĐ", "Ngày lập", "Tổng tiền", "Trạng thái"};
+        String[] ivCols = {"Mã HĐ", "Ngày lập", "Tổng tiền", "Trạng thái", "Bàn"};
         DefaultTableModel ivModel = new DefaultTableModel(ivCols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -74,6 +77,7 @@ public class QuanLyKhachHang_LSDB extends JDialog {
         ivTable.getColumnModel().getColumn(0).setPreferredWidth(65);
         ivTable.getColumnModel().getColumn(1).setPreferredWidth(90);
         ivTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        ivTable.getColumnModel().getColumn(4).setPreferredWidth(90);
         ivTable.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object val,
                                                                      boolean sel, boolean focus, int r2, int c2) {
@@ -92,7 +96,8 @@ public class QuanLyKhachHang_LSDB extends JDialog {
                     hd.getMaHD(),
                     hd.getNgayLap() != null ? dateSdf.format(hd.getNgayLap()) : "",
                     String.format("%,.0fđ", hd.getTongTien()),
-                    hd.isTrangThai() ? "Đã thanh toán" : "Chưa thanh toán"
+                    hd.isTrangThai() ? "Đã thanh toán" : "Chưa thanh toán",
+                    banMap.getOrDefault(hd.getMaHD(), "-")
             });
         }
 

@@ -29,6 +29,7 @@ public class KhuyenMai_DAO {
                 while (rs.next()) ds.add(mapRow(rs));
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return ds;
     }
 
@@ -44,6 +45,7 @@ public class KhuyenMai_DAO {
                 while (rs.next()) ds.add(mapRow(rs));
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return ds;
     }
 
@@ -61,6 +63,7 @@ public class KhuyenMai_DAO {
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return "KM001";
     }
 
@@ -79,6 +82,7 @@ public class KhuyenMai_DAO {
                 return ps.executeUpdate() > 0;
             }
         } catch (SQLException e) { e.printStackTrace(); return false; }
+        finally { ConnectDB.closeConnection(); }
     }
 
     public boolean update(KhuyenMai km) {
@@ -96,6 +100,7 @@ public class KhuyenMai_DAO {
                 return ps.executeUpdate() > 0;
             }
         } catch (SQLException e) { e.printStackTrace(); return false; }
+        finally { ConnectDB.closeConnection(); }
     }
 
     public boolean delete(String maKM) {
@@ -108,5 +113,6 @@ public class KhuyenMai_DAO {
                 return ps.executeUpdate() > 0;
             }
         } catch (SQLException e) { e.printStackTrace(); return false; }
+        finally { ConnectDB.closeConnection(); }
     }
 }

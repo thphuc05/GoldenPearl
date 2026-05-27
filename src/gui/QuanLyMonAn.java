@@ -56,7 +56,7 @@ public class QuanLyMonAn extends JPanel {
         // ── Thanh tiêu đề xanh (chỉ title) ──────────────────────────────
         JPanel pTitle = new JPanel(new BorderLayout());
         pTitle.setBackground(MAIN_BLUE);
-        pTitle.setBorder(new EmptyBorder(10, 16, 10, 16));
+        pTitle.setBorder(new EmptyBorder(10, 28, 10, 28));
         JLabel lblTitle = new JLabel("QUẢN LÝ MÓN ĂN");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitle.setForeground(GOLD_COLOR);
@@ -137,7 +137,7 @@ public class QuanLyMonAn extends JPanel {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         table = new JTable(tableModel);
-        table.setFont(new Font("Inter", Font.PLAIN, 13));
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setRowHeight(36);
         table.getTableHeader().setFont(new Font("Inter Bold", Font.BOLD, 13));
         table.getTableHeader().setBackground(new Color(248, 248, 248));
@@ -410,9 +410,10 @@ public class QuanLyMonAn extends JPanel {
     }
 
     private void updateMonAn() {
+        String ma = txtMaMon.getText().trim();
+        if (ma.isEmpty()) { JOptionPane.showMessageDialog(this, "Nhập mã món cần cập nhật!"); return; }
+        btnUpdate.setEnabled(false);
         try {
-            String ma = txtMaMon.getText().trim();
-            if (ma.isEmpty()) { JOptionPane.showMessageDialog(this, "Nhập mã món cần cập nhật!"); return; }
             String ten = txtTenMon.getText().trim();
             double giaGoc = Double.parseDouble(txtGiaGoc.getText().trim().replace(",", ""));
             double giaBan = Double.parseDouble(txtGiaBan.getText().trim().replace(",", ""));
@@ -420,7 +421,11 @@ public class QuanLyMonAn extends JPanel {
             LoaiSanPham loai = getSelectedLoai();
             SanPham sp = new SanPham(ma, ten, giaGoc, giaBan, "", tt, loai, "");
             if (sp_dao.updateSanPham(sp)) { JOptionPane.showMessageDialog(this, "Cập nhật thành công!"); loadDataToTable(); }
-        } catch (Exception e) { JOptionPane.showMessageDialog(this, "Lỗi cập nhật!"); }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi cập nhật!");
+        } finally {
+            btnUpdate.setEnabled(true);
+        }
     }
 
     private void deleteMonAn() {
@@ -573,16 +578,21 @@ public class QuanLyMonAn extends JPanel {
         btnLuu.addActionListener(e -> {
             String ten = txtTenDM.getText().trim();
             if (ten.isEmpty()) { JOptionPane.showMessageDialog(dlg, "Tên danh mục không được trống!"); return; }
-            LoaiSanPham loai = new LoaiSanPham();
-            loai.setMaLoai(txtMaDM.getText().trim());
-            loai.setTenLoai(ten);
-            loai.setMoTa(txtMoTaDM.getText().trim());
-            if (lsp_dao.addLoaiSanPham(loai)) {
-                JOptionPane.showMessageDialog(dlg, "Thêm danh mục thành công!");
-                refreshData();
-                dlg.dispose();
-            } else {
-                JOptionPane.showMessageDialog(dlg, "Thêm danh mục thất bại!");
+            btnLuu.setEnabled(false);
+            try {
+                LoaiSanPham loai = new LoaiSanPham();
+                loai.setMaLoai(txtMaDM.getText().trim());
+                loai.setTenLoai(ten);
+                loai.setMoTa(txtMoTaDM.getText().trim());
+                if (lsp_dao.addLoaiSanPham(loai)) {
+                    JOptionPane.showMessageDialog(dlg, "Thêm danh mục thành công!");
+                    refreshData();
+                    dlg.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(dlg, "Thêm danh mục thất bại!");
+                }
+            } finally {
+                btnLuu.setEnabled(true);
             }
         });
         dlg.setVisible(true);
@@ -653,11 +663,12 @@ public class QuanLyMonAn extends JPanel {
 
         btnHuy.addActionListener(e -> dlg.dispose());
         btnLuu.addActionListener(e -> {
+            String ma  = txtMaDlg.getText().trim();
+            String ten = txtTenDlg.getText().trim();
+            if (ma.isEmpty())  { JOptionPane.showMessageDialog(dlg, "Vui lòng chọn danh mục để tạo mã món!"); return; }
+            if (ten.isEmpty()) { JOptionPane.showMessageDialog(dlg, "Tên món không được trống!"); return; }
+            btnLuu.setEnabled(false);
             try {
-                String ma  = txtMaDlg.getText().trim();
-                String ten = txtTenDlg.getText().trim();
-                if (ma.isEmpty())  { JOptionPane.showMessageDialog(dlg, "Vui lòng chọn danh mục để tạo mã món!"); return; }
-                if (ten.isEmpty()) { JOptionPane.showMessageDialog(dlg, "Tên món không được trống!"); return; }
                 List<SanPham> ds = sp_dao.getAllSanPham();
                 if (ds != null) for (SanPham sp : ds) {
                     if (sp.getMaMon().equalsIgnoreCase(ma))  { JOptionPane.showMessageDialog(dlg, "Mã món đã tồn tại!"); return; }
@@ -680,6 +691,8 @@ public class QuanLyMonAn extends JPanel {
                 }
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(dlg, "Giá tiền không hợp lệ!");
+            } finally {
+                btnLuu.setEnabled(true);
             }
         });
         dlg.setVisible(true);

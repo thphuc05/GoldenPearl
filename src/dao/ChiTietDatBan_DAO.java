@@ -65,7 +65,7 @@ public class ChiTietDatBan_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        } finally { ConnectDB.closeConnection(); }
     }
 
     // ── Lấy danh sách bàn của đơn ────────────────────────────────────────
@@ -90,7 +90,7 @@ public class ChiTietDatBan_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return result;
     }
 
@@ -124,7 +124,7 @@ public class ChiTietDatBan_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return false;
     }
 
@@ -150,7 +150,7 @@ public class ChiTietDatBan_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        } finally { ConnectDB.closeConnection(); }
     }
 
     /**
@@ -172,7 +172,7 @@ public class ChiTietDatBan_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        } finally { ConnectDB.closeConnection(); }
     }
 
     // ── Mapper ────────────────────────────────────────────────────────────

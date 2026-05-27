@@ -121,14 +121,16 @@ public class QuanLyCaLam extends JPanel {
 
         card.add(label("Kiểu xem:"));
         JComboBox<String> cboKieu = new JComboBox<>(new String[]{"Theo Tuần"});
-        cboKieu.setPreferredSize(new Dimension(120, 32));
+        cboKieu.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cboKieu.setPreferredSize(new Dimension(150, 32));
         card.add(cboKieu);
 
         card.add(label("Chọn ngày mốc:"));
         SpinnerDateModel mdl = new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_MONTH);
         spNgayMoc = new JSpinner(mdl);
         spNgayMoc.setEditor(new JSpinner.DateEditor(spNgayMoc, "dd/MM/yyyy"));
-        spNgayMoc.setPreferredSize(new Dimension(130, 32));
+        ((JSpinner.DefaultEditor) spNgayMoc.getEditor()).getTextField().setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        spNgayMoc.setPreferredSize(new Dimension(150, 32));
         card.add(spNgayMoc);
 
         JButton btnTai = makeBlueButton("Tải Lịch");
@@ -248,7 +250,7 @@ public class QuanLyCaLam extends JPanel {
         card.add(lbl);
 
         card.add(label("Nhân viên:"));
-        cboNhanVien = new JComboBox<>();
+        cboNhanVien = new JComboBox<>();cboNhanVien.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cboNhanVien.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value,
@@ -266,17 +268,18 @@ public class QuanLyCaLam extends JPanel {
         SpinnerDateModel ngayMdl = new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_MONTH);
         spNgayTruc = new JSpinner(ngayMdl);
         spNgayTruc.setEditor(new JSpinner.DateEditor(spNgayTruc, "dd/MM/yyyy"));
-        spNgayTruc.setPreferredSize(new Dimension(130, 32));
+        ((JSpinner.DefaultEditor) spNgayTruc.getEditor()).getTextField().setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        spNgayTruc.setPreferredSize(new Dimension(150, 32));
         card.add(spNgayTruc);
 
         card.add(label("Ca làm:"));
-        cboCaLam = new JComboBox<>();
+        cboCaLam = new JComboBox<>(); cboCaLam.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         for (CaLam ca : dsCa) cboCaLam.addItem(ca);
         cboCaLam.setPreferredSize(new Dimension(140, 32));
         card.add(cboCaLam);
 
         JButton btnReset = new JButton("Làm mới");
-        btnReset.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        btnReset.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnReset.setPreferredSize(new Dimension(100, 32));
         btnReset.setFocusPainted(false);
         btnReset.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -443,7 +446,7 @@ public class QuanLyCaLam extends JPanel {
         btn.setFocusPainted(false);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
-        btn.setPreferredSize(new Dimension(130, 32));
+        btn.setPreferredSize(new Dimension(140, 32));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
     }

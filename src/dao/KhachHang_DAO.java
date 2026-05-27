@@ -19,6 +19,7 @@ public class KhachHang_DAO {
                 ma = String.format("KH%03d", num);
             }
         } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
         return ma;
     }
 
@@ -38,7 +39,7 @@ public class KhachHang_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return dsKH;
     }
 
@@ -58,7 +59,7 @@ public class KhachHang_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return null;
     }
 
@@ -78,7 +79,7 @@ public class KhachHang_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return null;
     }
 
@@ -99,7 +100,7 @@ public class KhachHang_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -120,7 +121,7 @@ public class KhachHang_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 
@@ -136,7 +137,7 @@ public class KhachHang_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return n > 0;
     }
 }

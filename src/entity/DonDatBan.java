@@ -109,7 +109,9 @@ public class DonDatBan {
         this.thoiGianDuKienRoi = computeThoiGianDuKienRoi();
     }
 
-    public double tinhTienCoc()        { return 0; }
+    public double tinhTienCoc() {
+        return (dsBan == null || dsBan.isEmpty()) ? 500_000 : (long) dsBan.size() * 500_000;
+    }
     public boolean kiemTraTinhTrang()  { return true; }
 
     @Override

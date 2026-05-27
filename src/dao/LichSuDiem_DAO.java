@@ -19,7 +19,7 @@ public class LichSuDiem_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return ma;
     }
 
@@ -37,7 +37,7 @@ public class LichSuDiem_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return 0;
     }
 
@@ -54,7 +54,7 @@ public class LichSuDiem_DAO {
                 ps.setString(2, lsd.getMaKH());
                 ps.setString(3, lsd.getMaHD());
                 ps.setInt   (4, lsd.getSoGiaoDich());
-                ps.setNString(5, lsd.getLoai());
+                ps.setNString(5, lsd.getLoai() != null ? lsd.getLoai().getDbValue() : null);
                 ps.setTimestamp(6, new Timestamp(
                         lsd.getThoiGian() != null ? lsd.getThoiGian().getTime() : System.currentTimeMillis()));
                 ps.setNString(7, lsd.getGhiChu());
@@ -62,7 +62,7 @@ public class LichSuDiem_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return false;
     }
 }

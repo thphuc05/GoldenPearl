@@ -3,16 +3,6 @@ package entity;
 import java.util.Date;
 import java.sql.Time;
 
-/**
- * Entity Hóa Đơn – đã nâng cấp để hỗ trợ:
- * <ul>
- *   <li>{@link TrangThaiThanhToan} – trạng thái thanh toán chi tiết (thay boolean cũ)</li>
- *   <li>{@link HinhThucThanhToan} – hình thức thanh toán (tiền mặt, chuyển khoản…)</li>
- * </ul>
- *
- * <p><b>Tương thích ngược:</b> Getter/setter {@code isTrangThai()} / {@code setTrangThai(boolean)}
- * vẫn được giữ lại để các class cũ không bị compile error.
- */
 public class HoaDon {
 
     private String maHD;
@@ -33,6 +23,7 @@ public class HoaDon {
     private double    tienCoc;
     private String    maCa;
     private Date      thoiGianRoiThucTe;
+    private String    ghiChu;
 
     // ── Constructors ──────────────────────────────────────────────────────
 
@@ -56,35 +47,6 @@ public class HoaDon {
         this.tienCoc            = tienCoc;
     }
 
-    /** Constructor tương thích ngược (boolean trangThai cũ). */
-    public HoaDon(String maHD, Date ngayLap, Time thoiGian, double tongTien,
-                  boolean trangThai, DonDatBan donDatBan, NhanVien nhanVien,
-                  KhuyenMai khuyenMai, KhachHang khachHang, double tienCoc) {
-        this.maHD               = maHD;
-        this.ngayLap            = ngayLap;
-        this.thoiGian           = thoiGian;
-        this.tongTien           = tongTien;
-        this.trangThaiThanhToan = TrangThaiThanhToan.fromBoolean(trangThai);
-        this.donDatBan          = donDatBan;
-        this.nhanVien           = nhanVien;
-        this.khuyenMai          = khuyenMai;
-        this.khachHang          = khachHang;
-        this.tienCoc            = tienCoc;
-    }
-
-    // Constructors cũ (2 tham số)
-    public HoaDon(String maHD, Date ngayLap, double tongTien, boolean trangThai,
-                  DonDatBan donDatBan, NhanVien nhanVien, KhuyenMai khuyenMai, KhachHang khachHang) {
-        this.maHD               = maHD;
-        this.ngayLap            = ngayLap;
-        this.tongTien           = tongTien;
-        this.trangThaiThanhToan = TrangThaiThanhToan.fromBoolean(trangThai);
-        this.donDatBan          = donDatBan;
-        this.nhanVien           = nhanVien;
-        this.khuyenMai          = khuyenMai;
-        this.khachHang          = khachHang;
-    }
-
     // ── Getters & Setters – trường mới ──────────────────────────────────────
 
     public TrangThaiThanhToan getTrangThaiThanhToan() {
@@ -98,14 +60,9 @@ public class HoaDon {
     public void setHinhThucThanhToan(HinhThucThanhToan v) { this.hinhThucThanhToan = v; }
 
 
-    // ── Tương thích ngược: boolean trangThai ────────────────────────────────
-
-    /** @deprecated Dùng getTrangThaiThanhToan() thay thế. */
     public boolean isTrangThai() { return getTrangThaiThanhToan().isFullyPaid(); }
-    /** @deprecated Dùng setTrangThaiThanhToan() thay thế. */
-    public void setTrangThai(boolean v) { this.trangThaiThanhToan = TrangThaiThanhToan.fromBoolean(v); }
 
-    // ── Getters & Setters – trường cũ ───────────────────────────────────────
+    // ── Getters & Setters ───────────────────────────────────────────────────
 
     public String getMaHD() { return maHD; }
     public void setMaHD(String maHD) { this.maHD = maHD; }
@@ -139,6 +96,9 @@ public class HoaDon {
 
     public Date getThoiGianRoiThucTe() { return thoiGianRoiThucTe; }
     public void setThoiGianRoiThucTe(Date thoiGianRoiThucTe) { this.thoiGianRoiThucTe = thoiGianRoiThucTe; }
+
+    public String getGhiChu() { return ghiChu; }
+    public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
 
     // ── Business helpers ────────────────────────────────────────────────────
 

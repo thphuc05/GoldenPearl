@@ -16,7 +16,7 @@ import java.util.List;
 public class QuanLyNhanVien extends JPanel {
     private JTextField txtMaNV, txtTenNV, txtSoDT, txtSoCCCD, txtEmail, txtTenTK, txtSearch;
     private JComboBox<String> cbChucVu, cbTrangThai;
-    private JButton btnAdd, btnUpdate, btnChoNghi, btnReset, btnClear, btnSearch;
+    private JButton btnAdd, btnUpdate, btnChoNghi, btnXoaNV, btnClear, btnSearch;
     private JButton btnTabNhanVien, btnTabQuanLy, btnTabBep, btnTabDaNghi;
     private JPanel listContainer;
     private NhanVien selectedNhanVien;
@@ -43,7 +43,7 @@ public class QuanLyNhanVien extends JPanel {
         JPanel pHeader = new JPanel(new BorderLayout());
         pHeader.setOpaque(true);
         pHeader.setBackground(MAIN_BLUE);
-        pHeader.setBorder(new EmptyBorder(10, 24, 10, 24));
+        pHeader.setBorder(new EmptyBorder(10, 28, 10, 28));
         JLabel lblTitle = new JLabel("QUẢN LÝ NHÂN VIÊN");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitle.setForeground(GOLD_COLOR);
@@ -201,16 +201,22 @@ public class QuanLyNhanVien extends JPanel {
         JPanel pBottom = new JPanel(new BorderLayout(0, 0));
         pBottom.setBackground(Color.WHITE);
 
-        JPanel pBtns = new JPanel(new GridLayout(1, 5, 6, 0));
+        JPanel pBtns = new JPanel(new GridLayout(1, 4, 6, 0));
         pBtns.setBackground(Color.WHITE);
         btnAdd     = mkColorBtn("Thêm nhân viên", MAIN_BLUE, Color.WHITE);
         btnUpdate  = mkColorBtn("Cập nhật", GOLD_COLOR, MAIN_BLUE);
         btnChoNghi = mkColorBtn("Cho nghỉ", Color.decode("#E67E22"), Color.WHITE);
-        btnReset   = mkColorBtn("Xóa trắng", Color.WHITE, TEXT_DARK);
+        btnXoaNV   = mkColorBtn("Xóa nhân viên", Color.decode("#C0392B"), Color.WHITE);
         btnClear   = mkColorBtn("Làm mới", Color.WHITE, TEXT_DARK);
+        btnXoaNV.setVisible(false);
         pBtns.add(btnAdd); pBtns.add(btnUpdate); pBtns.add(btnChoNghi);
-        pBtns.add(btnReset); pBtns.add(btnClear);
-        pBottom.add(pBtns, BorderLayout.NORTH);
+        pBtns.add(btnClear);
+
+        JPanel pBtnsWrapper = new JPanel(new BorderLayout(0, 6));
+        pBtnsWrapper.setBackground(Color.WHITE);
+        pBtnsWrapper.add(pBtns, BorderLayout.NORTH);
+        pBtnsWrapper.add(btnXoaNV, BorderLayout.SOUTH);
+        pBottom.add(pBtnsWrapper, BorderLayout.NORTH);
 
         // Search section
         JPanel pSearchSection = new JPanel(new BorderLayout(0, 6));
@@ -344,10 +350,10 @@ public class QuanLyNhanVien extends JPanel {
         btnTabQuanLy.addActionListener(e -> { currentFilter = "QUAN_LY"; setActiveTab(btnTabQuanLy); clearInputs(); loadList(); });
         btnTabBep.addActionListener(e -> { currentFilter = "BEP"; setActiveTab(btnTabBep); clearInputs(); loadList(); });
         btnTabDaNghi.addActionListener(e -> { currentFilter = "DA_NGHI"; setActiveTab(btnTabDaNghi); clearInputs(); loadList(); });
-        btnAdd.addActionListener(e -> addNhanVien());
+        btnAdd.addActionListener(e -> showAddNhanVienDialog());
         btnUpdate.addActionListener(e -> updateNhanVien());
-        btnChoNghi.addActionListener(e -> choNghi());
-        btnReset.addActionListener(e -> clearInputs());
+        btnChoNghi.addActionListener(e -> toggleTrangThai());
+        btnXoaNV.addActionListener(e -> deleteNhanVien());
         btnClear.addActionListener(e -> { txtSearch.setText(""); clearInputs(); loadList(); });
         btnSearch.addActionListener(e -> searchNhanVien());
         cbChucVu.addActionListener(e -> {
@@ -475,6 +481,9 @@ public class QuanLyNhanVien extends JPanel {
         }
         cbChucVu.setSelectedItem(nv.getChucVu().getTenHienThi());
         cbTrangThai.setSelectedIndex(nv.isTrangThai() ? 0 : 1);
+        btnChoNghi.setText(nv.isTrangThai() ? "Cho nghỉ" : "Đi làm");
+        // Nút xóa chỉ hiện khi NV đã nghỉ
+        btnXoaNV.setVisible(!nv.isTrangThai());
     }
 
     private void clearInputs() {
@@ -484,6 +493,7 @@ public class QuanLyNhanVien extends JPanel {
         txtEmail.setText("");
         txtTenTK.setText(""); txtTenTK.setEditable(true); txtTenTK.setBackground(Color.WHITE);
         cbChucVu.setSelectedIndex(0); cbTrangThai.setSelectedIndex(0);
+        btnXoaNV.setVisible(false);
         listContainer.repaint();
     }
 
@@ -503,35 +513,24 @@ public class QuanLyNhanVien extends JPanel {
         String sdt    = txtSoDT.getText().trim();
         String cccd   = txtSoCCCD.getText().trim();
         String email  = txtEmail.getText().trim().toLowerCase();
-        String tenTK  = txtTenTK.getText().trim();
         boolean tt    = "Đang làm việc".equals(cbTrangThai.getSelectedItem().toString());
         ChucVu cv     = ChucVu.fromString(cbChucVu.getSelectedItem().toString());
         String prefix = cv == ChucVu.QUAN_LY ? "QL" : "NV";
         String maNV   = nv_dao.getNextMaByPrefix(prefix);
 
-        // Tạo TaiKhoan trước
-        TaiKhoan tk = null;
-        if (!tenTK.isEmpty()) {
-            if (tk_dao.isTenTKExists(tenTK)) {
-                JOptionPane.showMessageDialog(this, "Tên đăng nhập '" + tenTK + "' đã tồn tại!");
-                return;
-            }
-            String maTK   = tk_dao.getNextMaTK();
-            String vaiTro = cv == ChucVu.QUAN_LY ? "QUAN_LY" : (cv == ChucVu.BEP ? "BEP" : "NHAN_VIEN");
-            if (tk_dao.createTaiKhoan(maTK, tenTK, vaiTro)) {
-                tk = new TaiKhoan(maTK, tenTK, null, vaiTro);
-            } else {
-                JOptionPane.showMessageDialog(this, "Tạo tài khoản thất bại!");
-                return;
-            }
+        String maTK   = "TK" + maNV.substring(2);
+        String vaiTro = cv == ChucVu.QUAN_LY ? "QUAN_LY" : (cv == ChucVu.BEP ? "BEP" : "NHAN_VIEN");
+        if (!tk_dao.createTaiKhoan(maTK, maTK, vaiTro)) {
+            JOptionPane.showMessageDialog(this, "Tạo tài khoản thất bại!");
+            return;
         }
+        TaiKhoan tk = new TaiKhoan(maTK, maTK, null, vaiTro);
 
         NhanVien nv = new NhanVien(maNV, ten, sdt, cccd, cv, tt, tk);
         nv.setEmail(email.isEmpty() ? null : email);
         if (nv_dao.addNhanVien(nv)) {
-            String msg = "Thêm nhân viên thành công!";
-            if (tk != null) msg += "\nTài khoản: " + tenTK + "\nMật khẩu mặc định: 123456";
-            JOptionPane.showMessageDialog(this, msg);
+            JOptionPane.showMessageDialog(this,
+                    "Đã tạo tài khoản thành công\nMã tài khoản: " + maTK + "\nMật khẩu mặc định: 123456");
             loadList(); clearInputs();
         } else {
             JOptionPane.showMessageDialog(this, "Thêm nhân viên thất bại!");
@@ -566,14 +565,134 @@ public class QuanLyNhanVien extends JPanel {
         } else JOptionPane.showMessageDialog(this, "Lưu thất bại!");
     }
 
-    private void choNghi() {
-        if (selectedNhanVien == null) { JOptionPane.showMessageDialog(this, "Chọn nhân viên cần cho nghỉ!"); return; }
-        int c = JOptionPane.showConfirmDialog(this,
-                "Cho nghỉ nhân viên " + selectedNhanVien.getTenNV() + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-        if (c == JOptionPane.YES_OPTION && nv_dao.setTrangThai(selectedNhanVien.getMaNV(), false)) {
-            JOptionPane.showMessageDialog(this, "Đã cho nhân viên nghỉ!");
-            loadList(); clearInputs();
+    private void toggleTrangThai() {
+        if (selectedNhanVien == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên!");
+            return;
         }
+        boolean isActive = selectedNhanVien.isTrangThai();
+        String msg = isActive
+                ? "Cho nghỉ nhân viên " + selectedNhanVien.getTenNV() + "?"
+                : "Kích hoạt lại nhân viên " + selectedNhanVien.getTenNV() + "?";
+        int c = JOptionPane.showConfirmDialog(this, msg, "Xác nhận", JOptionPane.YES_NO_OPTION);
+        if (c == JOptionPane.YES_OPTION && nv_dao.setTrangThai(selectedNhanVien.getMaNV(), !isActive)) {
+            JOptionPane.showMessageDialog(this, isActive ? "Đã cho nhân viên nghỉ!" : "Đã kích hoạt lại nhân viên!");
+            loadList(); clearInputs();
+            btnChoNghi.setText("Cho nghỉ");
+        }
+    }
+
+    private void showAddNhanVienDialog() {
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        JDialog dlg = new JDialog(owner instanceof Frame ? (Frame) owner : null, "Thêm nhân viên mới", true);
+        dlg.setSize(460, 430);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout(0, 0));
+        dlg.getRootPane().setBorder(javax.swing.BorderFactory.createEmptyBorder(16, 20, 16, 20));
+
+        JPanel pForm = new JPanel(new GridLayout(5, 1, 0, 10));
+        pForm.setOpaque(false);
+
+        JTextField fTen   = mkField();
+        JTextField fSdt   = mkField();
+        JTextField fCCCD  = mkField();
+        JTextField fEmail = mkField();
+        JComboBox<String> fChucVu = new JComboBox<>();
+        for (ChucVu cv : ChucVu.values()) fChucVu.addItem(cv.getTenHienThi());
+        styleCombo(fChucVu);
+
+        pForm.add(mkFieldGroup("Họ tên (*):", fTen));
+        pForm.add(mkFieldGroup("Số điện thoại:", fSdt));
+        pForm.add(mkFieldGroup("Số CCCD:", fCCCD));
+        pForm.add(mkFieldGroup("Email:", fEmail));
+        pForm.add(mkFieldGroup("Chức vụ (*):", fChucVu));
+
+        JLabel lblNote = new JLabel("Mã tài khoản tự động sinh từ mã NV  |  Mật khẩu mặc định: 123456");
+        lblNote.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        lblNote.setForeground(new Color(130, 130, 130));
+
+        JPanel pCenter = new JPanel(new BorderLayout(0, 10));
+        pCenter.setOpaque(false);
+        pCenter.add(pForm, BorderLayout.CENTER);
+        pCenter.add(lblNote, BorderLayout.SOUTH);
+
+        JButton btnConfirm = mkColorBtn("Thêm nhân viên", MAIN_BLUE, Color.WHITE);
+        JButton btnCancel  = mkColorBtn("Hủy", Color.WHITE, TEXT_DARK);
+
+        JPanel pBtns = new JPanel(new GridLayout(1, 2, 10, 0));
+        pBtns.setOpaque(false);
+        pBtns.setBorder(javax.swing.BorderFactory.createEmptyBorder(12, 0, 0, 0));
+        pBtns.add(btnCancel);
+        pBtns.add(btnConfirm);
+
+        dlg.add(pCenter, BorderLayout.CENTER);
+        dlg.add(pBtns, BorderLayout.SOUTH);
+
+        btnCancel.addActionListener(ev -> dlg.dispose());
+        btnConfirm.addActionListener(ev -> {
+            String ten   = formatName(fTen.getText().trim());
+            String sdt   = fSdt.getText().trim();
+            String cccd  = fCCCD.getText().trim();
+            String email = fEmail.getText().trim().toLowerCase();
+
+            // ── Validate ────────────────────────────────────────────────────
+            if (ten.isEmpty()) {
+                showDlgErr(dlg, "Vui lòng nhập họ tên!"); fTen.requestFocus(); return;
+            }
+            if (ten.length() < 2 || ten.length() > 100) {
+                showDlgErr(dlg, "Họ tên phải từ 2 đến 100 ký tự!"); fTen.requestFocus(); return;
+            }
+            if (!sdt.isEmpty() && !sdt.matches("^0\\d{9}$")) {
+                showDlgErr(dlg, "Số điện thoại phải bắt đầu bằng 0 và đủ 10 chữ số!"); fSdt.requestFocus(); return;
+            }
+            if (!cccd.isEmpty() && !cccd.matches("^\\d{12}$")) {
+                showDlgErr(dlg, "Số CCCD phải có đúng 12 chữ số!"); fCCCD.requestFocus(); return;
+            }
+            if (!email.isEmpty() && !email.matches("^[\\w.+-]+@[\\w-]+\\.[\\w.]+$")) {
+                showDlgErr(dlg, "Email không đúng định dạng!"); fEmail.requestFocus(); return;
+            }
+
+            // ── Kiểm tra trùng SĐT / CCCD ───────────────────────────────────
+            if (!sdt.isEmpty() || !cccd.isEmpty()) {
+                List<NhanVien> ds = nv_dao.getAllNhanVien();
+                if (ds != null) {
+                    for (NhanVien existing : ds) {
+                        if (!sdt.isEmpty() && sdt.equals(existing.getSoDT())) {
+                            showDlgErr(dlg, "Số điện thoại đã tồn tại!"); fSdt.requestFocus(); return;
+                        }
+                        if (!cccd.isEmpty() && cccd.equals(existing.getSoCCCD())) {
+                            showDlgErr(dlg, "Số CCCD đã tồn tại!"); fCCCD.requestFocus(); return;
+                        }
+                    }
+                }
+            }
+            // ────────────────────────────────────────────────────────────────
+
+            ChucVu cv     = ChucVu.fromString(fChucVu.getSelectedItem().toString());
+            String prefix = cv == ChucVu.QUAN_LY ? "QL" : "NV";
+            String maNV   = nv_dao.getNextMaByPrefix(prefix);
+            String maTK   = "TK" + maNV.substring(2);
+            String vaiTro = cv == ChucVu.QUAN_LY ? "QUAN_LY" : (cv == ChucVu.BEP ? "BEP" : "NHAN_VIEN");
+
+            if (!tk_dao.createTaiKhoan(maTK, maTK, vaiTro)) {
+                showDlgErr(dlg, "Tạo tài khoản thất bại!"); return;
+            }
+            TaiKhoan tk = new TaiKhoan(maTK, maTK, null, vaiTro);
+
+            NhanVien nv = new NhanVien(maNV, ten, sdt, cccd, cv, true, tk);
+            nv.setEmail(email.isEmpty() ? null : email);
+            if (nv_dao.addNhanVien(nv)) {
+                JOptionPane.showMessageDialog(dlg,
+                        "Đã tạo tài khoản thành công\nMã tài khoản: " + maTK + "\nMật khẩu mặc định: 123456",
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                dlg.dispose();
+                loadList();
+            } else {
+                showDlgErr(dlg, "Thêm nhân viên thất bại! Vui lòng thử lại.");
+            }
+        });
+
+        dlg.setVisible(true);
     }
 
     private void searchNhanVien() {
@@ -594,6 +713,10 @@ public class QuanLyNhanVien extends JPanel {
         }
         if (!found) { JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên!"); loadList(); }
         listContainer.revalidate(); listContainer.repaint();
+    }
+
+    private void showDlgErr(JDialog dlg, String msg) {
+        JOptionPane.showMessageDialog(dlg, msg, "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 
     private boolean validateData(boolean isAdd) {
@@ -626,5 +749,29 @@ public class QuanLyNhanVien extends JPanel {
             }
         }
         return true;
+    }
+
+    private void deleteNhanVien() {
+        if (selectedNhanVien == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên!");
+            return;
+        }
+        if (selectedNhanVien.isTrangThai()) {
+            JOptionPane.showMessageDialog(this, "Chỉ có thể xóa nhân viên đã nghỉ việc!");
+            return;
+        }
+        int c = JOptionPane.showConfirmDialog(this,
+                "Xóa vĩnh viễn nhân viên " + selectedNhanVien.getTenNV() + " (" + selectedNhanVien.getMaNV() + ")?\n"
+                + "Hành động này không thể hoàn tác!",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (c != JOptionPane.YES_OPTION) return;
+
+        if (nv_dao.deleteNhanVien(selectedNhanVien.getMaNV())) {
+            JOptionPane.showMessageDialog(this, "Đã xóa nhân viên " + selectedNhanVien.getTenNV() + "!");
+            loadList();
+            clearInputs();
+        } else {
+            JOptionPane.showMessageDialog(this, "Xóa thất bại! Nhân viên có thể đang liên kết với dữ liệu khác.");
+        }
     }
 }

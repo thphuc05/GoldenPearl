@@ -31,7 +31,7 @@ public class NhanVien_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return ma;
     }
 
@@ -47,7 +47,7 @@ public class NhanVien_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return dsNV;
     }
 
@@ -66,7 +66,7 @@ public class NhanVien_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return dsNV;
     }
 
@@ -83,7 +83,7 @@ public class NhanVien_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return null;
     }
 
@@ -101,7 +101,7 @@ public class NhanVien_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return null;
     }
 
@@ -126,7 +126,7 @@ public class NhanVien_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        } finally { ConnectDB.closeConnection(); }
     }
 
     public boolean updateNhanVien(NhanVien nv) {
@@ -149,7 +149,7 @@ public class NhanVien_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        } finally { ConnectDB.closeConnection(); }
     }
 
     public boolean deleteNhanVien(String ma) {
@@ -164,7 +164,7 @@ public class NhanVien_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
+        } finally { ConnectDB.closeConnection(); }
     }
 
     public boolean setTrangThai(String maNV, boolean trangThai) {
@@ -179,7 +179,7 @@ public class NhanVien_DAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
+        } finally { ConnectDB.closeConnection(); }
         return false;
     }
 
@@ -194,7 +194,7 @@ public class NhanVien_DAO {
                 rs.getBoolean("trangThai"),
                 null);
         // email có thể chưa tồn tại trên DB cũ → dùng try/catch
-        try { nv.setEmail(rs.getString("email")); } catch (SQLException ignored) {}
+        try { nv.setEmail(rs.getString("email")); } catch (Exception e) { System.err.println("WARN mapRow: " + e.getMessage()); }
         String maTK = rs.getString("maTK");
         if (maTK != null) {
             TaiKhoan tk = new TaiKhoan();

@@ -59,7 +59,7 @@ public class QuanLyKhuyenMai extends JPanel {
         // ── Thanh tiêu đề xanh (chỉ title) ──────────────────────────────
         JPanel pTitle = new JPanel(new BorderLayout());
         pTitle.setBackground(MAIN_BLUE);
-        pTitle.setBorder(new EmptyBorder(10, 16, 10, 16));
+        pTitle.setBorder(new EmptyBorder(10, 28, 10, 28));
         JLabel lbl = new JLabel("QUẢN LÝ KHUYẾN MÃI");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lbl.setForeground(GOLD_COLOR);
@@ -282,12 +282,8 @@ public class QuanLyKhuyenMai extends JPanel {
         });
 
         btnThemMoi.addActionListener(e -> {
-            clearForm();
-            dangChinhSua = false;
-            txtMaKM.setText(dao.generateMaKM());
-            btnLuu.setEnabled(true);
-            btnXoa.setEnabled(false);
-            txtTenKM.requestFocus();
+            Window owner = SwingUtilities.getWindowAncestor(QuanLyKhuyenMai.this);
+            new ThemKhuyenMaiDialog(owner).setVisible(true);
         });
 
         btnLuu.addActionListener(e -> save());
@@ -535,5 +531,180 @@ public class QuanLyKhuyenMai extends JPanel {
         btn.setPreferredSize(new Dimension(120, 36));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return btn;
+    }
+
+    // ─── Dialog thêm khuyến mãi mới ──────────────────────────────────────────
+    private class ThemKhuyenMaiDialog extends JDialog {
+
+        private JTextField dlgMaKM, dlgTenKM;
+        private JSpinner dlgPhanTram, dlgNgayBD, dlgNgayKT;
+        private JCheckBox dlgChkBD, dlgChkKT;
+
+        ThemKhuyenMaiDialog(Window owner) {
+            super(owner, "Thêm khuyến mãi mới", ModalityType.APPLICATION_MODAL);
+            setLayout(new BorderLayout());
+            getContentPane().setBackground(Color.WHITE);
+
+            add(buildDlgHeader(), BorderLayout.NORTH);
+            add(buildDlgForm(),   BorderLayout.CENTER);
+            add(buildDlgButtons(), BorderLayout.SOUTH);
+
+            pack();
+            setMinimumSize(new Dimension(520, 0));
+            setResizable(false);
+            setLocationRelativeTo(owner);
+        }
+
+        private JPanel buildDlgHeader() {
+            JPanel p = new JPanel(new BorderLayout());
+            p.setBackground(MAIN_BLUE);
+            p.setBorder(new EmptyBorder(12, 18, 12, 18));
+            JLabel lbl = new JLabel("THÊM KHUYẾN MÃI MỚI");
+            lbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            lbl.setForeground(GOLD_COLOR);
+            p.add(lbl, BorderLayout.WEST);
+            return p;
+        }
+
+        private JPanel buildDlgForm() {
+            JPanel wrapper = new JPanel(new BorderLayout());
+            wrapper.setBackground(Color.WHITE);
+            wrapper.setBorder(new EmptyBorder(16, 18, 8, 18));
+
+            JPanel form = new JPanel(new GridBagLayout());
+            form.setBackground(Color.WHITE);
+            GridBagConstraints gc = new GridBagConstraints();
+            gc.insets = new Insets(7, 8, 7, 8);
+            gc.fill = GridBagConstraints.HORIZONTAL;
+
+            // Mã KM (auto, read-only)
+            gc.gridx = 0; gc.gridy = 0; gc.weightx = 0;
+            form.add(mkLbl("Mã KM:"), gc);
+            gc.gridx = 1; gc.weightx = 1; gc.gridwidth = 3;
+            dlgMaKM = mkField(200);
+            dlgMaKM.setText(dao.generateMaKM());
+            dlgMaKM.setEditable(false);
+            dlgMaKM.setBackground(new Color(245, 245, 245));
+            form.add(dlgMaKM, gc);
+            gc.gridwidth = 1;
+
+            // Tên KM
+            gc.gridx = 0; gc.gridy = 1; gc.weightx = 0;
+            form.add(mkLbl("Tên khuyến mãi:"), gc);
+            gc.gridx = 1; gc.weightx = 1; gc.gridwidth = 3;
+            dlgTenKM = mkField(300);
+            form.add(dlgTenKM, gc);
+            gc.gridwidth = 1;
+
+            // % Giảm
+            gc.gridx = 0; gc.gridy = 2; gc.weightx = 0;
+            form.add(mkLbl("% Giảm giá:"), gc);
+            gc.gridx = 1; gc.weightx = 1; gc.gridwidth = 3;
+            dlgPhanTram = buildPercentSpinner();
+            form.add(dlgPhanTram, gc);
+            gc.gridwidth = 1;
+
+            // Ngày bắt đầu
+            gc.gridx = 0; gc.gridy = 3; gc.weightx = 0;
+            dlgChkBD = new JCheckBox("Ngày bắt đầu:");
+            dlgChkBD.setFont(new Font("Inter", Font.PLAIN, 13));
+            dlgChkBD.setForeground(TEXT_DARK);
+            dlgChkBD.setBackground(Color.WHITE);
+            form.add(dlgChkBD, gc);
+            gc.gridx = 1; gc.weightx = 1; gc.gridwidth = 3;
+            dlgNgayBD = buildDateSpinner();
+            dlgNgayBD.setEnabled(false);
+            dlgChkBD.addActionListener(e -> dlgNgayBD.setEnabled(dlgChkBD.isSelected()));
+            form.add(dlgNgayBD, gc);
+            gc.gridwidth = 1;
+
+            // Ngày kết thúc
+            gc.gridx = 0; gc.gridy = 4; gc.weightx = 0;
+            dlgChkKT = new JCheckBox("Ngày kết thúc:");
+            dlgChkKT.setFont(new Font("Inter", Font.PLAIN, 13));
+            dlgChkKT.setForeground(TEXT_DARK);
+            dlgChkKT.setBackground(Color.WHITE);
+            form.add(dlgChkKT, gc);
+            gc.gridx = 1; gc.weightx = 1; gc.gridwidth = 3;
+            dlgNgayKT = buildDateSpinner();
+            dlgNgayKT.setEnabled(false);
+            dlgChkKT.addActionListener(e -> dlgNgayKT.setEnabled(dlgChkKT.isSelected()));
+            form.add(dlgNgayKT, gc);
+            gc.gridwidth = 1;
+
+            wrapper.add(form, BorderLayout.CENTER);
+            return wrapper;
+        }
+
+        private JPanel buildDlgButtons() {
+            JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+            p.setBackground(Color.WHITE);
+            p.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_COLOR));
+
+            JButton btnLuuDlg = mkBtn("Lưu", GREEN_ACTIVE, Color.WHITE);
+            JButton btnHuy    = mkBtn("Hủy", Color.decode("#E0E0E0"), TEXT_DARK);
+
+            btnLuuDlg.addActionListener(e -> saveAndClose());
+            btnHuy.addActionListener(e -> dispose());
+
+            // Nhấn Enter = Lưu
+            getRootPane().setDefaultButton(btnLuuDlg);
+
+            p.add(btnLuuDlg);
+            p.add(btnHuy);
+            return p;
+        }
+
+        private void saveAndClose() {
+            String ten = dlgTenKM.getText().trim();
+            if (ten.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khuyến mãi.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                dlgTenKM.requestFocus();
+                return;
+            }
+
+            try { dlgPhanTram.commitEdit(); } catch (Exception ignored) {}
+            double pt = ((Number) dlgPhanTram.getValue()).doubleValue();
+            if (pt <= 0 || pt >= 100) {
+                JOptionPane.showMessageDialog(this, "% Giảm giá phải lớn hơn 0 và nhỏ hơn 100.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                dlgPhanTram.requestFocus();
+                return;
+            }
+
+            Date ngayBD = dlgChkBD.isSelected() ? (Date) dlgNgayBD.getValue() : null;
+            Date ngayKT = dlgChkKT.isSelected() ? (Date) dlgNgayKT.getValue() : null;
+            if (ngayBD != null && ngayKT != null && !ngayKT.after(ngayBD)) {
+                JOptionPane.showMessageDialog(this, "Ngày kết thúc phải sau ngày bắt đầu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            KhuyenMai km = new KhuyenMai();
+            km.setMaKM(dlgMaKM.getText().trim());
+            km.setTenKM(ten);
+            km.setPhanTramGiam(pt);
+            km.setNgayBatDau(ngayBD);
+            km.setNgayKetThuc(ngayKT);
+
+            new SwingWorker<Boolean, Void>() {
+                @Override protected Boolean doInBackground() { return dao.add(km); }
+                @Override protected void done() {
+                    try {
+                        if (get()) {
+                            JOptionPane.showMessageDialog(ThemKhuyenMaiDialog.this,
+                                    "Thêm khuyến mãi thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                            dispose();
+                            refreshData();
+                        } else {
+                            JOptionPane.showMessageDialog(ThemKhuyenMaiDialog.this,
+                                    "Thêm thất bại. Mã đã tồn tại?", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(ThemKhuyenMaiDialog.this,
+                                "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }.execute();
+        }
     }
 }

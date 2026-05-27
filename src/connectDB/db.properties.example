@@ -1,0 +1,48 @@
+# ============================================================
+#  GoldenPearl — Cấu hình kết nối SQL Server
+#  Sao chép file này thành db.properties rồi điền thông tin thật
+# ============================================================
+
+# ── Máy A (máy cài SQL Server) ───────────────────────────────
+# Dùng localhost nếu chạy trên chính máy A
+db.url=jdbc:sqlserver://localhost:1433;databaseName=GoldenPearlDB_Test;encrypt=false;trustServerCertificate=true;loginTimeout=30;
+
+# ── Máy B (máy client kết nối từ xa qua LAN) ────────────────
+# Thay <IP_MAY_A> bằng địa chỉ IP thực của máy A (vd: 192.168.1.10)
+# db.url=jdbc:sqlserver://192.168.1.10:1433;databaseName=GoldenPearlDB_Test;encrypt=false;trustServerCertificate=true;loginTimeout=30;
+
+db.username=sa
+db.password=your_password_here
+
+
+# ============================================================
+#  HƯỚNG DẪN CẤU HÌNH 2 MÁY DÙNG CHUNG SQL SERVER
+# ============================================================
+#
+#  [MÁY A — máy chủ SQL Server]
+#  1. Mở "SQL Server Configuration Manager"
+#     (Start → tìm "SQL Server Configuration Manager")
+#  2. SQL Server Network Configuration → Protocols for MSSQLSERVER
+#     → TCP/IP → Enable
+#  3. Click đúp TCP/IP → tab "IP Addresses"
+#     → IPAll → TCP Port = 1433 → OK
+#  4. Khởi động lại service: SQL Server Services → SQL Server → Restart
+#  5. Mở Windows Firewall → Inbound Rules → New Rule
+#     → Port → TCP → 1433 → Allow → đặt tên "SQL Server 1433"
+#  6. Kiểm tra SQL Server Authentication đã bật:
+#     SSMS → chuột phải server → Properties → Security
+#     → chọn "SQL Server and Windows Authentication mode"
+#     → Restart SQL Server service
+#  7. Kiểm tra tài khoản 'sa' đã Enable:
+#     SSMS → Security → Logins → sa → chuột phải → Properties
+#     → Status → Login: Enabled
+#
+#  [MÁY B — máy client]
+#  1. Copy file db.properties.example → db.properties
+#  2. Sửa db.url: thay localhost bằng IP của máy A
+#     (Máy A: ipconfig → IPv4 Address)
+#  3. Điền db.username=sa và db.password đúng với máy A
+#  4. Chạy app → kết nối được là xong
+#
+#  Lưu ý: Cả 2 máy phải cùng mạng LAN hoặc cùng WiFi
+# ============================================================

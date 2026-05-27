@@ -2,6 +2,7 @@ package gui;
 
 import connectDB.ConnectDB;
 import dao.*;
+import service.DatBanService;
 import entity.*;
 import javax.swing.*;
 import javax.swing.border.*;
@@ -37,6 +38,9 @@ public class QuanLyDatBan_DB extends JPanel {
     private final ChiTietHoaDon_DAO  cthdDAO = new ChiTietHoaDon_DAO();
     private final SanPham_DAO        spDAO   = new SanPham_DAO();
     private final ChiTietDatBan_DAO  ctdbDAO = new ChiTietDatBan_DAO();
+
+    // ── Service ───────────────────────────────────────────────────────────
+    private final DatBanService datBanService = new DatBanService();
 
     // ── state ─────────────────────────────────────────────────────────────
     private final NhanVien      currentNV;
@@ -104,14 +108,14 @@ public class QuanLyDatBan_DB extends JPanel {
                 ? "ĂN NGAY  ·  " + tenBan + "  ·  " + loai + "  ·  " + tongSucChua + " người"
                 : tenBan + "  ·  " + loai + "  ·  " + tongSucChua + " người";
         lblBookingTitle = new JLabel(titleText);
-        lblBookingTitle.setFont(new Font("Segoe UI", Font.BOLD, 17));
+        lblBookingTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblBookingTitle.setForeground(walkIn ? GREEN_OK : MAIN_BLUE);
         hdr.add(lblBookingTitle, BorderLayout.WEST);
 
         JLabel sub = walkIn
-                ? new JLabel("Không cần cọc  ·  Ngồi & ăn ngay")
-                : new JLabel("Tiền cọc bắt buộc: " + FMT.format(TIEN_COC) + "đ");
-        sub.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                ? new JLabel("| Không cần cọc  ·  Ngồi & ăn ngay")
+                : new JLabel("| Tiền cọc bắt buộc: " + FMT.format(TIEN_COC) + "đ");
+        sub.setFont(new Font("Segoe UI", Font.BOLD, 12));
         sub.setForeground(walkIn ? GREEN_OK : RED_DANG);
         hdr.add(sub, BorderLayout.EAST);
         add(hdr, BorderLayout.NORTH);
@@ -394,254 +398,69 @@ public class QuanLyDatBan_DB extends JPanel {
 
     // ── Luồng đặt trước ───────────────────────────────────────────────────
     private void doReservation() {
-        String ten = txtTenKH.getText().trim();
-        String sdt = txtSdtKH.getText().trim();
-
-        if (ten.isEmpty()) { msg("Vui lòng nhập tên khách hàng!"); return; }
-        if (!sdt.matches("0\\d{9}")) {
-            msg("Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)!"); return;
-        }
-
-        Date thoiGianDen = buildBookingDateTime(selectedBookingDate, selectedTime);
-        if (isToday(selectedBookingDate) && thoiGianDen.before(new Date())) {
-            msg("Giờ " + selectedTime + " hôm nay đã qua! Vui lòng chọn giờ khác.");
-            return;
-        }
-
-        int tongSucChua = selectedBans.stream().mapToInt(Ban::getSucChua).sum();
-        int mins;
-        if      (tongSucChua <= 2) mins = 90;
-        else if (tongSucChua <= 4) mins = 120;
-        else if (tongSucChua <= 8) mins = 180;
-        else                       mins = 240;
-        Date thoiGianDuKienRoi = new Date(thoiGianDen.getTime() + (long) mins * 60_000);
-
-        for (Ban ban : selectedBans) {
-            if (findConflictingDon(ban.getMaBan(), thoiGianDen, thoiGianDuKienRoi) != null) {
-                msg("Bàn " + ban.getSoBan() + " đã có đơn đặt trùng lịch!\n"
-                        + "Khoảng thời gian: " + selectedTime + " → "
-                        + new SimpleDateFormat("HH:mm").format(thoiGianDuKienRoi)
-                        + " ngày " + new SimpleDateFormat("dd/MM/yyyy").format(selectedBookingDate));
-                return;
-            }
-        }
-
-        KhachHang kh = khDAO.getKhachHangBySdt(sdt);
-        if (kh == null) {
-            kh = new KhachHang();
-            kh.setMaKH(khDAO.getNextMaKH());
-            kh.setTenKH(ten);
-            kh.setSoDT(sdt);
-            khDAO.addKhachHang(kh);
-        }
-
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        DonDatBan don = new DonDatBan();
-        don.setMaDon(ddbDAO.getNextMaDon());
-        don.setThoiGianDat(now);
-        don.setThoiGianDen(thoiGianDen);
-        don.setThoiGianDuKienRoi(thoiGianDuKienRoi);
-        don.setSoLuongKhach(tongSucChua);
-        don.setKhachHang(kh);
-        don.setNhanVien(currentNV);
-        don.setDsBan(new ArrayList<>(selectedBans));
-        don.setTrangThai(false);
-        don.setGhiChu(txtGhiChu.getText().trim());
-        ddbDAO.addDonDatBan(don);
-
-        List<SanPham> allSP = spDAO.getAllSanPham();
-        Map<String,SanPham> spMap = new HashMap<>();
-        for (SanPham sp : allSP) spMap.put(sp.getMaMon(), sp);
-        double foodTotal = 0;
-        for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {
-            SanPham sp = spMap.get(e.getKey());
-            if (sp != null) foodTotal += sp.getGiaBan() * e.getValue();
-        }
-
-        HoaDon hd = new HoaDon();
-        hd.setMaHD(hdDAO.getNextMaHD());
-        hd.setNgayLap(now);
-        hd.setThoiGian(new Time(now.getTime()));
-        hd.setTongTien(TIEN_COC + foodTotal);
-        hd.setTrangThaiThanhToan(TrangThaiThanhToan.DA_COC);
-        hd.setDonDatBan(don);
-        hd.setNhanVien(currentNV);
-        hd.setKhachHang(kh);
-        hd.setTienCoc(TIEN_COC);
-        Connection con = ConnectDB.getConnection();
+        DatBanService.DatBanRequest req = new DatBanService.DatBanRequest(
+                selectedBans, selectedBookingDate, selectedTime,
+                txtTenKH.getText().trim(), txtSdtKH.getText().trim(),
+                txtGhiChu.getText().trim(), bookingCart);
         try {
-            con.setAutoCommit(false);
+            HoaDon hd = datBanService.datBanTruoc(req, currentNV);
 
-            if (!hdDAO.create(hd)) throw new RuntimeException("Lỗi tạo hóa đơn");
-            for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {
-                SanPham sp = spMap.get(e.getKey());
-                if (sp == null || e.getValue() <= 0) continue;
-                double tt = sp.getGiaBan() * e.getValue();
-                HoaDon ref = new HoaDon(); ref.setMaHD(hd.getMaHD());
-                if (!cthdDAO.create(new ChiTietHoaDon(sp, ref, e.getValue(), sp.getGiaBan(), "", tt)))
-                    throw new RuntimeException("Lỗi thêm chi tiết món");
-            }
-            if (isToday(selectedBookingDate)) {
-                for (Ban ban : selectedBans)
-                    banDAO.updateTinhTrangBan(ban.getMaBan(), TrangThaiBan.DaDuocDat);
-            }
+            int tongSucChua = selectedBans.stream().mapToInt(Ban::getSucChua).sum();
+            int mins = DatBanService.tinhGioRoiDuKien(tongSucChua);
+            Date tgDen = DatBanService.buildDateTime(selectedBookingDate, selectedTime);
+            Date tgRoi = new Date(tgDen.getTime() + (long) mins * 60_000);
+            String tenBan = selectedBans.stream()
+                    .map(b -> "Bàn " + b.getSoBan())
+                    .collect(java.util.stream.Collectors.joining(", "));
 
-            con.commit();
+            JOptionPane.showMessageDialog(this,
+                    "Đặt bàn thành công!\nBàn: " + tenBan
+                            + "\nNgày: " + new SimpleDateFormat("dd/MM/yyyy").format(selectedBookingDate)
+                            + "\nGiờ đến: " + selectedTime
+                            + "\nDự kiến rời: " + new SimpleDateFormat("HH:mm").format(tgRoi)
+                            + "\nTiền cọc: " + FMT.format(TIEN_COC) + "đ",
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            listener.onBookingSuccess();
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            msg(ex.getMessage());
         } catch (Exception ex) {
-            try { con.rollback(); } catch (SQLException ignored) {}
             msg("Lỗi hệ thống khi lưu đặt bàn, vui lòng thử lại!\n" + ex.getMessage());
-            return;
-        } finally {
-            try { con.setAutoCommit(true); } catch (SQLException ignored) {}
-            ConnectDB.closeConnection();
         }
-
-        String tenBan = selectedBans.stream()
-                .map(b -> "Bàn " + b.getSoBan())
-                .collect(java.util.stream.Collectors.joining(", "));
-
-        JOptionPane.showMessageDialog(this,
-                "Đặt bàn thành công!\nBàn: " + tenBan
-                        + "\nNgày: " + new SimpleDateFormat("dd/MM/yyyy").format(selectedBookingDate)
-                        + "\nGiờ đến: " + selectedTime
-                        + "\nDự kiến rời: " + new SimpleDateFormat("HH:mm").format(thoiGianDuKienRoi)
-                        + "\nTiền cọc: " + FMT.format(TIEN_COC) + "đ",
-                "Thành công", JOptionPane.INFORMATION_MESSAGE);
-
-        listener.onBookingSuccess();
     }
 
     // ── Luồng ăn ngay ─────────────────────────────────────────────────────
     private void doWalkIn() {
-        String ten = txtTenKH.getText().trim();
-        String sdt = txtSdtKH.getText().trim();
-
-        // Customer: phone optional, name optional
-        KhachHang kh;
-        if (!sdt.isEmpty()) {
-            if (!sdt.matches("0\\d{9}")) {
-                msg("Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)!"); return;
-            }
-            kh = khDAO.getKhachHangBySdt(sdt);
-            if (kh == null) {
-                kh = new KhachHang();
-                kh.setMaKH(khDAO.getNextMaKH());
-                kh.setTenKH(ten.isEmpty() ? "Khách vãng lai" : ten);
-                kh.setSoDT(sdt);
-                khDAO.addKhachHang(kh);
-            }
-        } else {
-            // Không có SĐT → dùng chung 1 bản ghi "Khách vãng lai" cố định, không tạo thêm
-            kh = khDAO.getKhachHangBySdt("0000000000");
-            if (kh == null) {
-                kh = new KhachHang();
-                kh.setMaKH(khDAO.getNextMaKH());
-                kh.setTenKH("Khách vãng lai");
-                kh.setSoDT("0000000000");
-                khDAO.addKhachHang(kh);
-            }
-        }
-
-        int tongSucChua = selectedBans.stream().mapToInt(Ban::getSucChua).sum();
-        int mins;
-        if      (tongSucChua <= 2) mins = 90;
-        else if (tongSucChua <= 4) mins = 120;
-        else if (tongSucChua <= 8) mins = 180;
-        else                       mins = 240;
-
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        Date thoiGianDuKienRoi = new Date(now.getTime() + (long) mins * 60_000);
-
-        DonDatBan don = new DonDatBan();
-        don.setMaDon(ddbDAO.getNextMaDon());
-        don.setThoiGianDat(now);
-        don.setThoiGianDen(now);
-        don.setThoiGianDuKienRoi(thoiGianDuKienRoi);
-        don.setSoLuongKhach(tongSucChua);
-        don.setKhachHang(kh);
-        don.setNhanVien(currentNV);
-        don.setDsBan(new ArrayList<>(selectedBans));
-        don.setTrangThai(false);
-        don.setGhiChu(txtGhiChu.getText().trim());
-        ddbDAO.addDonDatBan(don);
-
-        List<SanPham> allSP = spDAO.getAllSanPham();
-        Map<String,SanPham> spMap = new HashMap<>();
-        for (SanPham sp : allSP) spMap.put(sp.getMaMon(), sp);
-        double foodTotal = 0;
-        for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {
-            SanPham sp = spMap.get(e.getKey());
-            if (sp != null) foodTotal += sp.getGiaBan() * e.getValue();
-        }
-
-        HoaDon hd = new HoaDon();
-        hd.setMaHD(hdDAO.getNextMaHD());
-        hd.setNgayLap(now);
-        hd.setThoiGian(new Time(now.getTime()));
-        hd.setTongTien(foodTotal);
-        hd.setTrangThaiThanhToan(TrangThaiThanhToan.CHUA_THANH_TOAN);
-        hd.setDonDatBan(don);
-        hd.setNhanVien(currentNV);
-        hd.setKhachHang(kh);
-        hd.setTienCoc(0);
-        Connection conWI = ConnectDB.getConnection();
+        DatBanService.DatBanRequest req = new DatBanService.DatBanRequest(
+                selectedBans, new Date(), selectedTime,
+                txtTenKH.getText().trim(), txtSdtKH.getText().trim(),
+                txtGhiChu.getText().trim(), bookingCart);
         try {
-            conWI.setAutoCommit(false);
+            HoaDon hd = datBanService.anNgay(req, currentNV);
 
-            if (!hdDAO.create(hd)) throw new RuntimeException("Lỗi tạo hóa đơn");
-            for (Map.Entry<String,Integer> e : bookingCart.entrySet()) {
-                SanPham sp = spMap.get(e.getKey());
-                if (sp == null || e.getValue() <= 0) continue;
-                double tt = sp.getGiaBan() * e.getValue();
-                HoaDon ref = new HoaDon(); ref.setMaHD(hd.getMaHD());
-                if (!cthdDAO.create(new ChiTietHoaDon(sp, ref, e.getValue(), sp.getGiaBan(), "", tt)))
-                    throw new RuntimeException("Lỗi thêm chi tiết món");
-            }
-            for (Ban ban : selectedBans)
-                banDAO.updateTinhTrangBan(ban.getMaBan(), TrangThaiBan.DangDuocSuDung);
+            int tongSucChua = selectedBans.stream().mapToInt(Ban::getSucChua).sum();
+            int mins = DatBanService.tinhGioRoiDuKien(tongSucChua);
+            Date tgRoi = new Date(System.currentTimeMillis() + (long) mins * 60_000);
+            String tenBan = selectedBans.stream()
+                    .map(b -> "Bàn " + b.getSoBan())
+                    .collect(java.util.stream.Collectors.joining(", "));
+            String tenKhach = hd.getKhachHang() != null ? hd.getKhachHang().getTenKH() : "Khách vãng lai";
 
-            conWI.commit();
+            JOptionPane.showMessageDialog(this,
+                    "Nhận bàn thành công!\n"
+                            + "Bàn: " + tenBan + "\n"
+                            + "Khách: " + tenKhach + "\n"
+                            + "Giờ vào: " + selectedTime + "\n"
+                            + "Dự kiến rời: " + new SimpleDateFormat("HH:mm").format(tgRoi),
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            listener.onBookingSuccess();
+        } catch (IllegalArgumentException ex) {
+            msg(ex.getMessage());
         } catch (Exception ex) {
-            try { conWI.rollback(); } catch (SQLException ignored) {}
             msg("Lỗi hệ thống khi nhận bàn, vui lòng thử lại!\n" + ex.getMessage());
-            return;
-        } finally {
-            try { conWI.setAutoCommit(true); } catch (SQLException ignored) {}
-            ConnectDB.closeConnection();
         }
-
-        String tenBan = selectedBans.stream()
-                .map(b -> "Bàn " + b.getSoBan())
-                .collect(java.util.stream.Collectors.joining(", "));
-
-        JOptionPane.showMessageDialog(this,
-                "Nhận bàn thành công!\n"
-                        + "Bàn: " + tenBan + "\n"
-                        + "Khách: " + kh.getTenKH() + "\n"
-                        + "Giờ vào: " + selectedTime + "\n"
-                        + "Dự kiến rời: " + new SimpleDateFormat("HH:mm").format(thoiGianDuKienRoi),
-                "Thành công", JOptionPane.INFORMATION_MESSAGE);
-
-        listener.onBookingSuccess();
     }
 
-    // ── Conflict check (chỉ dùng cho đặt trước) ──────────────────────────
-    private DonDatBan findConflictingDon(String maBan, Date tgDenNew, Date tgRoiNew) {
-        List<DonDatBan> allDons = ddbDAO.getAllDonDatBanWithBan();
-        for (DonDatBan d : allDons) {
-            if (d.isTrangThai()) continue;
-            boolean hasBan = d.getDsBan().stream()
-                    .anyMatch(b -> b.getMaBan().equals(maBan));
-            if (!hasBan) continue;
-            Date tgDen = d.getThoiGianDen();
-            Date tgRoi = d.computeThoiGianDuKienRoi();
-            if (tgDen == null || tgRoi == null) continue;
-            if (tgDenNew.before(tgRoi) && tgDen.before(tgRoiNew)) return d;
-        }
-        return null;
-    }
-
-    // ── Time helpers ──────────────────────────────────────────────────────
+    // ── Time helpers (delegate sang DatBanService) ────────────────────────
     private static boolean isSameDay(Date d1, Date d2) {
         if (d1 == null || d2 == null) return false;
         Calendar c1 = Calendar.getInstance(); c1.setTime(d1);
@@ -649,19 +468,9 @@ public class QuanLyDatBan_DB extends JPanel {
         return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR)
                 && c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR);
     }
-    private static boolean isToday(Date d) { return isSameDay(d, new Date()); }
-
+    private static boolean isToday(Date d) { return DatBanService.isToday(d); }
     private static Date buildBookingDateTime(Date date, String timeStr) {
-        String[] parts = timeStr.split(":");
-        int h = Integer.parseInt(parts[0]);
-        int m = Integer.parseInt(parts[1]);
-        Calendar c = Calendar.getInstance();
-        c.setTime(date);
-        c.set(Calendar.HOUR_OF_DAY, h);
-        c.set(Calendar.MINUTE, m);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        return c.getTime();
+        return DatBanService.buildDateTime(date, timeStr);
     }
 
     // ── UI helpers ────────────────────────────────────────────────────────

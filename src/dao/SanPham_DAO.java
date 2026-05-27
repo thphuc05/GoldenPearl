@@ -42,6 +42,37 @@ public class SanPham_DAO {
         return dsSP;
     }
 
+    public SanPham getSanPhamByMa(String maMon) {
+        Connection con = ConnectDB.getConnection();
+        try {
+            String sql = "SELECT sp.*, lsp.tenDanhMuc FROM SanPham sp "
+                       + "JOIN LoaiSanPham lsp ON sp.maDanhMuc = lsp.maDanhMuc "
+                       + "WHERE sp.maMon = ?";
+            try (PreparedStatement st = con.prepareStatement(sql)) {
+                st.setString(1, maMon);
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next()) {
+                        SanPham sp = new SanPham();
+                        sp.setMaMon(rs.getString("maMon"));
+                        sp.setTenMon(rs.getString("tenMon"));
+                        sp.setGiaGoc(rs.getDouble("giaGoc"));
+                        sp.setGiaBan(rs.getDouble("giaBan"));
+                        sp.setTrangThai(rs.getBoolean("trangThai"));
+                        try { sp.setMoTa(rs.getString("moTa")); } catch (Exception ignored) {}
+                        try { sp.setHinhAnh(rs.getString("hinhAnh")); } catch (Exception ignored) {}
+                        LoaiSanPham loai = new LoaiSanPham();
+                        loai.setMaLoai(rs.getString("maDanhMuc"));
+                        loai.setTenLoai(rs.getString("tenDanhMuc"));
+                        sp.setLoaiSanPham(loai);
+                        return sp;
+                    }
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        finally { ConnectDB.closeConnection(); }
+        return null;
+    }
+
     public boolean addSanPham(SanPham sp) {
         Connection con = ConnectDB.getConnection();
         int n = 0;

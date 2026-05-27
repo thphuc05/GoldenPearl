@@ -64,7 +64,7 @@ public class QuanLyBep extends JPanel {
         p.setBackground(MAIN_BLUE);
         p.setBorder(new EmptyBorder(10, 28, 10, 28));
 
-        JLabel lblTitle = new JLabel("MÀN HÌNH BẾP");
+        JLabel lblTitle = new JLabel("QUẢN LÝ BẾP");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitle.setForeground(GOLD_COLOR);
         JLabel lblSub = new JLabel("Xem và xác nhận trạng thái các món đang chờ chế biến");
@@ -150,18 +150,21 @@ public class QuanLyBep extends JPanel {
             return;
         }
 
-        // Nhóm theo bàn
-        Map<Integer, List<MonBep>> byBan = new LinkedHashMap<>();
+        // Nhóm theo đơn đặt bàn (maDon); walk-in nhóm theo maHD
+        Map<String, List<MonBep>> byDon = new LinkedHashMap<>();
         for (MonBep m : ds) {
-            byBan.computeIfAbsent(m.soBan, k -> new java.util.ArrayList<>()).add(m);
+            String key = (m.maDon != null && !m.maDon.isEmpty()) ? m.maDon : "WALKIN_" + m.maHD;
+            byDon.computeIfAbsent(key, k -> new java.util.ArrayList<>()).add(m);
         }
 
         long choCount = ds.stream().filter(m -> m.trangThaiMon == TrangThaiMon.CHO_XU_LY).count();
         long lamCount = ds.stream().filter(m -> m.trangThaiMon == TrangThaiMon.DANG_LAM).count();
         lblCount.setText(choCount + " chờ  |  " + lamCount + " đang làm");
 
-        for (Map.Entry<Integer, List<MonBep>> entry : byBan.entrySet()) {
-            pContent.add(buildBanSection(entry.getKey(), entry.getValue()));
+        for (List<MonBep> group : byDon.values()) {
+            MonBep first = group.get(0);
+            String tenCum = buildTenCum(first);
+            pContent.add(buildBanSection(tenCum, group));
             pContent.add(Box.createVerticalStrut(14));
         }
 
@@ -169,8 +172,24 @@ public class QuanLyBep extends JPanel {
         pContent.repaint();
     }
 
-    // ── Card theo bàn ────────────────────────────────────────────────────────
-    private JPanel buildBanSection(int soBan, List<MonBep> items) {
+    // ── Tên cụm bàn ─────────────────────────────────────────────────────────
+    private String buildTenCum(MonBep first) {
+        if (first.tenCum != null && !first.tenCum.isEmpty()) {
+            // tenCum = "1+2" → hiển thị "BÀN 01+02"
+            String[] parts = first.tenCum.split("\\+");
+            StringBuilder sb = new StringBuilder("BÀN ");
+            for (int i = 0; i < parts.length; i++) {
+                if (i > 0) sb.append("+");
+                try { sb.append(String.format("%02d", Integer.parseInt(parts[i].trim()))); }
+                catch (NumberFormatException e) { sb.append(parts[i].trim()); }
+            }
+            return sb.toString();
+        }
+        return first.soBan == 0 ? "Không xác định bàn" : "BÀN " + String.format("%02d", first.soBan);
+    }
+
+    // ── Card theo nhóm đơn ───────────────────────────────────────────────────
+    private JPanel buildBanSection(String tenBan, List<MonBep> items) {
         JPanel section = new JPanel();
         section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
         section.setOpaque(false);
@@ -183,7 +202,6 @@ public class QuanLyBep extends JPanel {
         header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         header.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        String tenBan = soBan == 0 ? "Không xác định bàn" : "BÀN " + String.format("%02d", soBan);
         JLabel lblBan = new JLabel(tenBan);
         lblBan.setFont(new Font("Inter Bold", Font.BOLD, 15));
         lblBan.setForeground(MAIN_BLUE);
@@ -323,7 +341,8 @@ public class QuanLyBep extends JPanel {
 
         new SwingWorker<Boolean, Void>() {
             @Override protected Boolean doInBackground() {
-                return cthdDAO.updateTrangThaiMon(m.maHD, m.maMon, nextStatus);
+                return cthdDAO.updateTrangThaiMon(m.maHD, m.maMon,
+                        (java.sql.Timestamp) m.thoiGianGoi, nextStatus);
             }
             @Override protected void done() {
                 try {

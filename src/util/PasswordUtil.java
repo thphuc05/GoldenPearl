@@ -35,8 +35,7 @@ public class PasswordUtil {
     public static boolean verify(String plaintext, String stored) {
         if (stored == null || plaintext == null) return false;
         if (!stored.startsWith(PREFIX)) {
-            // Mật khẩu cũ chưa hash — so sánh plaintext (sẽ được re-hash sau khi login)
-            return plaintext.equals(stored);
+            return false;
         }
         try {
             String[] parts = stored.split(":");

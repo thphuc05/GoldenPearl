@@ -40,6 +40,12 @@ public class QuanLyHoaDon extends JPanel {
     private final ChiTietHoaDon_DAO ctDao = new ChiTietHoaDon_DAO();
     private final KhuVuc_DAO        kvDao = new KhuVuc_DAO();
 
+    // ── Service ───────────────────────────────────────────────────────────────
+    private final service.HoaDonService hoaDonService = new service.HoaDonService();
+
+    // ── SwingWorker tracking (race condition fix) ─────────────────────────────
+    private SwingWorker<?, ?> currentWorker = null;
+
     // ── Cache ────────────────────────────────────────────────────────────────
     private Map<String, String> maHDToKhuVuc   = new HashMap<>();
     private Map<String, String> maHDToBan      = new HashMap<>();
@@ -75,7 +81,7 @@ public class QuanLyHoaDon extends JPanel {
         JPanel pHeader = new JPanel(new BorderLayout());
         pHeader.setOpaque(true);
         pHeader.setBackground(MAIN_BLUE);
-        pHeader.setBorder(new EmptyBorder(10, 24, 10, 24));
+        pHeader.setBorder(new EmptyBorder(10, 28, 10, 28));
         JLabel lblTitle = new JLabel("QUẢN LÝ HÓA ĐƠN");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitle.setForeground(GOLD_COLOR);
@@ -248,8 +254,11 @@ public class QuanLyHoaDon extends JPanel {
     // ════════════════════════════════════════════════════════════════════════
 
     private void loadDataFromDB() {
+        if (currentWorker != null && !currentWorker.isDone()) {
+            currentWorker.cancel(true);
+        }
         modelHoaDon.setRowCount(0);
-        new SwingWorker<Object[], Void>() {
+        currentWorker = new SwingWorker<Object[], Void>() {
             @Override protected Object[] doInBackground() {
                 return new Object[]{
                         hdDao.getKhuVucMapForAllHoaDon(),
@@ -260,6 +269,7 @@ public class QuanLyHoaDon extends JPanel {
                 };
             }
             @Override @SuppressWarnings("unchecked") protected void done() {
+                if (isCancelled()) return;
                 try {
                     Object[] r = get();
                     maHDToKhuVuc   = (Map<String, String>) r[0];
@@ -280,7 +290,8 @@ public class QuanLyHoaDon extends JPanel {
                     applyCurrentFilters();
                 } catch (Exception e) { e.printStackTrace(); }
             }
-        }.execute();
+        };
+        currentWorker.execute();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -290,24 +301,9 @@ public class QuanLyHoaDon extends JPanel {
     private void applyCurrentFilters() {
         String selKV = (String) cmbKhuVuc.getSelectedItem();
         String selTT = (String) cmbTrangThai.getSelectedItem();
-
-        boolean filterKV = selKV != null && !selKV.equals("Tất cả");
-        TrangThaiThanhToan filterTT = resolveTrangThaiFilter(selTT);
-
+        List<HoaDon> filtered = hoaDonService.filter(cachedHoaDon, selKV, selTT, maHDToKhuVuc);
         modelHoaDon.setRowCount(0);
-        for (HoaDon hd : cachedHoaDon) {
-            if (filterKV) {
-                String kv = maHDToKhuVuc.get(hd.getMaHD());
-                if (!selKV.equals(kv)) continue;
-            }
-            if (filterTT != null && hd.getTrangThaiThanhToan() != filterTT) continue;
-            addRowToInvoiceTable(hd);
-        }
-    }
-
-    private TrangThaiThanhToan resolveTrangThaiFilter(String sel) {
-        if (sel == null || sel.equals("Tất cả")) return null;
-        return TrangThaiThanhToan.fromDisplay(sel);
+        for (HoaDon hd : filtered) addRowToInvoiceTable(hd);
     }
 
     private void searchHoaDon() {
@@ -315,20 +311,10 @@ public class QuanLyHoaDon extends JPanel {
         try {
             Date from = dateSdf.parse(txtFromDate.getText());
             Date to   = dateSdf.parse(txtToDate.getText());
-            Calendar cFrom = toStartOfDay(from);
-            Calendar cTo   = toEndOfDay(to);
-
-            List<HoaDon> result = new ArrayList<>();
-            if (!keyword.isEmpty()) {
-                HoaDon hd = hdDao.getHoaDonByMa(keyword);
-                if (hd != null && isInDateRange(hd.getNgayLap(), cFrom.getTime(), cTo.getTime()))
-                    result.add(hd);
-                else
-                    JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn phù hợp!");
-            } else {
-                List<HoaDon> ds = hdDao.getHoaDonByDateRange(cFrom.getTime(), cTo.getTime());
-                if (ds != null) result.addAll(ds);
-            }
+            List<HoaDon> result = hoaDonService.searchByKeywordAndDateRange(
+                    keyword, toStartOfDay(from).getTime(), toEndOfDay(to).getTime());
+            if (!keyword.isEmpty() && result.isEmpty())
+                JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn phù hợp!");
             cachedHoaDon = result;
             applyCurrentFilters();
         } catch (Exception ex) {
@@ -343,11 +329,15 @@ public class QuanLyHoaDon extends JPanel {
     private void openDetailForRow(int row) {
         if (row < 0 || row >= modelHoaDon.getRowCount()) return;
         final String maHD = modelHoaDon.getValueAt(row, 0).toString();
-        new SwingWorker<Object[], Void>() {
+        if (currentWorker != null && !currentWorker.isDone()) {
+            currentWorker.cancel(true);
+        }
+        currentWorker = new SwingWorker<Object[], Void>() {
             @Override protected Object[] doInBackground() {
                 return new Object[]{ hdDao.getHoaDonByMa(maHD), ctDao.getChiTietByMaHD(maHD) };
             }
             @Override @SuppressWarnings("unchecked") protected void done() {
+                if (isCancelled()) return;
                 try {
                     Object[] r = get();
                     HoaDon hd = (HoaDon) r[0];
@@ -359,7 +349,8 @@ public class QuanLyHoaDon extends JPanel {
                     }
                 } catch (Exception e) { e.printStackTrace(); }
             }
-        }.execute();
+        };
+        currentWorker.execute();
     }
 
     private void handlePrint() {
@@ -465,10 +456,6 @@ public class QuanLyHoaDon extends JPanel {
         c.set(Calendar.SECOND, 59);      c.set(Calendar.MILLISECOND, 999);
         return c;
     }
-    private boolean isInDateRange(Date date, Date from, Date to) {
-        return date != null && !date.before(from) && !date.after(to);
-    }
-
     // ════════════════════════════════════════════════════════════════════════
     //  STRING HELPERS
     // ════════════════════════════════════════════════════════════════════════
@@ -547,7 +534,7 @@ public class QuanLyHoaDon extends JPanel {
         return b;
     }
     private void styleTable(JTable t) {
-        t.setFont(new Font("Inter", Font.PLAIN, 15));
+        t.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         t.setRowHeight(42);
         t.setSelectionBackground(SELECT_BG);
         t.setSelectionForeground(TEXT_DARK);

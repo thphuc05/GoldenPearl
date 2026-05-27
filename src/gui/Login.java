@@ -36,7 +36,7 @@ public class Login {
     // Label
     private JLabel screenTitle = new JLabel("Trình quản lý nhà hàng");
     private JLabel restaurantName = new JGradientLabel("GOLDEN PEARL");
-    private JLabel userNameLabel = new JLabel("Tên đăng nhập");
+    private JLabel userNameLabel = new JLabel("Mã tài khoản");
     private JLabel passwordLabel = new JLabel("Mật khẩu");
 
     // Trường thông tin
@@ -110,7 +110,7 @@ public class Login {
 
         // Tiêu đề
         screenTitle.setFont(new Font("Inter Bold", Font.BOLD, 35));
-        screenTitle.setForeground(Color.BLACK);
+        screenTitle.setForeground(Color.WHITE);
         screenTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         screenTitle.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -243,7 +243,7 @@ public class Login {
                                         "Lỗi", JOptionPane.ERROR_MESSAGE);
                             }
                         } else {
-                            JOptionPane.showMessageDialog(null, "Tên đăng nhập hoặc mật khẩu sai!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(null, "Mã tài khoản hoặc mật khẩu sai!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                         }
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(null, "Lỗi kết nối database: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);

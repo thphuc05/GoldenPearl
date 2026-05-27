@@ -81,6 +81,9 @@ public class QuanLyBan extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(getModel().isRollover() ? GREEN.darker() : GREEN);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 40, 20);
+                g2.setColor(GREEN.darker().darker());
+                g2.setStroke(new java.awt.BasicStroke(1.5f));
+                g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 40, 20);
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -101,6 +104,9 @@ public class QuanLyBan extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(getModel().isRollover() ? GOLD_VIP.darker() : GOLD_VIP);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+                g2.setColor(GOLD_VIP.darker().darker());
+                g2.setStroke(new java.awt.BasicStroke(1.5f));
+                g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 20, 20);
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -114,16 +120,20 @@ public class QuanLyBan extends JPanel {
         btnRefresh.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnRefresh.addActionListener(e -> loadCards());
 
-        JPanel pRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        row.setOpaque(false);
+        row.add(makeLegend("Trống", GREEN));
+        row.add(makeLegend("Đã đặt", ORANGE));
+        row.add(makeLegend("Đang dùng", RED_DANG));
+        row.add(makeLegend("Quá giờ", PURPLE));
+        row.add(makeLegend("Bảo trì", GRAY_MT));
+        row.add(Box.createHorizontalStrut(8));
+        row.add(btnAdd);
+        row.add(btnRefresh);
+
+        JPanel pRight = new JPanel(new GridBagLayout());
         pRight.setOpaque(false);
-        pRight.add(makeLegend("Trống", GREEN));
-        pRight.add(makeLegend("Đã đặt", ORANGE));
-        pRight.add(makeLegend("Đang dùng", RED_DANG));
-        pRight.add(makeLegend("Quá giờ", PURPLE));
-        pRight.add(makeLegend("Bảo trì", GRAY_MT));
-        pRight.add(Box.createHorizontalStrut(8));
-        pRight.add(btnAdd);
-        pRight.add(btnRefresh);
+        pRight.add(row);
 
         p.add(pLeft, BorderLayout.WEST);
         p.add(pRight, BorderLayout.EAST);
@@ -263,16 +273,13 @@ public class QuanLyBan extends JPanel {
         boolean      isVip       = "VIP".equalsIgnoreCase(ban.getLoaiBan() != null ? ban.getLoaiBan().trim() : "");
         boolean[]    hovered     = {false};
 
-        JPanel card = new JPanel(new BorderLayout(0, 8)) {
+        JPanel card = new JPanel(new BorderLayout(0, 0)) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(isBaoTri ? new Color(242, 242, 244) : CARD_BG);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
-                g2.setColor(sc);
-                g2.fillRoundRect(0, 0, getWidth(), 8, 14, 14);
-                g2.fillRect(0, 4, getWidth(), 8);
                 g2.setColor(isBaoTri ? GRAY_MT : (isVip ? GOLD_VIP : (hovered[0] ? sc : BORDER_CLR)));
                 g2.setStroke(new BasicStroke(isBaoTri ? 1.5f : (isVip ? 2f : (hovered[0] ? 1.5f : 1f))));
                 g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
@@ -280,86 +287,57 @@ public class QuanLyBan extends JPanel {
             }
         };
         card.setOpaque(false);
-        card.setPreferredSize(new Dimension(160, 185));
-        card.setBorder(new EmptyBorder(16, 14, 12, 14));
+        card.setPreferredSize(new Dimension(165, 220));
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+        // ── Icon bàn nhìn từ trên xuống ───────────────────────────────────
+        TableIconPanel iconPanel = new TableIconPanel(MAIN_BLUE, sc, ban.getSucChua(), isVip, isBaoTri, GOLD_VIP);
+        iconPanel.setPreferredSize(new Dimension(165, 98));
+
+        // ── Thông tin ─────────────────────────────────────────────────────
         JPanel pInfo = new JPanel();
         pInfo.setLayout(new BoxLayout(pInfo, BoxLayout.Y_AXIS));
         pInfo.setOpaque(false);
+        pInfo.setBorder(new EmptyBorder(6, 13, 4, 13));
 
         JLabel lblNum = new JLabel("Bàn " + ban.getSoBan());
-        lblNum.setFont(new Font("Inter Bold", Font.BOLD, 22));
+        lblNum.setFont(new Font("Inter Bold", Font.BOLD, 19));
         lblNum.setForeground(isBaoTri ? new Color(110, 110, 115) : (isVip ? GOLD_VIP : MAIN_BLUE));
+        lblNum.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel lblType = new JLabel((isVip ? "VIP" : "Thường") + "  •  " + ban.getSucChua() + " người");
-        lblType.setFont(new Font("Segoe UI", isVip ? Font.BOLD : Font.PLAIN, 14));
-        lblType.setForeground(isVip ? GOLD_VIP.darker() : new Color(130, 140, 150));
-
-        String kv = (ban.getKhuVuc() != null && ban.getKhuVuc().getTenKV() != null)
-                ? ban.getKhuVuc().getTenKV() : "—";
-        JLabel lblKV = new JLabel("Khu: " + kv);
-        lblKV.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblKV.setForeground(new Color(130, 140, 150));
-
-        // Badge VIP góc trên phải
-        JPanel pNorth = new JPanel(new BorderLayout());
-        pNorth.setOpaque(false);
-        pNorth.add(pInfo, BorderLayout.CENTER);
-
-        if (isVip && !isBaoTri) {
-            JLabel lblVipTag = new JLabel("★ VIP") {
-                @Override protected void paintComponent(Graphics g) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(new Color(GOLD_VIP.getRed(), GOLD_VIP.getGreen(), GOLD_VIP.getBlue(), 30));
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                    g2.dispose();
-                    super.paintComponent(g);
-                }
-            };
-            lblVipTag.setFont(new Font("Inter Bold", Font.BOLD, 11));
-            lblVipTag.setForeground(GOLD_VIP);
-            lblVipTag.setBorder(new EmptyBorder(3, 7, 3, 7));
-            lblVipTag.setOpaque(false);
-            JPanel pVipTag = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-            pVipTag.setOpaque(false);
-            pVipTag.add(lblVipTag);
-            pNorth.add(pVipTag, BorderLayout.EAST);
-        }
-
-        pInfo.add(lblNum);
-        pInfo.add(Box.createVerticalStrut(4));
-        pInfo.add(lblType);
-        pInfo.add(Box.createVerticalStrut(2));
-        pInfo.add(lblKV);
+        JLabel lblSub = new JLabel((isVip ? "VIP" : "Thường") + "  •  " + ban.getSucChua() + " người");
+        lblSub.setFont(new Font("Segoe UI", isVip ? Font.BOLD : Font.PLAIN, 12));
+        lblSub.setForeground(isVip ? GOLD_VIP.darker() : new Color(130, 140, 150));
+        lblSub.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lblBadge = new JLabel(badgeText, SwingConstants.CENTER) {
-            @Override
-            protected void paintComponent(Graphics g) {
+            @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(new Color(sc.getRed(), sc.getGreen(), sc.getBlue(), 30));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
-        lblBadge.setFont(new Font("Inter Bold", Font.BOLD, 15));
+        lblBadge.setFont(new Font("Inter Bold", Font.BOLD, 12));
         lblBadge.setForeground(sc);
-        lblBadge.setBorder(new EmptyBorder(4, 12, 4, 12));
+        lblBadge.setBorder(new EmptyBorder(3, 8, 3, 8));
         lblBadge.setOpaque(false);
+        lblBadge.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel pBadge = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        pBadge.setOpaque(false);
-        pBadge.add(lblBadge);
+        pInfo.add(lblNum);
+        pInfo.add(Box.createVerticalStrut(3));
+        pInfo.add(lblSub);
+        pInfo.add(Box.createVerticalStrut(6));
+        pInfo.add(lblBadge);
 
+        // ── Nút bảo trì ───────────────────────────────────────────────────
         String btnText  = isBaoTri ? "Kết thúc bảo trì" : "Đặt bảo trì";
         Color  btnColor = isBaoTri ? GREEN : GRAY_MT;
 
         JButton btnToggle = new JButton(btnText) {
-            @Override
-            protected void paintComponent(Graphics g) {
+            @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 Color base = isEnabled()
@@ -371,19 +349,17 @@ public class QuanLyBan extends JPanel {
                 super.paintComponent(g);
             }
         };
-        btnToggle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnToggle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnToggle.setForeground(Color.WHITE);
         btnToggle.setEnabled(canToggle);
         btnToggle.setFocusPainted(false);
         btnToggle.setBorderPainted(false);
         btnToggle.setContentAreaFilled(false);
-        btnToggle.setPreferredSize(new Dimension(0, 32));
+        btnToggle.setPreferredSize(new Dimension(0, 30));
         btnToggle.setCursor(canToggle
                 ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
                 : Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-        if (!canToggle) {
-            btnToggle.setToolTipText("Bàn đang có lịch đặt — không thể đặt bảo trì");
-        }
+        if (!canToggle) btnToggle.setToolTipText("Bàn đang có lịch đặt — không thể đặt bảo trì");
 
         btnToggle.addActionListener(e -> {
             TrangThaiBan next  = isBaoTri ? TrangThaiBan.Trong : TrangThaiBan.BaoTri;
@@ -399,15 +375,90 @@ public class QuanLyBan extends JPanel {
             }
         });
 
+        JPanel pBtn = new JPanel(new BorderLayout());
+        pBtn.setOpaque(false);
+        pBtn.setBorder(new EmptyBorder(0, 10, 10, 10));
+        pBtn.add(btnToggle, BorderLayout.CENTER);
+
         card.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseEntered(java.awt.event.MouseEvent e) { hovered[0] = true;  card.repaint(); }
             @Override public void mouseExited (java.awt.event.MouseEvent e) { hovered[0] = false; card.repaint(); }
         });
 
-        card.add(pNorth,    BorderLayout.NORTH);
-        card.add(pBadge,    BorderLayout.CENTER);
-        card.add(btnToggle, BorderLayout.SOUTH);
+        card.add(iconPanel, BorderLayout.NORTH);
+        card.add(pInfo,     BorderLayout.CENTER);
+        card.add(pBtn,      BorderLayout.SOUTH);
         return card;
+    }
+
+    // ── Icon bàn vẽ bằng Java2D (top-down view) ───────────────────────────────
+    static class TableIconPanel extends JPanel {
+        private final Color tableColor;   // màu mặt bàn
+        private final Color tintColor;    // màu nền mờ (theo trạng thái)
+        private final int   seats;
+        private final boolean isVip;
+        private final boolean isMaintenance;
+        private final Color goldColor;
+
+        TableIconPanel(Color tableColor, Color tintColor, int seats, boolean isVip, boolean isMaintenance, Color goldColor) {
+            this.tableColor    = tableColor;
+            this.tintColor     = tintColor;
+            this.seats         = seats;
+            this.isVip         = isVip;
+            this.isMaintenance = isMaintenance;
+            this.goldColor     = goldColor;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int W = getWidth(), H = getHeight();
+
+            // Nền nhạt màu trạng thái
+            g2.setColor(new Color(tintColor.getRed(), tintColor.getGreen(), tintColor.getBlue(), 20));
+            g2.fillRoundRect(0, 0, W, H, 14, 14);
+
+            // Mặt bàn top-down
+            int tableW = (int)(W * 0.62);
+            int tableH = (int)(H * 0.55);
+            int tableX = (W - tableW) / 2;
+            int tableY = (H - tableH) / 2;
+
+            Color cLight = new Color(
+                Math.min(255, tableColor.getRed()   + 60),
+                Math.min(255, tableColor.getGreen() + 60),
+                Math.min(255, tableColor.getBlue()  + 60));
+
+            // Bóng đổ
+            g2.setColor(new Color(0, 0, 0, 28));
+            g2.fillRoundRect(tableX + 4, tableY + 5, tableW, tableH, 14, 14);
+
+            // Mặt bàn gradient
+            g2.setPaint(new GradientPaint(tableX, tableY, cLight, tableX, tableY + tableH, tableColor));
+            g2.fillRoundRect(tableX, tableY, tableW, tableH, 14, 14);
+
+            // Viền
+            g2.setPaint(tableColor.darker());
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawRoundRect(tableX, tableY, tableW, tableH, 14, 14);
+
+            // Nhãn
+            String label = isVip ? "★ VIP" : (isMaintenance ? "B.TRÌ" : "");
+            if (!label.isEmpty()) {
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 10));
+                FontMetrics fm = g2.getFontMetrics();
+                g2.setColor(new Color(255, 255, 255, 220));
+                g2.drawString(label,
+                    tableX + (tableW - fm.stringWidth(label)) / 2,
+                    tableY + (tableH + fm.getAscent() - fm.getDescent()) / 2);
+            }
+
+            g2.dispose();
+        }
     }
 
     // ── Thêm bàn dialog ────────────────────────────────────────────────────
@@ -415,7 +466,7 @@ public class QuanLyBan extends JPanel {
         Window owner = SwingUtilities.getWindowAncestor(this);
         JDialog dlg = new JDialog(owner, "Thêm bàn mới", java.awt.Dialog.ModalityType.APPLICATION_MODAL);
         dlg.setUndecorated(true);
-        dlg.setSize(460, 390);
+        dlg.setSize(460, 320);
         dlg.setLocationRelativeTo(this);
 
         JPanel root = new JPanel(new BorderLayout()) {
@@ -469,25 +520,13 @@ public class QuanLyBan extends JPanel {
         cmbLoai.setFont(fField);
 
         List<KhuVuc> kvList = cachedKV.isEmpty() ? kvDAO.getAllKhuVuc() : cachedKV;
-        JComboBox<KhuVuc> cmbKV = new JComboBox<>();
-        for (KhuVuc kv : kvList) cmbKV.addItem(kv);
-        cmbKV.setFont(fField);
-        cmbKV.setRenderer((list, value, index, isSelected, cellHasFocus) -> {
-            JLabel l = new JLabel(value != null ? value.getTenKV() : "");
-            l.setFont(fField);
-            l.setOpaque(true);
-            l.setBackground(isSelected ? new Color(235, 240, 255) : Color.WHITE);
-            l.setBorder(new EmptyBorder(4, 8, 4, 8));
-            return l;
-        });
 
         String[][] rows = {
             {"Số bàn:", null},
             {"Sức chứa (người):", null},
-            {"Loại bàn:", null},
-            {"Khu vực:", null}
+            {"Loại bàn:", null}
         };
-        JComponent[] fields = {spinSoBan, spinSucChua, cmbLoai, cmbKV};
+        JComponent[] fields = {spinSoBan, spinSucChua, cmbLoai};
 
         for (int i = 0; i < fields.length; i++) {
             gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0.35;
@@ -514,9 +553,18 @@ public class QuanLyBan extends JPanel {
             int    soBan   = (int) spinSoBan.getValue();
             int    sucChua = (int) spinSucChua.getValue();
             String loai    = (String) cmbLoai.getSelectedItem();
-            KhuVuc kv      = (KhuVuc) cmbKV.getSelectedItem();
 
-            if (kv == null) { showErrorDialog("Vui lòng chọn khu vực!"); return; }
+            // Tự động xác định khu vực từ loại bàn
+            KhuVuc kv = null;
+            boolean wantVip = "VIP".equals(loai);
+            for (KhuVuc k : kvList) {
+                String tenKV = k.getTenKV() != null ? k.getTenKV().toLowerCase() : "";
+                if (wantVip && tenKV.contains("vip")) { kv = k; break; }
+                if (!wantVip && !tenKV.contains("vip")) { kv = k; break; }
+            }
+            if (kv == null && !kvList.isEmpty()) kv = kvList.get(0);
+
+            if (kv == null) { showErrorDialog("Không tìm thấy khu vực phù hợp trong hệ thống!"); return; }
             if (banDAO.isSoBanExists(soBan)) {
                 showErrorDialog("Số bàn " + soBan + " đã tồn tại!\nVui lòng chọn số bàn khác.");
                 return;
@@ -702,6 +750,7 @@ public class QuanLyBan extends JPanel {
         switch (tt) {
             case DaDuocDat:      return ORANGE;
             case DangDuocSuDung: return RED_DANG;
+            case DangDonDep:     return PURPLE;
             case BaoTri:         return GRAY_MT;
             default:             return GREEN;
         }
@@ -712,6 +761,7 @@ public class QuanLyBan extends JPanel {
         switch (tt) {
             case DaDuocDat:      return "Đã đặt trước";
             case DangDuocSuDung: return "Đang sử dụng";
+            case DangDonDep:     return "Đang dọn dẹp";
             case BaoTri:         return "Bảo trì";
             default:             return "Trống";
         }
